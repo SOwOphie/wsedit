@@ -190,7 +190,7 @@ main = do
                ++ "\n"
                ++ "\t-b\tDon't draw the background (dots + lines). May speed up\n"
                ++ "\t\tthe editor on older systems, as it seems to be quite the\n"
-               ++ "\t\tresource hog.\n."
+               ++ "\t\tresource hog.\n"
                ++ "\t-B\tDraw the usual background (dots + lines).\n"
                ++ "\n"
                ++ "\n"
