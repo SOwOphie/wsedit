@@ -1,0 +1,37 @@
+WYVERNSCALE SOURCE CODE LICENSE V1.0
+
+COPYRIGHT (c) 2016, Felix Hirn
+
+This license may only be copied verbatim, not in modified form.
+
+
+
+The user is granted the following rights:
+
+ 1. The freedom to run the software however he wants.
+
+ 2. The freedom to study and modify the software's source code however he wants.
+
+ 3. The freedom to redistribute the software in unmodified form, as long as
+    it stays under the original license and the copyright notice stays attached.
+    Distribution of compiled versions is permitted as long as the users are
+    granted unobstructed access to the source code as well.
+
+ 4. The freedom to distribute modified versions of the software, as long as the
+    modifications are also released under the original license or future
+    versions of it.
+
+ 5. The freedom to use parts or the entirety of the software for his own. Any
+    software that directly or indirectly depends on this software must be
+    released under a license that also grants the user the rights 1-3 defined
+    above as well as rights 4 and 5, possibly with some differing restrictions
+    as to under which license derived software is to be released.
+
+
+
+The licensed software is to be regarded as an awful, insecure, barely-working
+hack job.  It should only be used in a secured environment that prevents the
+software from causing any damage, including, but not limited to damage from
+unexpected side effects or refusal to run at all.  Any potential damage caused
+by the software is to blame on failure to implement sufficient safety measures
+and therefore on the user, not on the developer of the software.
