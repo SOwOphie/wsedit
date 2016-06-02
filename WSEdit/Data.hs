@@ -53,28 +53,75 @@ import qualified WSEdit.Buffer as B
 -- | Editor state container (dynamic part).
 data EdState = EdState
     { edLines      :: B.Buffer String
+        -- ^ Buffer of lines. The current line is always left of the current
+        --   position.
+
     , fname        :: FilePath
+        -- ^ Path of the current file.
+
     , readOnly     :: Bool
+        -- ^ Whether the file is opened in read only mode. Has no relation to
+        --   the write permissions on the actual file.
+
     , cursorPos    :: Int
+        -- ^ 1-based offset from the left end of the current line in characters.
+
+
     , wantsPos     :: Maybe Int
+        -- ^ Target visual position (1-based offset in columns) of the cursor.
+        --   Used to implement the cursor vertically moving over empty lines
+        --   without resetting to column 1.  (It's hard to explain, see
+        --   'WSEdit.Control.Base.moveCursor'.)
+
     , markPos      :: Maybe (Int, Int)
+        -- ^ Selection mark position.
+
     , scrollOffset :: (Int, Int)
+        -- ^ Viewport offset, 0-based.
+
 
     , continue     :: Bool
+        -- ^ Whether the main loop should continue past this iteration.
+
     , status       :: String
+        -- ^ Status string displayed at the bottom.
+
 
     , changed      :: Bool
+        -- ^ Whether the file has been changed since the last load/save.
+
     , history      :: Maybe EdState
+        -- ^ Editor state prior to the last action, used to implement undo
+        --   facilities.  Horrible memory efficiency, but it seems to work.
+
 
     , buildDict    :: Maybe Int
+        -- ^ Whether the editor is to build a dictionary, and if yes, at which
+        --   indentation depth.
+
     , dict         :: WordTree
+        -- ^ Autocompletion dictionary.
+
     , canComplete  :: Bool
+        -- ^ Whether the autocomplete function can be invoked at this moment
+        --   (usually 'True' while the user is typing and 'False' while he's
+        --   scrolling).
 
     , tabWidth     :: Int
+        -- ^ Width of a tab character.
+
     , replaceTabs  :: Bool
+        -- ^ Whether to insert spaces instead of tabs. Has no effect on existing
+        --   indentation.
+
     , detectTabs   :: Bool
+        -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
+        --   on the file's existing indentation.
+
 
     , drawBg       :: Bool
+        -- ^ Whether or not to draw the background.
+
     }
     deriving (Show)
 
@@ -124,6 +171,7 @@ setCursor (r, c) = do
 -- | Retrieve the current mark position, if it exists.
 getMark :: WSEdit (Maybe (Int, Int))
 getMark = markPos <$> get
+
 
 -- | Set the mark to a position.
 setMark :: (Int, Int) -> WSEdit ()
@@ -192,7 +240,10 @@ setOffset p = do
 setStatus :: String -> WSEdit ()
 setStatus st = do
     s <- get
+
+    -- Precaution, since lazyness can be quirky sometimes
     st' <- liftIO $ evaluate st
+
     put $ s { status = st' }
 
 
@@ -205,6 +256,8 @@ alter = do
                     , changed = True
                     } )
     where
+        -- | The 'EdState' 'history' is structured like a conventional list, and
+        --   this is its 'take', with some added 'Maybe'ness.
         chopHist :: Int -> Maybe EdState -> Maybe EdState
         chopHist n _        | n <= 0 = Nothing
         chopHist _ Nothing           = Nothing
@@ -212,11 +265,13 @@ alter = do
             Just $ s { history = chopHist (n-1) (history s) }
 
 
--- | Restore the last undo checkpoint.
+-- | Restore the last undo checkpoint, if available.
 popHist :: WSEdit ()
 popHist = modify popHist'
 
     where
+        -- | The 'EdState' 'history' is structured like a conventional list, and
+        --   this is its 'tail'.
         popHist' :: EdState -> EdState
         popHist' s = fromMaybe s $ history s
 
@@ -311,7 +366,8 @@ delSelection = do
 
 
 
--- | Retrieve the number of rows, colums displayed.
+-- | Retrieve the number of rows, colums displayed by vty, including all borders
+--   , frames and similar woo.
 getDisplayBounds :: WSEdit (Int, Int)
 getDisplayBounds = ask
                >>= displayBounds . outputIface . vtyObj
@@ -324,9 +380,19 @@ getDisplayBounds = ask
 -- | Editor configuration container (static part).
 data EdConfig = EdConfig
     { vtyObj   :: Vty
+        -- ^ vty object container, used to issue draw calls and receive events.
+
     , edDesign :: EdDesign
+        -- ^ Design object, see below.
+
     , keymap   :: Keymap
+        -- ^ What to do when a button is pressed. Inserting a character when the
+        --   corresponding key is pressed (e.g. 'a') is not included here, but
+        --   may be overridden with this table. (Why would you want to do that?)
+
     , histSize :: Int
+        -- ^ Number of undo states to keep.
+
     }
 
 
@@ -336,25 +402,48 @@ data EdConfig = EdConfig
 -- | Design portion of the editor configuration.
 data EdDesign = EdDesign
     { dFrameFormat   :: Attr
+        -- ^ vty attribute for the frame lines
+
     , dStatusFormat  :: Attr
+        -- ^ vty attribute for the status line
+
 
     , dLineNoFormat  :: Attr
+        -- ^ vty attribute for the line numbers to the left
+
     , dLineNoInterv  :: Int
+        -- ^ Display interval for the line numbers
+
 
     , dColNoInterval :: Int
-    , dColNoFormat   :: Attr
+        -- ^ Display interval for the column numbers. Don't set this lower than
+        --   the expected number's length, or strange things might happen.
 
-    , dTextDefFormat :: Attr
+    , dColNoFormat   :: Attr
+        -- ^ vty attribute for the column numbers
+
 
     , dBGChar        :: Char
+        -- ^ Character to fill the background with
+
     , dColChar       :: Maybe Char
+        -- ^ Character to draw column lines with
+
     , dBGFormat      :: Attr
+        -- ^ vty attribute for everything in the background
+
 
     , dCurrLnMod     :: Attr -> Attr
+        -- ^ Attribute modifications to apply to the current line
+
 
     , dTabStr        :: String
+        -- ^ String to display tab characters as. Will get truncated from the
+        --   left as needed. Make sure this is at least as long as your intended
+        --   indentation width (wsedit supports a maximum of 9).
 
     , dSelFormat     :: Attr
+        -- ^ vty attribute for selected text
 
     , dCharStyles    :: [(CharClass, Attr)]
     }
@@ -378,8 +467,6 @@ instance Default EdDesign where
         , dColNoFormat   = defAttr
                             `withForeColor` green
                             `withStyle`     bold
-
-        , dTextDefFormat = defAttr
 
         , dBGChar        = '·'
         , dColChar       = Just '|'
@@ -423,12 +510,12 @@ instance Default EdDesign where
 
 
 
--- | Editor monad.
+-- | Editor monad. Reads an 'EdConfig', writes nothing, alters an 'EdState'.
 type WSEdit = RWST EdConfig () EdState IO
 
 
 
--- | Lifted version of 'catch'.
+-- | Lifted version of 'catch' typed to 'SomeException'.
 catchEditor :: WSEdit a -> (SomeException -> WSEdit a) -> WSEdit a
 catchEditor a e = do
     c <- ask

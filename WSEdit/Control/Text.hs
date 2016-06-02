@@ -65,7 +65,10 @@ insertTab :: WSEdit ()
 insertTab = alterBuffer $ do
     b <- replaceTabs <$> get
     c <- cursorPos <$> get
-    n <- (edLines <$> get) >>= (stringWidth 1 . take (c - 1) . fromJust . B.left)
+
+    -- Column the tab will sit in
+    n <- (edLines <$> get)
+      >>= (stringWidth 1 . take (c - 1) . fromJust . B.left)
 
     w <- tabWidth <$> get
 
@@ -151,6 +154,7 @@ smartHome :: WSEdit ()
 smartHome = alterState $ do
     (_, cC) <- getCursor
 
+    -- Calculate the target position
     pos <-  (+1)
          .  length
          .  takeWhile isSpace
@@ -216,3 +220,4 @@ cleanse = alterBuffer $ do
     where
         trim :: String -> String
         trim = reverse . dropWhile isSpace . reverse
+               -- performs awfully, but doesn't get executed too often...

@@ -84,7 +84,7 @@ paste = alterBuffer $ do
     let c = lines c1
     s <- get
 
-    put $ s
+    put $ s     -- Arcane buffer magic incoming...
         { edLines = if length c == 1
                        then fromJust
                           $ B.withLeft (\l -> take (cursorPos s - 1) l

@@ -71,8 +71,11 @@ moveViewport r c = do
                 (max 0 . (+c))
 
 
+    -- Prevent infinite mutual recursion with moveCursor in read only mode
     b <- readOnly <$> get
     unless b $ do
+        -- Drag the cursor with the viewport
+
         (curR, curC) <- getCursor >>= toCursorDispPos
         (maxR, maxC) <- getDisplayBounds
         lnW <- lineNoWidth
@@ -100,6 +103,8 @@ moveCursor r c = alterState $ do
             moveV r
             unless (c == 0) $ moveH c
 
+            -- Adjust the viewport if necessary
+
             (curR, curC) <- getCursor >>= toCursorDispPos
             (maxR, maxC) <- getDisplayBounds
             lnW <- lineNoWidth
@@ -110,6 +115,7 @@ moveCursor r c = alterState $ do
             when (curC < lnW  + 4) $ moveViewport 0                   (curC - (lnW  + 4))
 
     where
+        -- | Vertical portion of the movement
         moveV :: Int -> WSEdit ()
         moveV n = do
             (currR, currC) <- getCursor
@@ -120,8 +126,10 @@ moveCursor r c = alterState $ do
                 tLnNo    = min (B.length lns) $ max 1 $ currR + n
                 targetLn = B.atDef "" lns $ tLnNo - 1
 
+            -- Current visual cursor offset (amount of columns)
             vPos <- txtToVisPos currLn currC
 
+            -- Targeted visual cursor offset
             tPos <- case wantsPos s of
                  Nothing -> do
                     unless (n == 0)
@@ -131,9 +139,11 @@ moveCursor r c = alterState $ do
                  Just p  -> do
                     return p
 
+            -- Resulting textual cursor offset (amount of characters)
             newC <- visToTxtPos targetLn tPos
             setCursor (tLnNo, newC)
 
+        -- | Horizontal portion of the movement
         moveH :: Int -> WSEdit ()
         moveH n = do
             (currR, currC) <- getCursor
@@ -147,4 +157,6 @@ moveCursor r c = alterState $ do
                       $ currC + n
                       )
 
+            -- Since this function will not be called for purely vertical
+            -- motions, we can safely discard the target cursor position here.
             modify (\s -> s { wantsPos = Nothing })

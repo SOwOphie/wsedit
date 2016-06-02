@@ -49,14 +49,15 @@ import qualified WSEdit.Buffer as B
 
 
 
--- | Crashes the editor.
+-- | Crashes the editor. Used for debugging. Mapped to Ctrl-Meta-C, test it if
+--   you dare.
 simulateCrash :: WSEdit ()
 simulateCrash = error "Simulated crash."
 
 
 -- | Shuts down vty gracefully, prints out an error message, creates a
---   (potentially quite huge) error dump at "./CRASH-DUMP" and finally
---   exits with return code 1.
+--   (potentially quite sizeable) error dump at "./CRASH-DUMP" and finally exits
+--   with return code 1.
 bail :: String -> WSEdit ()
 bail s = do
     v <- vtyObj <$> ask
@@ -118,6 +119,11 @@ canWriteFile = do
                         Right _ -> return True
                         Left  e -> const (return False) (e :: SomeException)
 
+    -- I am aware of the fact that this code is pretty awful, but it has yet to
+    -- fail me and/or break anything.  I use it as my daily driver to edit all
+    -- kinds of mission-critical system files, but do heed lines 33-38 of the
+    -- license file anyways.
+
 
 
 -- | Saves the text buffer to the file name in the editor state.
@@ -126,11 +132,11 @@ save = refuseOnReadOnly $ do
     s <- get
 
     if not (changed s)
-       then do
-            setStatus "No changes to save."
-            dictAddRec
+       then setStatus "No changes to save."
 
        else do
+            -- TODO: this blatantly disregards line endings and encoding.
+
             liftIO $ writeFile (fname s)
                    $ unlines
                    $ B.toList
@@ -138,8 +144,11 @@ save = refuseOnReadOnly $ do
 
             put s { changed = False }
 
-            setStatus $ "Saved " ++ show (B.length (edLines s)) ++ " lines of text."
-            dictAddRec
+            setStatus $ "Saved "
+                     ++ show (B.length (edLines s))
+                     ++ " lines of text."
+
+    dictAddRec
 
 
 
@@ -192,7 +201,9 @@ load = alterState $ do
                                     ++ p'
                                     ++ " , check permissions and disk state."
 
+    -- Wiggle the cursor to ensure its position is valid.
     moveCursor 0 0
+
     dictAddRec
 
 
@@ -216,6 +227,8 @@ toggleReadOnly = alterState $ do
                then setStatus "Error: file is read-only."
                else do
                     put $ s { readOnly = False }
+
+                    -- Place the cursor at the start of first visible line
                     moveCursor (1 + fst (scrollOffset s)) (-1)
 
        else put $ s { readOnly  = True
@@ -223,6 +236,9 @@ toggleReadOnly = alterState $ do
                     , markPos   = Nothing
                     , edLines   = B.toFirst $ edLines s
                     }
+
+            -- This puts the cursor to (1, 1), where it gets hidden by the
+            -- output functions.
 
 
 

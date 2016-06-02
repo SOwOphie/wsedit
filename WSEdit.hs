@@ -2,7 +2,6 @@
 
 module Main where
 
-import Control.Exception        (SomeException)
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
@@ -38,14 +37,17 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 
 
+-- | Version number constant.
 version :: String
-version = "0.1.2.0"
+version = "0.1.2.1"
 
+-- | License version number constant.
 licenseVersion :: String
 licenseVersion = "1.1"
 
 
 
+-- | Main editor loop. Runs once per input event processed.
 mainLoop :: WSEdit ()
 mainLoop = do
     draw
@@ -56,6 +58,9 @@ mainLoop = do
     ev <- liftIO $ nextEvent $ vtyObj c
 
 
+    -- look up the event in the keymap
+    -- if not found: insert the pressed key
+    -- if it's not alphanumeric: show an "event not bound" warning
     fromMaybe (case ev of
                     EvKey (KChar k) [] -> deleteSelection
                                        >> insert k
@@ -74,30 +79,48 @@ mainLoop = do
 
 
 
+-- | Main function. Reads in the parameters, then passes control to the main
+--   loop.
 main :: IO ()
 main = do
+    -- partition the parameters into switches and arguments
     (sw, args) <- partition (isPrefixOf "-") <$> getArgs
+
+    -- initialize vty
     v <- mkVty def
 
+    -- create the configuration object
+    -- TODO: maybe implement instance Default EdConfig?
     let conf = EdConfig
             { vtyObj   = v
             , edDesign = def
             , keymap   = defaultKM
             , histSize = 100
             }
+
         filename = headMay args
 
+    -- Read the global and local config files. Use an empty string in case of
+    -- nonexistence.
     h <- liftIO $ getHomeDirectory
     glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.conf")
     loc  <- fromMaybe "" <$> mayReadFile "./.wsedit"
 
-    _ <- runRWST (argLoop $ filterFileArgs (getExt <$> filename) glob
-                         ++ filterFileArgs (getExt <$> filename) loc
-                         ++ sw
-                 ) conf $ def { fname = fromMaybe "" filename }
+    -- Assemble the switches from all possible config locations
+    let swChain = filterFileArgs (getExt <$> filename) glob
+               ++ filterFileArgs (getExt <$> filename) loc
+               ++ sw
+
+    -- Run the argument loop with the default config and state objects.
+    _ <- runRWST (argLoop swChain) conf $ def { fname = fromMaybe "" filename }
+
+    -- Shutdown vty
     shutdown v
 
     where
+        -- | Takes maybe the file extension and the raw string read from a
+        --   config location and returns a list of switches, throwing out
+        --   comment lines as well as those specific to other extensions.
         filterFileArgs :: Maybe String -> String -> [String]
         filterFileArgs Nothing    s = concatMap words
                                     $ filter (\x -> notElem ':' x
@@ -119,178 +142,187 @@ main = do
                 )
 
 
-        argLoop :: [String] -> WSEdit ()
-        argLoop (('-':'V'    :_ ):_ ) =
-            versionInfo
 
-        argLoop (('-':'b'    :x ):xs) = do
-            modify (\s -> s { drawBg = False })
-            argLoop (('-':x):xs)
+-- | Parse all switches passed to it, then starts the main loop.
+argLoop :: [String] -> WSEdit ()
+argLoop (('-':'V'    :_ ):_ ) =
+    versionInfo
 
-        argLoop (('-':'B'    :x ):xs) = do
-            modify (\s -> s { drawBg = True })
-            argLoop (('-':x):xs)
+argLoop (('-':'b'    :x ):xs) = do
+    modify (\s -> s { drawBg = False })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'c':'g':x ):xs) = do
-            h <- liftIO getHomeDirectory
-            modify (\s -> s { fname = h ++ "/.config/wsedit.conf" })
-            argLoop (('-':x):xs)
+argLoop (('-':'B'    :x ):xs) = do
+    modify (\s -> s { drawBg = True })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'c':'l':x ):xs) = do
-            modify (\s -> s { fname = "./.wsedit" })
-            argLoop (('-':x):xs)
+argLoop (('-':'c':'g':x ):xs) = do
+    h <- liftIO getHomeDirectory
+    modify (\s -> s { fname = h ++ "/.config/wsedit.conf" })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'d': c :x ):xs) = do
-            modify (\s -> s { buildDict = Just $ read [c] })
-            argLoop (('-':x):xs)
+argLoop (('-':'c':'l':x ):xs) = do
+    modify (\s -> s { fname = "./.wsedit" })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'D'    :x ):xs) = do
-            modify (\s -> s { buildDict = Nothing })
-            argLoop (('-':x):xs)
+argLoop (('-':'d': c :x ):xs) = do
+    modify (\s -> s { buildDict = Just $ read [c] })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'r'    :x ):xs) = do
-            modify (\s -> s { readOnly = True })
-            argLoop (('-':x):xs)
+argLoop (('-':'D'    :x ):xs) = do
+    modify (\s -> s { buildDict = Nothing })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'i': c :x ):xs) = do
-            modify (\s -> s { tabWidth = read [c] })
-            argLoop (('-':x):xs)
+argLoop (('-':'r'    :x ):xs) = do
+    modify (\s -> s { readOnly = True })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'R'    :x ):xs) = do
-            modify (\s -> s { readOnly = False })
-            argLoop (('-':x):xs)
+argLoop (('-':'i': c :x ):xs) = do
+    modify (\s -> s { tabWidth = read [c] })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'t':'s':x ):xs) = do
-            modify (\s -> s { replaceTabs = True
-                            , detectTabs  = False
-                            }
-                   )
-            argLoop (('-':x):xs)
+argLoop (('-':'R'    :x ):xs) = do
+    modify (\s -> s { readOnly = False })
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'t':'t':x ):xs) = do
-            modify (\s -> s { replaceTabs = False
-                            , detectTabs  = False
-                            }
-                   )
-            argLoop (('-':x):xs)
+argLoop (('-':'t':'s':x ):xs) = do
+    modify (\s -> s { replaceTabs = True
+                    , detectTabs  = False
+                    }
+           )
+    argLoop (('-':x):xs)
 
-        argLoop (('-':'T'    :x ):xs) = do
-            modify (\s -> s { detectTabs  = True })
-            argLoop (('-':x):xs)
+argLoop (('-':'t':'t':x ):xs) = do
+    modify (\s -> s { replaceTabs = False
+                    , detectTabs  = False
+                    }
+           )
+    argLoop (('-':x):xs)
 
-        argLoop (['-']           :xs) =
-            argLoop xs
+argLoop (('-':'T'    :x ):xs) = do
+    modify (\s -> s { detectTabs  = True })
+    argLoop (('-':x):xs)
 
-        argLoop (('-': x     :_ ):_ ) =
-            usage $ "Unknown argument: " ++ [x]
+argLoop (['-']           :xs) =
+    argLoop xs
 
-        argLoop (x               :_ ) =
-            usage $ "Unexpected argument: " ++ x
+argLoop (('-': x     :_ ):_ ) =
+    usage $ "Unknown argument: " ++ [x]
 
-        argLoop []                    = do
-            f <- fname <$> get
-            if f == ""
-               then usage "No file specified."
-               else do
-                    load
-                    catchEditor mainLoop errHdl
+argLoop (x               :_ ) =
+    usage $ "Unexpected argument: " ++ x
 
+argLoop []                    = do
+    f <- fname <$> get
+    if f == ""
+       then usage "No file specified."
+       else do
+            load
+            catchEditor mainLoop $ \e -> do
+                b <- changed <$> get
+                if b
+                   then do
+                        modify (\s -> s { fname = "CRASH-RESCUE" })
+                        save
+                        bail $ "An error occured: " ++ show e
+                            ++ "\n\n"
+                            ++ "Your unsaved work has been rescued to"
+                            ++ " ./CRASH-RESCUE ."
 
-        errHdl :: SomeException -> WSEdit ()
-        errHdl e = do
-            b <- changed <$> get
-            if b
-               then do
-                    modify (\s -> s { fname = "CRASH-RESCUE" })
-                    save
-                    bail $ "An error occured: " ++ show e
-                        ++ "\n\n"
-                        ++ "Your unsaved work has been rescued to ./CRASH-RESCUE ."
-               else bail $ "An error occured: " ++ show e
-
-
-        versionInfo :: WSEdit ()
-        versionInfo = quitComplain
-                    $ "Wyvernscale Source Code Editor (wsedit) Version "
-                        ++ version ++ "\n"
-                   ++ "\n"
-                   ++ "Licensed under the Wyvernscale Source Code License Version "
-                        ++ licenseVersion ++ ".\n"
-                   ++ "\n"
-                   ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
-                   ++ "hack job.  It should only be used in a secured environment that prevents the\n"
-                   ++ "software from causing any damage, including, but not limited to damage from\n"
-                   ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
-                   ++ "by the software is to blame on failure to implement sufficient safety measures\n"
-                   ++ "and therefore on the user, not on the developer of the software.\n"
+                   else bail $ "An error occured: " ++ show e
 
 
-        usage :: String -> WSEdit ()
-        usage s = quitComplain
-                $ s ++ "\n"
-               ++ "\n"
-               ++ "Usage: wsedit [<arguments>] [filename]\n"
-               ++ "\n"
-               ++ "Arguments (the uppercase options are on by default):\n"
-               ++ "\n"
-               ++ "\t-b\tDon't draw the background (dots + lines). May speed up\n"
-               ++ "\t\tthe editor on older systems, as it seems to be quite the\n"
-               ++ "\t\tresource hog.\n"
-               ++ "\t-B\tDraw the usual background (dots + lines).\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-cg\tOpen global configuration file (~/.config/wsedit.conf).\n"
-               ++ "\t-cl\tOpen local configuration file (./.wsedit).\n"
-               ++ "\n"
-               ++ "\t\tThose files will be concatenated with the command line\n"
-               ++ "\t\targuments and then evaluated, so that flags in the global\n"
-               ++ "\t\tconfig are overridden by those in the local config, which\n"
-               ++ "\t\tare then overridden by command line arguments.  You can\n"
-               ++ "\t\tprefix lines with \"<ext>:\" so that they are only read\n"
-               ++ "\t\tfor files with extension .<ext> , e.g.\n"
-               ++ "\n"
-               ++ "\t\t\ths: -i4 -t\n"
-               ++ "\n"
-               ++ "\t\tLines starting with a '#' will be ignored.\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-d<n>\tEnable dictionary building at indentation depth n.\n"
-               ++ "\t-D\tDisable dictionary building.\n"
-               ++ "\n"
-               ++ "\t\tWith dictionary building enabled, wsedit will scan all\n"
-               ++ "\t\tfiles and directories under the current working directory,\n"
-               ++ "\t\tskipping hidden ones (starting with a dot).  Every file\n"
-               ++ "\t\twith the same file ending as the opened file will be read,\n"
-               ++ "\t\tand a dictionary will be built from all words from lines\n"
-               ++ "\t\tat depth n (either n tabs or n*tabWidth spaces).  This \n"
-               ++ "\t\tdictionary will then be used to feed the autocomplete\n"
-               ++ "\t\tfunction.  The scan will take place everytime you safe or\n"
-               ++ "\t\tload.\n"
-               ++ "\t\tSETTING THIS GLOBALLY WILL MAKE YOUR EDITOR TAKE AGES TO\n"
-               ++ "\t\tSTART UP, E.G. WHEN RUNNING FROM THE HOME DIRECTORY!\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-i<n>\tSet indentation width to n (default = -i4).\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-r\tOpen file in read-only mode.\n"
-               ++ "\t-R\tOpen file in read-write mode.\n"
-               ++ "\n"
-               ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-ts\tInsert the appropriate amount of spaces instead of tabs.\n"
-               ++ "\t-tt\tInsert a tab character when pressing tab.\n"
-               ++ "\t-T\tAutomatically detect tab settings.\n"
-               ++ "\n"
-               ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle tab\n"
-               ++ "\t\treplacement.\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\n"
-               ++ "\t-V\tDisplays the current version number.\n"
+
+-- | Prints out version and licensing information, then exits with code 1.
+versionInfo :: WSEdit ()
+versionInfo = quitComplain
+            $ "Wyvernscale Source Code Editor (wsedit) Version "
+                ++ version ++ "\n"
+           ++ "\n"
+           ++ "Licensed under the Wyvernscale Source Code License Version "
+                ++ licenseVersion ++ ".\n"
+           ++ "\n"
+           ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
+           ++ "hack job.  It should only be used in a secured environment that prevents the\n"
+           ++ "software from causing any damage, including, but not limited to damage from\n"
+           ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
+           ++ "by the software is to blame on failure to implement sufficient safety measures\n"
+           ++ "and therefore on the user, not on the developer of the software.\n"
+
+
+
+-- | Prints an error message, followed by the usage help. Shuts down vty and
+--   exits with code 1.
+usage :: String -> WSEdit ()
+usage s = quitComplain
+        $ s ++ "\n"
+       ++ "\n"
+       ++ "Usage: wsedit [<arguments>] [filename]\n"
+       ++ "\n"
+       ++ "Arguments (the uppercase options are on by default):\n"
+       ++ "\n"
+       ++ "\t-b\tDon't draw the background (dots + lines). May speed up the\n"
+       ++ "\t\teditor on older systems, as it seems to be quite the resource hog.\n"
+       ++ "\t-B\tDraw the usual background (dots + lines).\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-cg\tOpen global configuration file (~/.config/wsedit.conf).\n"
+       ++ "\t-cl\tOpen local configuration file (./.wsedit).\n"
+       ++ "\n"
+       ++ "\t\tThose files will be concatenated with the command line arguments\n"
+       ++ "\t\tand then evaluated. You can prefix lines with \"<ext>:\" so that\n"
+       ++ "\t\tthey are only read for files with extension .<ext> , e.g.\n"
+       ++ "\n"
+       ++ "\t\t\ths: -i4 -t\n"
+       ++ "\n"
+       ++ "\t\tLines starting with a '#' will be ignored. The order of evaluation\n"
+       ++ "\t\tis\n"
+       ++ "\n"
+       ++ "\t\t\t* Generic global options\n"
+       ++ "\t\t\t* Extension-specific global options\n"
+       ++ "\t\t\t* Generic local options\n"
+       ++ "\t\t\t* Extension-specific local options\n"
+       ++ "\t\t\t* Command line options\n"
+       ++ "\n"
+       ++ "\t\t, earlier options get overridden by later ones.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-d<n>\tEnable dictionary building at indentation depth n.\n"
+       ++ "\t-D\tDisable dictionary building.\n"
+       ++ "\n"
+       ++ "\t\tWith dictionary building enabled, wsedit will scan all files and\n"
+       ++ "\t\tdirectories under the current working directory, skipping hidden\n"
+       ++ "\t\tones (starting with a dot).  Every file with the same file ending\n"
+       ++ "\t\tas the opened file will be read, and a dictionary will be built\n"
+       ++ "\t\tfrom all words from lines at depth n (either n tabs or n*tabWidth\n"
+       ++ "\t\tspaces).  This dictionary will then be used to feed the\n"
+       ++ "\t\tautocomplete function.  The scan will take place everytime you\n"
+       ++ "\t\tsafe or load.\n"
+       ++ "\t\tSETTING THIS GLOBALLY WILL MAKE YOUR EDITOR TAKE AGES TO\n"
+       ++ "\t\tSTART UP, E.G. WHEN RUNNING FROM THE HOME DIRECTORY!\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-i<0-9>\tSet indentation width to n (default = -i4).\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-r\tOpen file in read-only mode.\n"
+       ++ "\t-R\tOpen file in read-write mode.\n"
+       ++ "\n"
+       ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-ts\tInsert the appropriate amount of spaces instead of tabs.\n"
+       ++ "\t-tt\tInsert a tab character when pressing tab.\n"
+       ++ "\t-T\tAutomatically detect tab settings.\n"
+       ++ "\n"
+       ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle tab\n"
+       ++ "\t\treplacement.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-V\tDisplays the current version number.\n"

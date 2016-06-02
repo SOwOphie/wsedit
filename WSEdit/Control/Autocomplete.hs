@@ -48,6 +48,18 @@ dictAdd l f = do
         t <- tabWidth <$> get
         txt <- liftIO $ readFile f
 
+        {- This is the magic behind the whole function. Ready?
+            1. Split the read file into lines
+            2. Filter out all the lines not at the specified indentation level.
+            3. Cut all leading whitespace.
+            4. Filter out all the lines not beginning with an alphanumeric char.
+            5. Glue the list back to a string.
+            6. Use a fancy word extraction function from the Util module.
+            7. Add everything to the dictionary.
+            8. Evaluate (to force strictness and surface any residual errors)
+            9. Lift to IO.
+        -}
+
         d <- liftIO
            $ evaluate
            $ foldl (flip addWord) (dict s)
@@ -61,6 +73,8 @@ dictAdd l f = do
         put $! s { dict = d }
 
     where
+        -- | Checks whether a line is at a specified indentation level. The
+        --   first parameter is the number of spaces equal to a tab.
         atLevel :: Int -> Int -> String -> Bool
         atLevel _ _ []        = False
         atLevel 0 _ _         = error "Tab width 0 encountered"
@@ -77,6 +91,7 @@ dictAddRec :: WSEdit ()
 dictAddRec = do
     s <- get
 
+    -- Skip everything if dictionary building is disabled
     case buildDict s of
          Nothing -> return ()
          Just l  -> do
@@ -84,15 +99,20 @@ dictAddRec = do
             dictAddRec' l p
 
     where
+        -- | Processes the files inside the given directory. First parameter is
+        --   the indentation depth to search at.
         dictAddRec' :: Int -> FilePath -> WSEdit ()
         dictAddRec' n p = do
+            -- Get the extension of the current file.
             ext <- getExt . fname <$> get
 
+            -- Retrieve the directory contents, filtering out hidden files.
             l <- liftIO
                $ filter (\s -> headDef '.' s /= '.')
               <$> getDirectoryContents p
 
             forM_ l $ \p' -> do
+                -- Full file name
                 let f = p ++ "/" ++ p'
 
                 isFile <- liftIO $ doesFileExist f
