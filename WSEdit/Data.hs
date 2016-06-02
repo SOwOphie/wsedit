@@ -72,6 +72,7 @@ data EdState = EdState
 
     , tabWidth     :: Int
     , replaceTabs  :: Bool
+    , detectTabs   :: Bool
 
     , drawBg       :: Bool
     }
@@ -99,6 +100,7 @@ instance Default EdState where
 
         , tabWidth     = 4
         , replaceTabs  = False
+        , detectTabs   = True
 
         , drawBg       = True
         }

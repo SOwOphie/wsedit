@@ -35,8 +35,8 @@ import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         (alterState, moveCursor, refuseOnReadOnly)
 import WSEdit.Data                 ( EdConfig (vtyObj)
                                    , EdState  ( changed, continue, cursorPos
-                                              , edLines, fname, markPos
-                                              , readOnly, replaceTabs
+                                              , detectTabs, edLines, fname
+                                              , markPos, readOnly, replaceTabs
                                               , scrollOffset
                                               )
                                    , WSEdit
@@ -164,12 +164,16 @@ load = alterState $ do
                else B.fromList $ lines txt
 
     put $ s
-        { edLines   = B.toFirst l
-        , fname     = p'
-        , cursorPos = 1
-        , readOnly  = if w
-                         then readOnly s
-                         else True
+        { edLines     = B.toFirst l
+        , fname       = p'
+        , cursorPos   = 1
+        , readOnly    = if w
+                           then readOnly s
+                           else True
+
+        , replaceTabs = if detectTabs s
+                           then '\t' `notElem` txt
+                           else replaceTabs s
         }
 
     setStatus $ case (b    , w    ) of

@@ -25,9 +25,9 @@ import WSEdit.Control           ( bail, deleteSelection, insert
 import WSEdit.Data              ( EdConfig ( EdConfig, edDesign, histSize
                                            , keymap, vtyObj
                                            )
-                                , EdState ( buildDict, changed, continue, drawBg
-                                          , fname, readOnly, replaceTabs
-                                          , tabWidth
+                                , EdState ( buildDict, changed, continue
+                                          , detectTabs, drawBg, fname, readOnly
+                                          , replaceTabs, tabWidth
                                           )
                                 , WSEdit
                                 , catchEditor, setStatus
@@ -39,7 +39,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 
 version :: String
-version = "0.1.0.1"
+version = "0.1.1.0"
 
 licenseVersion :: String
 licenseVersion = "1.0"
@@ -152,12 +152,22 @@ main = do
             modify (\s -> s { readOnly = False })
             argLoop (('-':x):xs)
 
-        argLoop (('-':'t'    :x ):xs) = do
-            modify (\s -> s { replaceTabs = True })
+        argLoop (('-':'t':'s':x ):xs) = do
+            modify (\s -> s { replaceTabs = True
+                            , detectTabs  = False
+                            }
+                   )
+            argLoop (('-':x):xs)
+
+        argLoop (('-':'t':'t':x ):xs) = do
+            modify (\s -> s { replaceTabs = False
+                            , detectTabs  = False
+                            }
+                   )
             argLoop (('-':x):xs)
 
         argLoop (('-':'T'    :x ):xs) = do
-            modify (\s -> s { replaceTabs = False })
+            modify (\s -> s { detectTabs  = True })
             argLoop (('-':x):xs)
 
         argLoop (['-']           :xs) =
@@ -264,10 +274,12 @@ main = do
                ++ "\n"
                ++ "\n"
                ++ "\n"
-               ++ "\t-t\tInsert the appropriate amount of spaces instead of tabs.\n"
-               ++ "\t-T\tInsert a tab character when pressing tab.\n"
+               ++ "\t-ts\tInsert the appropriate amount of spaces instead of tabs.\n"
+               ++ "\t-tt\tInsert a tab character when pressing tab.\n"
+               ++ "\t-T\tAutomatically detect tab settings.\n"
                ++ "\n"
-               ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle this.\n"
+               ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle tab\n"
+               ++ "\t\treplacement.\n"
                ++ "\n"
                ++ "\n"
                ++ "\n"
