@@ -38,6 +38,14 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 
 
+version :: String
+version = "0.1.0.1"
+
+licenseVersion :: String
+licenseVersion = "1.0"
+
+
+
 mainLoop :: WSEdit ()
 mainLoop = do
     draw
@@ -104,6 +112,9 @@ main = do
                 )
 
         argLoop :: [String] -> WSEdit ()
+        argLoop (('-':'V'    :_ ):_ ) =
+            versionInfo
+
         argLoop (('-':'b'    :x ):xs) = do
             modify (\s -> s { drawBg = False })
             argLoop (('-':x):xs)
@@ -180,6 +191,22 @@ main = do
                else bail $ "An error occured: " ++ show e
 
 
+        versionInfo :: WSEdit ()
+        versionInfo = quitComplain
+                    $ "Wyvernscale Source Code Editor (wsedit) Version "
+                        ++ version ++ "\n"
+                   ++ "\n"
+                   ++ "Licensed under the Wyvernscale Source Code License Version "
+                        ++ licenseVersion ++ ".\n"
+                   ++ "\n"
+                   ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
+                   ++ "hack job.  It should only be used in a secured environment that prevents the\n"
+                   ++ "software from causing any damage, including, but not limited to damage from\n"
+                   ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
+                   ++ "by the software is to blame on failure to implement sufficient safety measures\n"
+                   ++ "and therefore on the user, not on the developer of the software.\n"
+
+
         usage :: String -> WSEdit ()
         usage s = quitComplain
                 $ s ++ "\n"
@@ -230,6 +257,13 @@ main = do
                ++ "\n"
                ++ "\n"
                ++ "\n"
+               ++ "\t-r\tOpen file in read-only mode.\n"
+               ++ "\t-R\tOpen file in read-write mode.\n"
+               ++ "\n"
+               ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
+               ++ "\n"
+               ++ "\n"
+               ++ "\n"
                ++ "\t-t\tInsert the appropriate amount of spaces instead of tabs.\n"
                ++ "\t-T\tInsert a tab character when pressing tab.\n"
                ++ "\n"
@@ -237,7 +271,4 @@ main = do
                ++ "\n"
                ++ "\n"
                ++ "\n"
-               ++ "\t-r\tOpen file in read-only mode.\n"
-               ++ "\t-R\tOpen file in read-write mode.\n"
-               ++ "\n"
-               ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
+               ++ "\t-V\tDisplays the current version number.\n"
