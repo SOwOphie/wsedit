@@ -42,7 +42,7 @@ version :: String
 version = "0.1.1.0"
 
 licenseVersion :: String
-licenseVersion = "1.0"
+licenseVersion = "1.1"
 
 
 

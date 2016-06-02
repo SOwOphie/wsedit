@@ -1,4 +1,4 @@
-WYVERNSCALE SOURCE CODE LICENSE V1.0
+WYVERNSCALE SOURCE CODE LICENSE V1.1
 
 COPYRIGHT (c) 2016, Felix Hirn
 
@@ -19,7 +19,8 @@ The user is granted the following rights:
 
  4. The freedom to distribute modified versions of the software, as long as the
     modifications are also released under the original license or future
-    versions of it.
+    versions of it and are clearly marked in a way so that they cannot be
+    confused with the original.
 
  5. The freedom to use parts or the entirety of the software for his own. Any
     software that directly or indirectly depends on this software must be
