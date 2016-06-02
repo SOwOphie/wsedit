@@ -39,7 +39,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.2.1"
+version = "0.1.2.2"
 
 -- | License version number constant.
 licenseVersion :: String

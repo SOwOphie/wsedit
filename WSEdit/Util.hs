@@ -188,7 +188,7 @@ isIdentifierChar c = case charClass c of
 isIdentifier :: String -> Bool
 isIdentifier s = all isIdentifierChar s
               && not (all (\c -> charClass c == Digit) s)
-              && length s >= 3
+              && length s >= 2
 
 
 
