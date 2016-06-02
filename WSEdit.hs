@@ -39,7 +39,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 
 version :: String
-version = "0.1.1.0"
+version = "0.1.2.0"
 
 licenseVersion :: String
 licenseVersion = "1.1"
@@ -99,10 +99,17 @@ main = do
 
     where
         filterFileArgs :: Maybe String -> String -> [String]
-        filterFileArgs Nothing    s = concatMap words $ filter (notElem ':') $ lines s
+        filterFileArgs Nothing    s = concatMap words
+                                    $ filter (\x -> notElem ':' x
+                                                 && not (isPrefixOf "#" x)
+                                             )
+                                    $ lines s
+
         filterFileArgs (Just ext) s =
             let
-                (loc, gl) = partition (elem ':') $ lines s
+                (loc, gl) = partition (elem ':')
+                          $ filter (not . isPrefixOf "#")
+                          $ lines s
             in
                 concatMap words
               $ gl
@@ -110,6 +117,7 @@ main = do
                 $ map (fromMaybe "" . stripPrefix (ext ++ ":"))
                   loc
                 )
+
 
         argLoop :: [String] -> WSEdit ()
         argLoop (('-':'V'    :_ ):_ ) =
@@ -242,7 +250,9 @@ main = do
                ++ "\t\tprefix lines with \"<ext>:\" so that they are only read\n"
                ++ "\t\tfor files with extension .<ext> , e.g.\n"
                ++ "\n"
-               ++ "\t\ths: -i4 -t\n"
+               ++ "\t\t\ths: -i4 -t\n"
+               ++ "\n"
+               ++ "\t\tLines starting with a '#' will be ignored.\n"
                ++ "\n"
                ++ "\n"
                ++ "\n"
