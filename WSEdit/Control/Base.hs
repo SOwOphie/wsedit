@@ -4,23 +4,22 @@ module WSEdit.Control.Base
     , alterState
     , moveViewport
     , moveCursor
+    , fetchCursor
     ) where
 
 
-import Control.Monad            (unless, when)
-import Control.Monad.RWS.Strict (get, modify)
+import Control.Monad            (unless)
+import Control.Monad.RWS.Strict (get, modify, put)
 import Data.Maybe               (fromMaybe)
 
-import WSEdit.Data              ( EdState  ( canComplete, edLines, readOnly
-                                           , wantsPos
+import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
+                                           , readOnly, scrollOffset, wantsPos
                                            )
                                 , WSEdit
-                                , alter, getCursor, getDisplayBounds, getOffset
-                                , setCursor, setStatus, setOffset
+                                , alter, getCursor, getOffset, setCursor
+                                , setStatus, setOffset
                                 )
-import WSEdit.Output            ( lineNoWidth, toCursorDispPos, txtToVisPos
-                                , visToTxtPos
-                                )
+import WSEdit.Output            (cursorOffScreen, txtToVisPos, visToTxtPos)
 import WSEdit.Util              (withPair)
 
 import qualified WSEdit.Buffer as B
@@ -59,9 +58,7 @@ alterState a = modify (\s -> s { canComplete = False })
 
 
 
--- | Moves the viewport by the given amount of rows, columns. Will also ensure
---   that the cursor stays within the viewport by dragging it along, except in
---   read-only mode.
+-- | Moves the viewport by the given amount of rows, columns.
 moveViewport :: Int -> Int -> WSEdit ()
 moveViewport r c = do
     getOffset
@@ -69,21 +66,6 @@ moveViewport r c = do
             . withPair
                 (max 0 . (+r))
                 (max 0 . (+c))
-
-
-    -- Prevent infinite mutual recursion with moveCursor in read only mode
-    b <- readOnly <$> get
-    unless b $ do
-        -- Drag the cursor with the viewport
-
-        (curR, curC) <- getCursor >>= toCursorDispPos
-        (maxR, maxC) <- getDisplayBounds
-        lnW <- lineNoWidth
-
-        when (curR > maxR - 3) $ moveCursor ((maxR - 3) - curR) 0
-        when (curR <        2) $ moveCursor (        2  - curR) 0
-        when (curC > maxC - 1) $ moveCursor 0                   ((maxC - 1) - curC)
-        when (curC < lnW  + 3) $ moveCursor 0                   ((lnW  + 3) - curC)
 
 
 
@@ -104,15 +86,8 @@ moveCursor r c = alterState $ do
             unless (c == 0) $ moveH c
 
             -- Adjust the viewport if necessary
-
-            (curR, curC) <- getCursor >>= toCursorDispPos
-            (maxR, maxC) <- getDisplayBounds
-            lnW <- lineNoWidth
-
-            when (curR > maxR - 3) $ moveViewport (curR - (maxR - 3)) 0
-            when (curR <        2) $ moveViewport (curR -         2 ) 0
-            when (curC > maxC - 1) $ moveViewport 0                   (curC - (maxC - 1))
-            when (curC < lnW  + 4) $ moveViewport 0                   (curC - (lnW  + 4))
+            ((ru, rd), (cl, cr)) <- cursorOffScreen
+            moveViewport (rd - ru) (cr - cl)
 
     where
         -- | Vertical portion of the movement
@@ -160,3 +135,15 @@ moveCursor r c = alterState $ do
             -- Since this function will not be called for purely vertical
             -- motions, we can safely discard the target cursor position here.
             modify (\s -> s { wantsPos = Nothing })
+
+
+
+-- | Moves the cursor to the upper left corner of the viewport.
+fetchCursor :: WSEdit ()
+fetchCursor = refuseOnReadOnly $ do
+    s <- get
+    put $ s { cursorPos = 1
+            , edLines = B.toFirst $ edLines s
+            }
+
+    moveCursor (1 + fst (scrollOffset s)) 0

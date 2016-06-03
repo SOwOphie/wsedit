@@ -10,6 +10,7 @@ module WSEdit.Output
     , lineNoWidth
     , toCursorDispPos
     , getViewportDimensions
+    , cursorOffScreen
     , makeFrame
     , draw
     ) where
@@ -203,6 +204,31 @@ getViewportDimensions = do
     lNoWidth <- lineNoWidth
 
     return (nRows - 4, nCols - lNoWidth - 4)
+
+
+
+-- | Returns the number of (rows up, rows down), (cols left, cols right)
+--   the cursor is off screen by.
+cursorOffScreen :: WSEdit ((Int, Int), (Int, Int))
+cursorOffScreen = do
+    s <- get
+
+    let
+        currLn       = fromJust $ B.left $ edLines s
+        (scrR, scrC) = scrollOffset s
+
+    (curR, curC_) <- getCursor
+    curC <- txtToVisPos currLn curC_
+
+    (maxR, maxC) <- getViewportDimensions
+
+    return ( ( max 0 $ (1 + scrR) - curR
+             , max 0 $ curR - (maxR + scrR)
+             )
+           , ( max 0 $ (1 + scrC) - curC
+             , max 0 $ curC - (maxC + scrC)
+             )
+           )
 
 
 
@@ -411,6 +437,7 @@ draw = do
     conf <- ask
 
     cursor <- getCursor >>= toCursorDispPos
+    ((ru, rd), (cl, cr)) <- cursorOffScreen
 
     frame <- makeFrame
     txt   <- makeTextFrame
@@ -420,7 +447,7 @@ draw = do
 
     liftIO $ update (vtyObj conf)
              Picture
-                { picCursor     = if readOnly s
+                { picCursor     = if (readOnly s || ru + rd + cl + cr > 0)
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
                 , picLayers     = if drawBg s

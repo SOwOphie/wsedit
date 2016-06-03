@@ -75,6 +75,7 @@ Key | Action
 **Ctrl + Meta + C** | Crash simulator 3000. Do not press.
 **Ctrl + u/d/l/r** | Move the viewport 10 characters.
 **Ctrl + Up/Down/Left/Right** | Move the cursor 10 characters.
+**Ctrl + Space** | Move the cursor to the upper left corner of the viewport.
 **Shift + _Movement_** | Move the cursor, selecting text.
 **Tab** | Indent selection *or* apply autocomplete *or* advance to the next tab stop.
 **Shift + Tab** | Unindent selection.

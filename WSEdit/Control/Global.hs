@@ -32,12 +32,13 @@ import System.IO.Strict            (readFile)
 import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
-import WSEdit.Control.Base         (alterState, moveCursor, refuseOnReadOnly)
+import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
+                                   , refuseOnReadOnly
+                                   )
 import WSEdit.Data                 ( EdConfig (vtyObj)
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, edLines, fname
                                               , markPos, readOnly, replaceTabs
-                                              , scrollOffset
                                               )
                                    , WSEdit
                                    , popHist, setStatus
@@ -227,9 +228,7 @@ toggleReadOnly = alterState $ do
                then setStatus "Error: file is read-only."
                else do
                     put $ s { readOnly = False }
-
-                    -- Place the cursor at the start of first visible line
-                    moveCursor (1 + fst (scrollOffset s)) (-1)
+                    fetchCursor
 
        else put $ s { readOnly  = True
                     , cursorPos = 1

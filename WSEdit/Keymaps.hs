@@ -11,10 +11,11 @@ import Graphics.Vty   ( Event (EvKey)
                       )
 
 import WSEdit.Control ( cleanse, completeOr, copy, deleteSelection, delLeft
-                      , delRight, forceQuit, ifMarked, indentSelection, initMark
-                      , insertTab, moveCursor, moveViewport, paste, quit, save
-                      , simulateCrash, smartHome, smartNewLine, toggleReadOnly
-                      , toggleTabRepl, unindentSelection, undo
+                      , delRight, fetchCursor, forceQuit, ifMarked
+                      , indentSelection, initMark, insertTab, moveCursor
+                      , moveViewport, paste, quit, save, simulateCrash
+                      , smartHome, smartNewLine, toggleReadOnly, toggleTabRepl
+                      , unindentSelection, undo
                       )
 import WSEdit.Data    (Keymap, clearMark)
 
@@ -37,6 +38,8 @@ defaultKM =
     , (EvKey  KDown       [       MCtrl        ],                                          moveCursor     10        0  >> clearMark)
     , (EvKey  KLeft       [       MCtrl        ],                                          moveCursor      0  (-   10) >> clearMark)
     , (EvKey  KRight      [       MCtrl        ],                                          moveCursor      0       10  >> clearMark)
+
+    , (EvKey (KChar '@')  [       MCtrl        ],                                          fetchCursor                 >> clearMark)
 
     , (EvKey  KUp         [              MShift],                              initMark >> moveCursor   (- 1)       0              )
     , (EvKey  KDown       [              MShift],                              initMark >> moveCursor      1        0              )
