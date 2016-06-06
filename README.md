@@ -15,7 +15,7 @@ conceivable language and to require only a minimal amount of configuration.
   the editor with `Ctrl-Meta-R`.
 
 * __Dynamic dictionary-based autocompletion__: When activated, everytime you
-  load or save, wsedit will read all files with the same ending as the one
+  load or save, `wsedit` will read all files with the same ending as the one
   you're currently editing, filter all lines by indentation depth and build a
   dictionary out of those at a specified level.
 
@@ -29,24 +29,29 @@ conceivable language and to require only a minimal amount of configuration.
 * __The usual selection editing, interacting directly with the system
   clipboard__: Make sure to have `xclip` or `xsel` installed.
 
-* __Easiest possible method of configuration__: Type `wsed -cg` (global) or
-  `wsed -cl` (directory-local) to open the configuration file, then put down all
-  the command line parameters you'd like to be default.  Prefix lines with e.g.
-  `hs:` to make them apply to .hs-files only.
+* __Easiest possible method of configuration__: Type `wsedit -cg` (global) or
+  `wsedit -cl` (directory-local) to open the configuration file, then put down
+  all the command line parameters you'd like to be default.  Prefix lines with
+  e.g. `hs:` to make them apply to .hs-files only.
 
 * __Numbered lines__: I know it isn't much, but hey!
 
 ## Building
 
-`wsedit` uses the
-[Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/) to build.
-The only external dependency is either `xclip` or `xsel`, whichever you prefer.
-Make sure you have at least one of them installed, then simply type
-`stack install` in the main directory and watch the magic happen.  Stack will
-place the (standalone) binary at `~/.local/bin/wsedit`, feel free to either add
-that to your `$PATH` or move the file somewhere else.  Sometimes the build may
-fail due to obscure reasons, deleting the local `.stack-work` build folder fixed
-it everytime for me.
+1. Install the
+   [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
+2. Install either `xclip` or `xsel` with your package manager.
+3. Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
+4. Run `stack setup` to pull in the correct version of `ghc`.
+5. Run `stack install` to build the dependencies and `wsedit`.
+6. Either:
+    * Add `~/.local/bin/` to your `$PATH`
+    * Copy `~/.local/bin/wsedit` to a directory in your path, e.g.
+      `/usr/local/bin/`.
+7. Run `wsedit <some file>` to test it, see the keybinds table below.
+
+Sometimes the build may fail due to obscure reasons, deleting the local
+`.stack-work` build folder fixed it everytime for me.
 
 ## Known issues
 
