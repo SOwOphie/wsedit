@@ -18,6 +18,7 @@ module WSEdit.Data
     , delSelection
     , getDisplayBounds
     , EdConfig (..)
+    , mkDefConfig
     , EdDesign (..)
     , WSEdit
     , catchEditor
@@ -107,9 +108,6 @@ data EdState = EdState
         --   (usually 'True' while the user is typing and 'False' while he's
         --   scrolling).
 
-    , tabWidth     :: Int
-        -- ^ Width of a tab character.
-
     , replaceTabs  :: Bool
         -- ^ Whether to insert spaces instead of tabs. Has no effect on existing
         --   indentation.
@@ -117,11 +115,6 @@ data EdState = EdState
     , detectTabs   :: Bool
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
-
-
-    , drawBg       :: Bool
-        -- ^ Whether or not to draw the background.
-
     }
     deriving (Show)
 
@@ -144,12 +137,8 @@ instance Default EdState where
         , buildDict    = Nothing
         , dict         = empty
         , canComplete  = False
-
-        , tabWidth     = 4
         , replaceTabs  = False
         , detectTabs   = True
-
-        , drawBg       = True
         }
 
 
@@ -393,7 +382,23 @@ data EdConfig = EdConfig
     , histSize :: Int
         -- ^ Number of undo states to keep.
 
+    , tabWidth     :: Int
+        -- ^ Width of a tab character.
+
+    , drawBg       :: Bool
+        -- ^ Whether or not to draw the background.
     }
+
+-- | Create a default `EdConfig`.
+mkDefConfig :: Vty -> Keymap -> EdConfig
+mkDefConfig v k = EdConfig
+                { vtyObj   = v
+                , edDesign = def
+                , keymap   = k
+                , histSize = 100
+                , tabWidth = 4
+                , drawBg   = True
+              }
 
 
 

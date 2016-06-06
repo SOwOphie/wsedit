@@ -10,7 +10,7 @@ module WSEdit.Control.Autocomplete
 import Control.Exception        (evaluate)
 import Control.Monad            (forM_, when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (get, modify, put)
+import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
 import Data.Maybe               (fromJust, isJust)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
@@ -22,9 +22,9 @@ import System.Directory         ( doesDirectoryExist, doesFileExist
 import WSEdit.Control.Base      (alterBuffer)
 import WSEdit.Control.Text      (insertRaw)
 import WSEdit.Data              ( WSEdit
-                                , EdState (buildDict, canComplete, cursorPos
+                                , EdConfig (tabWidth)
+                                , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
-                                          , tabWidth
                                           )
                                 , setStatus
                                 )
@@ -45,7 +45,7 @@ dictAdd l f = do
     s <- get
 
     when (isJust $ buildDict s) $ do
-        t <- tabWidth <$> get
+        t <- tabWidth <$> ask
         txt <- liftIO $ readFile f
 
         {- This is the magic behind the whole function. Ready?

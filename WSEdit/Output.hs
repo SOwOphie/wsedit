@@ -33,7 +33,7 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 )
 import Safe                     (lookupJustDef)
 
-import WSEdit.Data              ( EdConfig (edDesign, vtyObj)
+import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
                                            , dColNoInterval, dCurrLnMod
@@ -41,9 +41,9 @@ import WSEdit.Data              ( EdConfig (edDesign, vtyObj)
                                            , dLineNoInterv, dSelFormat
                                            , dStatusFormat, dTabStr
                                            )
-                                , EdState ( changed, drawBg, edLines, fname
-                                          , markPos, readOnly, replaceTabs
-                                          , scrollOffset, status, tabWidth
+                                , EdState ( changed, edLines, fname, markPos
+                                          , readOnly, replaceTabs, scrollOffset
+                                          , status
                                           )
                                 , WSEdit
                                 , getCursor, getFirstSelected, getDisplayBounds
@@ -61,7 +61,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Returns the display width of a given char in a given column.
 charWidth :: Int -> Char -> WSEdit Int
-charWidth n '\t' = (\w -> w - (n-1) `mod` w) . tabWidth <$> get
+charWidth n '\t' = (\w -> w - (n-1) `mod` w) . tabWidth <$> ask
 charWidth _ _    = return 1
 
 -- | Returns the display width of a given string starting at a given column.
@@ -80,11 +80,13 @@ charRep pos n '\t' = do
     lastSel  <- getLastSelected
     (r, _)   <- getCursor
     st       <- get
-    d        <- edDesign <$> ask
+    c        <- ask
 
     let
+        d       = edDesign    c
+
         selSty  = dSelFormat  d
-        tW      = tabWidth    st
+        tW      = tabWidth    c
         tStr    = dTabStr     d
         tSty    = dCharStyles d
         currSty = dCurrLnMod  d
@@ -367,7 +369,10 @@ makeFrame = do
 makeTextFrame :: WSEdit Image
 makeTextFrame = do
     s <- get
-    d <- edDesign <$> ask
+    c <- ask
+
+    let d = edDesign c
+
     lNoWidth <- lineNoWidth
 
     (scrollRows, scrollCols) <- getOffset
@@ -383,7 +388,7 @@ makeTextFrame = do
            $ map ( (char (dLineNoFormat d) ' ' <|>)
                  . translateX (-scrollCols)
                  . pad 0 0 (scrollCols + 1) 0
-                 . if drawBg s
+                 . if drawBg c
                       then id
                       else (<|> char ( fromJust
                                      $ lookup Whitesp
@@ -433,24 +438,24 @@ makeBackground = do
 -- | Draws everything.
 draw :: WSEdit ()
 draw = do
-    s    <- get
-    conf <- ask
+    s <- get
+    c <- ask
 
     cursor <- getCursor >>= toCursorDispPos
     ((ru, rd), (cl, cr)) <- cursorOffScreen
 
     frame <- makeFrame
     txt   <- makeTextFrame
-    bg    <- if drawBg s
+    bg    <- if drawBg c
                 then makeBackground
                 else return undefined
 
-    liftIO $ update (vtyObj conf)
+    liftIO $ update (vtyObj c)
              Picture
                 { picCursor     = if (readOnly s || ru + rd + cl + cr > 0)
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
-                , picLayers     = if drawBg s
+                , picLayers     = if drawBg c
                                      then [ frame
                                           , txt
                                           , bg

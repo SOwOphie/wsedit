@@ -15,7 +15,7 @@ module WSEdit.Control.Text
 
 
 import Control.Monad               (when)
-import Control.Monad.RWS.Strict    (get, modify)
+import Control.Monad.RWS.Strict    (ask, get, modify)
 import Data.Char                   (isSpace)
 import Data.Maybe                  (fromJust)
 
@@ -23,9 +23,8 @@ import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
                                    , refuseOnReadOnly
                                    )
 import WSEdit.Data                 ( WSEdit
-                                   , EdState (cursorPos, edLines, replaceTabs
-                                             , tabWidth
-                                             )
+                                   , EdConfig (tabWidth)
+                                   , EdState (cursorPos, edLines, replaceTabs)
                                    , getCursor
                                    )
 import WSEdit.Output               (stringWidth)
@@ -70,7 +69,7 @@ insertTab = alterBuffer $ do
     n <- (edLines <$> get)
       >>= (stringWidth 1 . take (c - 1) . fromJust . B.left)
 
-    w <- tabWidth <$> get
+    w <- tabWidth <$> ask
 
     if b
        then insertRaw

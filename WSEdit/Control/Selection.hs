@@ -12,7 +12,7 @@ module WSEdit.Control.Selection
 
 
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (get, put)
+import Control.Monad.RWS.Strict (ask, get, put)
 import Data.List                (stripPrefix)
 import Data.Maybe               (fromJust, isJust, fromMaybe)
 import System.Hclip             (getClipboard, setClipboard)
@@ -20,8 +20,9 @@ import System.Hclip             (getClipboard, setClipboard)
 import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
                                 , refuseOnReadOnly
                                 )
-import WSEdit.Data              ( EdState ( cursorPos, edLines, markPos
-                                          , replaceTabs, tabWidth
+import WSEdit.Data              ( EdConfig (tabWidth)
+                                , EdState ( cursorPos, edLines, markPos
+                                          , replaceTabs
                                           )
                                 , WSEdit
                                 , clearMark, delSelection, getMark, getCursor
@@ -122,11 +123,12 @@ indentSelection = alterBuffer $ do
        Nothing      -> return ()
        Just (sR, _) -> do
             s <- get
+            c <- ask
             (cR, _) <- getCursor
 
             let
                 ind = if replaceTabs s
-                         then replicate (tabWidth s) ' '
+                         then replicate (tabWidth c) ' '
                          else "\t"
 
             put $ s { edLines =
@@ -154,11 +156,12 @@ unindentSelection = alterBuffer $ do
        Nothing      -> return ()
        Just (sR, _) -> do
             s <- get
+            c <- ask
             (cR, _) <- getCursor
 
             let
                 ind = if replaceTabs s
-                         then replicate (tabWidth s) ' '
+                         then replicate (tabWidth c) ' '
                          else "\t"
 
             put $ s { edLines =

@@ -4,7 +4,7 @@ module Main where
 
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
+import Control.Monad.RWS.Strict (ask, get, local, modify, runRWST)
 import Data.Default             (def)
 import Data.List                (isPrefixOf, partition, stripPrefix)
 import Data.Maybe               (fromMaybe)
@@ -21,15 +21,13 @@ import System.Environment       (getArgs)
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
-import WSEdit.Data              ( EdConfig ( EdConfig, edDesign, histSize
-                                           , keymap, vtyObj
-                                           )
+import WSEdit.Data              ( EdConfig (drawBg, keymap, vtyObj, tabWidth)
                                 , EdState ( buildDict, changed, continue
-                                          , detectTabs, drawBg, fname, readOnly
-                                          , replaceTabs, tabWidth
+                                          , detectTabs, fname, readOnly
+                                          , replaceTabs
                                           )
                                 , WSEdit
-                                , catchEditor, setStatus
+                                , catchEditor, mkDefConfig, setStatus
                                 )
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw)
@@ -39,7 +37,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.3.0"
+version = "0.1.3.1"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -91,13 +89,7 @@ main = do
 
     -- create the configuration object
     -- TODO: maybe implement instance Default EdConfig?
-    let conf = EdConfig
-            { vtyObj   = v
-            , edDesign = def
-            , keymap   = defaultKM
-            , histSize = 100
-            }
-
+    let conf     = mkDefConfig v defaultKM
         filename = headMay args
 
     -- Read the global and local config files. Use an empty string in case of
@@ -149,12 +141,12 @@ argLoop (('-':'V'    :_ ):_ ) =
     versionInfo
 
 argLoop (('-':'b'    :x ):xs) = do
-    modify (\s -> s { drawBg = False })
-    argLoop (('-':x):xs)
+    local (\c -> c { drawBg = False })
+        $ argLoop (('-':x):xs)
 
 argLoop (('-':'B'    :x ):xs) = do
-    modify (\s -> s { drawBg = True })
-    argLoop (('-':x):xs)
+    local (\c -> c { drawBg = True })
+        $ argLoop (('-':x):xs)
 
 argLoop (('-':'c':'g':x ):xs) = do
     h <- liftIO getHomeDirectory
@@ -177,9 +169,9 @@ argLoop (('-':'r'    :x ):xs) = do
     modify (\s -> s { readOnly = True })
     argLoop (('-':x):xs)
 
-argLoop (('-':'i': c :x ):xs) = do
-    modify (\s -> s { tabWidth = read [c] })
-    argLoop (('-':x):xs)
+argLoop (('-':'i': n :x ):xs) = do
+    local (\c -> c { tabWidth = read [n] })
+        $ argLoop (('-':x):xs)
 
 argLoop (('-':'R'    :x ):xs) = do
     modify (\s -> s { readOnly = False })
