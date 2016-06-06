@@ -42,13 +42,14 @@ conceivable language and to require only a minimal amount of configuration.
    [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
 2. Install either `xclip` or `xsel` with your package manager.
 3. Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
-4. Run `stack setup` to pull in the correct version of `ghc`.
-5. Run `stack install` to build the dependencies and `wsedit`.
-6. Either:
+4. `cd` into the newly created directory (`cd wsedit`).
+5. Run `stack setup` to pull in the correct version of `ghc`.
+6. Run `stack install` to build the dependencies and `wsedit`.
+7. Either:
     * Add `~/.local/bin/` to your `$PATH`
     * Copy `~/.local/bin/wsedit` to a directory in your `$PATH`, e.g.
       `/usr/local/bin/`.
-7. Run `wsedit <some file>` to test it, see the keybinds table below.
+8. Run `wsedit <some file>` to test it, see the keybinds table below.
 
 Sometimes the build may fail due to obscure reasons, deleting the local
 `.stack-work` build folder fixed it everytime for me.
