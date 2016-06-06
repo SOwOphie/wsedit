@@ -46,7 +46,7 @@ conceivable language and to require only a minimal amount of configuration.
 5. Run `stack install` to build the dependencies and `wsedit`.
 6. Either:
     * Add `~/.local/bin/` to your `$PATH`
-    * Copy `~/.local/bin/wsedit` to a directory in your path, e.g.
+    * Copy `~/.local/bin/wsedit` to a directory in your `$PATH`, e.g.
       `/usr/local/bin/`.
 7. Run `wsedit <some file>` to test it, see the keybinds table below.
 
