@@ -20,6 +20,7 @@ module WSEdit.Data
     , EdConfig (..)
     , mkDefConfig
     , EdDesign (..)
+    , brightTheme
     , WSEdit
     , catchEditor
     , Keymap
@@ -36,7 +37,7 @@ import Graphics.Vty             ( Attr
                                 , Event
                                 , Vty (outputIface)
                                 , black, blue, bold, green, defAttr
-                                , displayBounds, green, red, white
+                                , displayBounds, green, magenta, red, white
                                 , withBackColor, withForeColor, withStyle
                                 , yellow
                                 )
@@ -503,6 +504,67 @@ instance Default EdDesign where
               )
             , (Operator, defAttr
                             `withForeColor` yellow
+                            `withStyle`     bold
+              )
+            , (Special , defAttr
+                            `withForeColor` red
+                            `withStyle`     bold
+              )
+            ]
+
+        }
+
+
+
+brightTheme:: EdDesign
+brightTheme = EdDesign
+        { dFrameFormat   = defAttr
+                            `withForeColor` green
+
+        , dStatusFormat  = defAttr
+                            `withForeColor` green
+                            `withStyle`     bold
+
+        , dLineNoFormat  = defAttr
+                            `withForeColor` green
+                            `withStyle`     bold
+        , dLineNoInterv  = 10
+
+        , dColNoInterval = 40
+        , dColNoFormat   = defAttr
+                            `withForeColor` green
+                            `withStyle`     bold
+
+        , dBGChar        = '·'
+        , dColChar       = Just '|'
+        , dBGFormat      = defAttr
+                            `withForeColor` white
+
+        , dCurrLnMod     = flip withBackColor white
+
+        , dTabStr        = "        |"
+
+        , dSelFormat     = defAttr
+                            `withForeColor` white
+                            `withBackColor` black
+
+        , dCharStyles    =
+            [ (Whitesp , defAttr
+                            `withForeColor` blue
+              )
+            , (Digit   , defAttr
+                            `withForeColor` red
+              )
+            , (Lower   , defAttr
+              )
+            , (Upper   , defAttr
+                            `withStyle`     bold
+              )
+            , (Bracket , defAttr
+                            `withForeColor` magenta
+              )
+            , (Operator, defAttr
+                            `withForeColor` magenta
                             `withStyle`     bold
               )
             , (Special , defAttr

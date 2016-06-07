@@ -59,11 +59,6 @@ Sometimes the build may fail due to obscure reasons, deleting the local
 * `wsedit` may be a bit on the slow side on older systems. Use `-b` to disable
   background rendering, which remedies this for the most part.
 
-* `wsedit` is currently designed for dark, but not completely black terminals.
-  Support for bright colour schemes is coming some time in the near future.
-  Since the background won't be rendering on black terminals anytime soon, set
-  `-b` to disable it and save some performance.
-
 * `wsedit` crashes violently (devastating your terminal in the process, use
   `reset` to get it back to normal) when opening a binary file. I will fix this
   as soon as I think of a good way to:

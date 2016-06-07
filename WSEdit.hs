@@ -21,13 +21,16 @@ import System.Environment       (getArgs)
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
-import WSEdit.Data              ( EdConfig (drawBg, keymap, vtyObj, tabWidth)
+import WSEdit.Data              ( EdConfig ( drawBg, edDesign, keymap, vtyObj
+                                           , tabWidth
+                                           )
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, readOnly
                                           , replaceTabs
                                           )
                                 , WSEdit
-                                , catchEditor, mkDefConfig, setStatus
+                                , brightTheme, catchEditor, mkDefConfig
+                                , setStatus
                                 )
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw)
@@ -37,7 +40,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.3.1"
+version = "0.1.4.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -146,6 +149,14 @@ argLoop (('-':'b'    :x ):xs) = do
 
 argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'x'    :x ):xs) = do
+    local (\c -> c { edDesign = brightTheme })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'X'    :x ):xs) = do
+    local (\c -> c { edDesign = def })
         $ argLoop (('-':x):xs)
 
 argLoop (('-':'c':'g':x ):xs) = do
@@ -310,7 +321,8 @@ usage s = quitComplain
        ++ "\n"
        ++ "\t-ts\tInsert the appropriate amount of spaces instead of tabs.\n"
        ++ "\t-tt\tInsert a tab character when pressing tab.\n"
-       ++ "\t-T\tAutomatically detect tab settings.\n"
+       ++ "\t-T\tAutomatically detect the opened file's indentation pattern.\n"
+       ++ "\t\tAssume spaces for new files.\n"
        ++ "\n"
        ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle tab\n"
        ++ "\t\treplacement.\n"
@@ -318,3 +330,15 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\t-V\tDisplays the current version number.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-x\tAssume a bright terminal background color.\n"
+       ++ "\t-X\tAssume a dark terminal background color.\n"
+       ++ "\n"
+       ++ "\t\tMake sure that every foreground color is clearly legible on your\n"
+       ++ "\t\tbackground and distinct from each other (many popular terminal\n"
+       ++ "\t\tcolor themes, e.g. Solarized, violate this), and that black / white\n"
+       ++ "\t\tis similar but different to your background color.  If the latter\n"
+       ++ "\t\tshould prove impossible in your environment, use -b to disable\n"
+       ++ "\t\tbackground rendering and save some performance.\n"
