@@ -82,11 +82,16 @@ copy = refuseOnReadOnly
 paste :: WSEdit ()
 paste = alterBuffer $ do
     c1 <- liftIO getClipboard
-    let c = lines c1
-    s <- get
 
-    put $ s     -- Arcane buffer magic incoming...
-        { edLines = if length c == 1
+    if c1 == ""
+       then setStatus "Warning: Clipboard is empty."
+       else do
+            let c = lines c1
+            s <- get
+
+            put $ s     -- Arcane buffer magic incoming...
+                { edLines =
+                    if length c == 1
                        then fromJust
                           $ B.withLeft (\l -> take (cursorPos s - 1) l
                                            ++ head c
@@ -99,19 +104,21 @@ paste = alterBuffer $ do
                           $ flip (foldl (flip B.insertLeft))
                                  (drop 1 $ init c)
                           $ fromJust
-                          $ B.withLeft (\l -> take (cursorPos s - 1) l ++ head c)
+                          $ B.withLeft (\l -> take (cursorPos s - 1) l
+                                           ++ head c
+                                       )
                           $ edLines s
-        }
+                }
 
-    if length c > 1
-       then moveCursor 0 $ length $ last c
-       else moveCursor 0 $ length c1
+            if length c > 1
+               then moveCursor 0 $ length $ last c
+               else moveCursor 0 $ length c1
 
-    setStatus $ "Pasted "
-             ++ show (length c)
-             ++ " lines ("
-             ++ show (length c1)
-             ++ " chars) from clipboard."
+            setStatus $ "Pasted "
+                     ++ show (length c)
+                     ++ " lines ("
+                     ++ show (length c1)
+                     ++ " chars) from clipboard."
 
 
 

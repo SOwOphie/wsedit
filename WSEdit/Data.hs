@@ -369,36 +369,40 @@ getDisplayBounds = ask
 
 -- | Editor configuration container (static part).
 data EdConfig = EdConfig
-    { vtyObj   :: Vty
+    { vtyObj     :: Vty
         -- ^ vty object container, used to issue draw calls and receive events.
 
-    , edDesign :: EdDesign
+    , edDesign   :: EdDesign
         -- ^ Design object, see below.
 
-    , keymap   :: Keymap
+    , keymap     :: Keymap
         -- ^ What to do when a button is pressed. Inserting a character when the
         --   corresponding key is pressed (e.g. 'a') is not included here, but
         --   may be overridden with this table. (Why would you want to do that?)
 
-    , histSize :: Int
+    , histSize   :: Int
         -- ^ Number of undo states to keep.
 
-    , tabWidth     :: Int
+    , tabWidth   :: Int
         -- ^ Width of a tab character.
 
-    , drawBg       :: Bool
+    , drawBg     :: Bool
         -- ^ Whether or not to draw the background.
+
+    , dumpEvents :: Bool
+        -- ^ Whether or not to dump every received event to the status line.
     }
 
 -- | Create a default `EdConfig`.
 mkDefConfig :: Vty -> Keymap -> EdConfig
 mkDefConfig v k = EdConfig
-                { vtyObj   = v
-                , edDesign = def
-                , keymap   = k
-                , histSize = 100
-                , tabWidth = 4
-                , drawBg   = True
+                { vtyObj     = v
+                , edDesign   = def
+                , keymap     = k
+                , histSize   = 100
+                , tabWidth   = 4
+                , drawBg     = True
+                , dumpEvents = False
               }
 
 

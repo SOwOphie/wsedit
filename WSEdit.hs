@@ -21,12 +21,12 @@ import System.Environment       (getArgs)
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
-import WSEdit.Data              ( EdConfig ( drawBg, edDesign, keymap, vtyObj
-                                           , tabWidth
+import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
+                                           , keymap, vtyObj, tabWidth
                                            )
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, readOnly
-                                          , replaceTabs
+                                          , replaceTabs, status
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
@@ -40,7 +40,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.4.0"
+version = "0.1.4.1"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -72,6 +72,10 @@ mainLoop = do
               )
         $ lookup ev
         $ keymap c
+
+    when (dumpEvents c) $ do
+        s <- get
+        setStatus $ show ev ++ status s
 
     b <- continue <$> get
     when b mainLoop
@@ -157,6 +161,14 @@ argLoop (('-':'x'    :x ):xs) = do
 
 argLoop (('-':'X'    :x ):xs) = do
     local (\c -> c { edDesign = def })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'y'    :x ):xs) = do
+    local (\c -> c { dumpEvents = True })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'Y'    :x ):xs) = do
+    local (\c -> c { dumpEvents = False })
         $ argLoop (('-':x):xs)
 
 argLoop (('-':'c':'g':x ):xs) = do
@@ -342,3 +354,8 @@ usage s = quitComplain
        ++ "\t\tis similar but different to your background color.  If the latter\n"
        ++ "\t\tshould prove impossible in your environment, use -b to disable\n"
        ++ "\t\tbackground rendering and save some performance.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-y\tDebug: enable event dumping (y as in \"y u no work?!?\").\n"
+       ++ "\t-Y\tDebug: disable event dumping.\n"
