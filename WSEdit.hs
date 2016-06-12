@@ -22,7 +22,8 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , keymap, vtyObj, tabWidth
+                                           , keymap, purgeOnClose, vtyObj
+                                           , tabWidth
                                            )
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, readOnly
@@ -40,7 +41,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.4.1"
+version = "0.1.5.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -147,12 +148,21 @@ argLoop :: [String] -> WSEdit ()
 argLoop (('-':'V'    :_ ):_ ) =
     versionInfo
 
+
 argLoop (('-':'b'    :x ):xs) = do
     local (\c -> c { drawBg = False })
         $ argLoop (('-':x):xs)
 
 argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'p'    :x ):xs) = do
+    local (\c -> c { purgeOnClose = True })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'P'    :x ):xs) = do
+    local (\c -> c { purgeOnClose = False })
         $ argLoop (('-':x):xs)
 
 argLoop (('-':'x'    :x ):xs) = do
@@ -170,6 +180,7 @@ argLoop (('-':'y'    :x ):xs) = do
 argLoop (('-':'Y'    :x ):xs) = do
     local (\c -> c { dumpEvents = False })
         $ argLoop (('-':x):xs)
+
 
 argLoop (('-':'c':'g':x ):xs) = do
     h <- liftIO getHomeDirectory
@@ -217,6 +228,7 @@ argLoop (('-':'t':'t':x ):xs) = do
 argLoop (('-':'T'    :x ):xs) = do
     modify (\s -> s { detectTabs  = True })
     argLoop (('-':x):xs)
+
 
 argLoop (['-']           :xs) =
     argLoop xs
@@ -321,6 +333,17 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\t-i<0-9>\tSet indentation width to n (default = -i4).\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-p\tPurge the clipboard file everytime the editor is closed.\n"
+       ++ "\t-P\tDo not purge the clipboard file.\n"
+       ++ "\n"
+       ++ "\t\twsedit normally uses xclip or xsel to provide copy/paste\n"
+       ++ "\t\tfunctionality, but defaults to ~/.wsedit-clipboard if those are\n"
+       ++ "\t\tunavailable.  When left alone, this file may sit around\n"
+       ++ "\t\tindefinitely, but you can tell wsedit to purge it everytime it\n"
+       ++ "\t\texits if you are concerned that it might compromise your privacy.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

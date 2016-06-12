@@ -27,7 +27,8 @@ conceivable language and to require only a minimal amount of configuration.
   English) without requiring anyone to write syntax files!
 
 * __The usual selection editing, interacting directly with the system
-  clipboard__: Make sure to have `xclip` or `xsel` installed.
+  clipboard__: Make sure to have `xclip` or `xsel` installed; an internal
+  fallback is provided.
 
 * __Easiest possible method of configuration__: Type `wsedit -cg` (global) or
   `wsedit -cl` (directory-local) to open the configuration file, then put down
@@ -40,7 +41,9 @@ conceivable language and to require only a minimal amount of configuration.
 
 1. Install the
    [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
-2. Install either `xclip` or `xsel` with your package manager.
+2. *Optional*: Install either `xclip` or `xsel` with your package manager.  If
+   this step is skipped, `wsedit` will use an internal buffer instead of the
+   system facilities for copy/paste functionality.
 3. Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
 4. `cd` into the newly created directory (`cd wsedit`).
 5. Run `stack setup` to pull in the correct version of `ghc`.

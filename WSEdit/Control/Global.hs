@@ -20,7 +20,8 @@ import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Graphics.Vty                (Vty (shutdown))
-import System.Directory            ( doesFileExist, getPermissions
+import System.Directory            ( doesFileExist, getHomeDirectory
+                                   , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
                                    , writable
                                    )
@@ -35,7 +36,7 @@ import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    , refuseOnReadOnly
                                    )
-import WSEdit.Data                 ( EdConfig (vtyObj)
+import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, edLines, fname
                                               , markPos, readOnly, replaceTabs
@@ -99,7 +100,16 @@ quit = do
 
 -- | Tells the main loop to exit gracefully.
 forceQuit :: WSEdit ()
-forceQuit = modify (\s -> s { continue = False })
+forceQuit = do
+    b1 <- purgeOnClose <$> ask
+    when b1 $ liftIO $ do
+        h <- getHomeDirectory
+        let cpath = h ++ "/.wsedit-clipboard"
+
+        b2 <- doesFileExist cpath
+        when b2 $ removeFile cpath
+
+    modify (\s -> s { continue = False })
 
 
 

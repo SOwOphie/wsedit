@@ -17,14 +17,18 @@ module WSEdit.Util
     , getExt
     , getKeywordAtCursor
     , longestCommonPrefix
+    , checkClipboardSupport
     ) where
 
-import Data.Char        (isAlphaNum)
-import Data.List        (inits, intersect, tails)
-import Safe             (headMay, lastDef)
-import System.Directory (doesFileExist)
-import System.IO.Unsafe (unsafePerformIO)
-import Text.Show.Pretty (ppShow)
+import Control.Exception (SomeException, try)
+import Data.Char         (isAlphaNum)
+import Data.List         (inits, intersect, tails)
+import Safe              (headMay, lastDef)
+import System.Directory  (doesFileExist)
+import System.Exit       (ExitCode (ExitSuccess))
+import System.IO.Unsafe  (unsafePerformIO)
+import System.Process    (readProcessWithExitCode)
+import Text.Show.Pretty  (ppShow)
 
 
 
@@ -230,3 +234,18 @@ longestCommonPrefix [] = []
 longestCommonPrefix s  = lastDef []
                        $ foldl1 intersect
                        $ map inits s
+
+
+
+-- | Checks whether either `xclip` or `xsel` is ready for action.
+checkClipboardSupport :: IO Bool
+checkClipboardSupport = do
+    r1 <- try $ readProcessWithExitCode "xclip" ["-o"] ""
+    r2 <- try $ readProcessWithExitCode "xsel"  []     ""
+    return $ ok r1 || ok r2
+
+    where
+        ok :: Either SomeException (ExitCode, String, String) -> Bool
+        ok (Right (ExitSuccess, _, _)) = True
+        ok _                           = False
+

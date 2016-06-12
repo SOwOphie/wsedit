@@ -15,19 +15,21 @@ import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, put)
 import Data.List                (stripPrefix)
 import Data.Maybe               (fromJust, isJust, fromMaybe)
+import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
 
 import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
                                 , refuseOnReadOnly
                                 )
 import WSEdit.Data              ( EdConfig (tabWidth)
-                                , EdState ( cursorPos, edLines, markPos
+                                , EdState (cursorPos, edLines, markPos
                                           , replaceTabs
                                           )
                                 , WSEdit
                                 , clearMark, delSelection, getMark, getCursor
                                 , getSelection, setMark, setStatus
                                 )
+import WSEdit.Util              (checkClipboardSupport, mayReadFile)
 
 import qualified WSEdit.Buffer as B
 
@@ -68,23 +70,49 @@ copy = refuseOnReadOnly
      $ getSelection >>= \case
             Nothing -> setStatus "Warning: nothing selected."
             Just s  -> do
-                setStatus $ "Copied "
-                         ++ show (length $ lines s)
-                         ++ " lines ("
-                         ++ show (length s)
-                         ++ " chars) to clipboard."
+                b <- liftIO checkClipboardSupport
 
-                liftIO $ setClipboard s
+                if b
+                   then do
+                        liftIO $ setClipboard s
+
+                        setStatus $ "Copied "
+                                 ++ show (length $ lines s)
+                                 ++ " lines ("
+                                 ++ show (length s)
+                                 ++ " chars) to system clipboard."
+
+                   else do
+                        liftIO $ do
+                            h <- getHomeDirectory
+                            writeFile (h ++ "/.wsedit-clipboard") s
+
+                        setStatus $ "Copied "
+                                 ++ show (length $ lines s)
+                                 ++ " lines ("
+                                 ++ show (length s)
+                                 ++ " chars) to editor clipboard."
+
 
 
 
 -- | Paste the clipboard contents to the cursor position.
 paste :: WSEdit ()
 paste = alterBuffer $ do
-    c1 <- liftIO getClipboard
+    b <- liftIO checkClipboardSupport
+
+    c1 <- liftIO
+        $ if b
+             then getClipboard
+             else do
+                    h <- getHomeDirectory
+                    fromMaybe "" <$> mayReadFile (h ++ "/.wsedit-clipboard")
 
     if c1 == ""
-       then setStatus "Warning: Clipboard is empty."
+       then setStatus $ if b
+                           then "Warning: System clipboard is empty."
+                           else "Warning: Editor clipboard is empty."
+
        else do
             let c = lines c1
             s <- get
@@ -118,7 +146,9 @@ paste = alterBuffer $ do
                      ++ show (length c)
                      ++ " lines ("
                      ++ show (length c1)
-                     ++ " chars) from clipboard."
+                     ++ if b
+                           then " chars) from system clipboard."
+                           else " chars) from editor clipboard."
 
 
 

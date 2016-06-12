@@ -65,9 +65,9 @@ data EdState = EdState
         -- ^ Whether the file is opened in read only mode. Has no relation to
         --   the write permissions on the actual file.
 
+
     , cursorPos    :: Int
         -- ^ 1-based offset from the left end of the current line in characters.
-
 
     , wantsPos     :: Maybe Int
         -- ^ Target visual position (1-based offset in columns) of the cursor.
@@ -124,6 +124,7 @@ instance Default EdState where
         { edLines      = B.singleton ""
         , fname        = ""
         , readOnly     = False
+
         , cursorPos    = 1
         , wantsPos     = Nothing
         , markPos      = Nothing
@@ -391,18 +392,22 @@ data EdConfig = EdConfig
 
     , dumpEvents :: Bool
         -- ^ Whether or not to dump every received event to the status line.
+
+    , purgeOnClose :: Bool
+        -- ^ Whether the clipboard file is to be deleted on close.
     }
 
 -- | Create a default `EdConfig`.
 mkDefConfig :: Vty -> Keymap -> EdConfig
 mkDefConfig v k = EdConfig
-                { vtyObj     = v
-                , edDesign   = def
-                , keymap     = k
-                , histSize   = 100
-                , tabWidth   = 4
-                , drawBg     = True
-                , dumpEvents = False
+                { vtyObj       = v
+                , edDesign     = def
+                , keymap       = k
+                , histSize     = 100
+                , tabWidth     = 4
+                , drawBg       = True
+                , dumpEvents   = False
+                , purgeOnClose = False
               }
 
 
