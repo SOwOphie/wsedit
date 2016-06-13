@@ -26,8 +26,8 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , tabWidth
                                            )
                                 , EdState ( buildDict, changed, continue
-                                          , detectTabs, fname, readOnly
-                                          , replaceTabs, status
+                                          , detectTabs, fname, lastEvent
+                                          , readOnly, replaceTabs, status
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
@@ -41,7 +41,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.5.0"
+version = "0.1.5.1"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -59,6 +59,7 @@ mainLoop = do
     c <- ask
     ev <- liftIO $ nextEvent $ vtyObj c
 
+    modify (\s -> s { lastEvent = Just ev })
 
     -- look up the event in the keymap
     -- if not found: insert the pressed key

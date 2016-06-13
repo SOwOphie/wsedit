@@ -62,20 +62,25 @@ simulateCrash = error "Simulated crash."
 --   with return code 1.
 bail :: String -> WSEdit ()
 bail s = do
-    v <- vtyObj <$> ask
+    c <- ask
     st <- get
 
     liftIO $ do
-        shutdown v
+        shutdown $ vtyObj c
         putStrLn s
         putStrLn "Writing state dump to ./CRASH-DUMP ..."
         writeFile "CRASH-DUMP"
-            $ "WSEDIT CRASH LOG\n"
-           ++ "Last event recorded: <PLACEHOLDER>\n"
-           ++ "Editor state:\n"
-           ++ ppShow st
+            $ "WSEDIT CRASH LOG"
+           ++ "\n\nEditor configuration:\n"
+           ++ indent (ppShow c)
+           ++ "\n\nEditor state:\n"
+           ++ indent (ppShow st)
 
         exitFailure
+
+    where
+        indent :: String -> String
+        indent = unlines . map ("    " ++) . lines
 
 
 -- | Similar to 'bail', but does not generate a state dump.

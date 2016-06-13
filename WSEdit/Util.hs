@@ -122,7 +122,7 @@ data CharClass = Whitesp    -- ^ Whitespace (@"\t\n\r "@)
                | Bracket    -- ^ Bracket (@"()[]{}"@)
                | Operator   -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|@"@)
                | Special    -- ^ Everything else
-    deriving (Eq)
+    deriving (Eq, Show)
 
 
 

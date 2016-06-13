@@ -1,4 +1,7 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleInstances
+           , LambdaCase
+           , TypeSynonymInstances
+           #-}
 
 module WSEdit.Data
     ( EdState (..)
@@ -88,6 +91,9 @@ data EdState = EdState
     , status       :: String
         -- ^ Status string displayed at the bottom.
 
+    , lastEvent    :: Maybe Event
+        -- ^ Last recorded input event.
+
 
     , changed      :: Bool
         -- ^ Whether the file has been changed since the last load/save.
@@ -132,6 +138,7 @@ instance Default EdState where
 
         , continue     = True
         , status       = ""
+        , lastEvent    = Nothing
 
         , changed      = False
         , history      = Nothing
@@ -396,6 +403,14 @@ data EdConfig = EdConfig
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
     }
+
+instance Show EdConfig where
+    show c = "{histSize="     ++ show (histSize     c)
+          ++ ",tabWidth="     ++ show (tabWidth     c)
+          ++ ",drawBg="       ++ show (drawBg       c)
+          ++ ",dumpEvents="   ++ show (dumpEvents   c)
+          ++ ",purgeOnClose=" ++ show (purgeOnClose c)
+          ++ "}"
 
 -- | Create a default `EdConfig`.
 mkDefConfig :: Vty -> Keymap -> EdConfig
