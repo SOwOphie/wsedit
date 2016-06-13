@@ -13,6 +13,7 @@ module WSEdit.Output
     , cursorOffScreen
     , makeFrame
     , draw
+    , drawExitFrame
     ) where
 
 import Control.Monad            (foldM)
@@ -27,8 +28,9 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
-                                , char, imageWidth, pad, reverseVideo, string
-                                , translateX, update, vertCat, withStyle
+                                , char, imageWidth, pad, picForImage
+                                , reverseVideo, string, translateX, update
+                                , vertCat, withStyle
                                 , (<|>), (<->)
                                 )
 import Safe                     (lookupJustDef)
@@ -465,3 +467,12 @@ draw = do
                                           ]
                 , picBackground = ClearBackground
                 }
+
+
+
+-- | Draw a frame that will keep some terminals from breaking.
+drawExitFrame :: WSEdit ()
+drawExitFrame = do
+    v <- vtyObj <$> ask
+
+    liftIO $ update v $ picForImage $ char def ' '

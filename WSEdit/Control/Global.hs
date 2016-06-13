@@ -44,6 +44,7 @@ import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                    , WSEdit
                                    , popHist, setStatus
                                    )
+import WSEdit.Output               (drawExitFrame)
 
 import qualified WSEdit.Buffer as B
 
@@ -64,6 +65,8 @@ bail :: String -> WSEdit ()
 bail s = do
     c <- ask
     st <- get
+
+    drawExitFrame
 
     liftIO $ do
         shutdown $ vtyObj c
@@ -87,6 +90,9 @@ bail s = do
 quitComplain :: String -> WSEdit ()
 quitComplain s = do
     v <- vtyObj <$> ask
+
+    drawExitFrame
+
     liftIO $ do
         shutdown v
         putStrLn s

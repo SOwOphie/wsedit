@@ -34,14 +34,14 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                 , setStatus
                                 )
 import WSEdit.Keymaps           (defaultKM)
-import WSEdit.Output            (draw)
+import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              (getExt, mayReadFile)
 
 
 
 -- | Version number constant.
 version :: String
-version = "0.1.5.2"
+version = "0.1.5.3"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -258,6 +258,8 @@ argLoop []                    = do
                             ++ " ./CRASH-RESCUE ."
 
                    else bail $ "An error occured: " ++ show e
+
+            drawExitFrame
 
 
 
