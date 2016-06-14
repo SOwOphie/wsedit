@@ -51,7 +51,7 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                 , getCursor, getFirstSelected, getDisplayBounds
                                 , getLastSelected, getOffset
                                 )
-import WSEdit.Util              ( CharClass (Whitesp)
+import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
                                 , charClass, padLeft, padRight, withSnd
                                 )
 
@@ -133,7 +133,9 @@ charRep pos _ c = do
                             && not (readOnly st)
                         then currSty s
                         else s
-                  ) c
+                  ) $ if charClass c /= Unprintable
+                         then c
+                         else '?'
 
 
 

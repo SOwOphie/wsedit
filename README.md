@@ -62,13 +62,6 @@ Sometimes the build may fail due to obscure reasons, deleting the local
 * `wsedit` may be a bit on the slow side on older systems. Use `-b` to disable
   background rendering, which remedies this for the most part.
 
-* `wsedit` crashes violently (devastating your terminal in the process, use
-  `reset` to get it back to normal) when opening a binary file. I will fix this
-  as soon as I think of a good way to:
-     * detect binary files
-     * behave instead (simply refusing to open is one thing, but being shown a
-       hexdump and eventually even editing files in hex would be much cooler)
-
 ## Current keybindings (at the moment not to be found anywhere else beside
 `Keymaps.hs`)
 

@@ -76,7 +76,7 @@ bail s = do
             $ "WSEDIT CRASH LOG"
            ++ "\n\nEditor configuration:\n"
            ++ indent (ppShow c)
-           ++ "\n\nEditor state:\n"
+           ++ "\nEditor state:\n"
            ++ indent (ppShow st)
 
         exitFailure

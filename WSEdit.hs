@@ -41,7 +41,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.5.3"
+version = "0.1.5.4"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -245,8 +245,12 @@ argLoop []                    = do
     if f == ""
        then usage "No file specified."
        else do
-            load
-            catchEditor mainLoop $ \e -> do
+            catchEditor load $ \e ->
+                quitComplain $ "An I/O error occured:\n\n"
+                            ++ show e
+                            ++ "\n\nAre you trying to open a binary file?"
+
+            catchEditor (mainLoop >> drawExitFrame) $ \e -> do
                 b <- changed <$> get
                 if b
                    then do
@@ -258,8 +262,6 @@ argLoop []                    = do
                             ++ " ./CRASH-RESCUE ."
 
                    else bail $ "An error occured: " ++ show e
-
-            drawExitFrame
 
 
 

@@ -46,7 +46,8 @@ import Graphics.Vty             ( Attr
                                 )
 
 import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
-                                           , Special, Upper, Whitesp
+                                           , Special, Unprintable, Upper
+                                           , Whitesp
                                            )
                                 )
 import WSEdit.WordTree          (WordTree, empty)
@@ -512,27 +513,30 @@ instance Default EdDesign where
                             `withBackColor` white
 
         , dCharStyles    =
-            [ (Whitesp , defAttr
+            [ (Whitesp    , defAttr
                             `withForeColor` blue
               )
-            , (Digit   , defAttr
+            , (Digit      , defAttr
                             `withForeColor` red
               )
-            , (Lower   , defAttr
+            , (Lower      , defAttr
               )
-            , (Upper   , defAttr
+            , (Upper      , defAttr
                             `withStyle`     bold
               )
-            , (Bracket , defAttr
+            , (Bracket    , defAttr
                             `withForeColor` yellow
               )
-            , (Operator, defAttr
+            , (Operator   , defAttr
                             `withForeColor` yellow
                             `withStyle`     bold
               )
-            , (Special , defAttr
+            , (Unprintable, defAttr
                             `withForeColor` red
                             `withStyle`     bold
+              )
+            , (Special    , defAttr
+                            `withForeColor` magenta
               )
             ]
 
@@ -573,27 +577,30 @@ brightTheme = EdDesign
                             `withBackColor` black
 
         , dCharStyles    =
-            [ (Whitesp , defAttr
+            [ (Whitesp    , defAttr
                             `withForeColor` blue
               )
-            , (Digit   , defAttr
+            , (Digit      , defAttr
                             `withForeColor` red
               )
-            , (Lower   , defAttr
+            , (Lower      , defAttr
               )
-            , (Upper   , defAttr
+            , (Upper      , defAttr
                             `withStyle`     bold
               )
-            , (Bracket , defAttr
-                            `withForeColor` magenta
+            , (Bracket    , defAttr
+                            `withForeColor` yellow
               )
-            , (Operator, defAttr
-                            `withForeColor` magenta
+            , (Operator   , defAttr
+                            `withForeColor` yellow
                             `withStyle`     bold
               )
-            , (Special , defAttr
+            , (Unprintable, defAttr
                             `withForeColor` red
                             `withStyle`     bold
+              )
+            , (Special    , defAttr
+                            `withForeColor` magenta
               )
             ]
 

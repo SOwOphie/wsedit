@@ -21,7 +21,7 @@ module WSEdit.Util
     ) where
 
 import Control.Exception (SomeException, try)
-import Data.Char         (isAlphaNum)
+import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intersect, tails)
 import Safe              (headMay, lastDef)
 import System.Directory  (doesFileExist)
@@ -115,13 +115,14 @@ mayReadFile f = do
 
 
 -- | Character classes.
-data CharClass = Whitesp    -- ^ Whitespace (@"\t\n\r "@)
-               | Digit      -- ^ Digit (@['0'..'9']@)
-               | Lower      -- ^ Lowercase letter (@'_':['a'..'z']@)
-               | Upper      -- ^ Uppercase letter (@['A'..'Z']@)
-               | Bracket    -- ^ Bracket (@"()[]{}"@)
-               | Operator   -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|@"@)
-               | Special    -- ^ Everything else
+data CharClass = Whitesp     -- ^ Whitespace (@"\t\n\r "@)
+               | Digit       -- ^ Digit (@['0'..'9']@)
+               | Lower       -- ^ Lowercase letter (@'_':['a'..'z']@)
+               | Upper       -- ^ Uppercase letter (@['A'..'Z']@)
+               | Bracket     -- ^ Bracket (@"()[]{}"@)
+               | Operator    -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|@"@)
+               | Unprintable -- ^ Unprintable or unicode mark characters.
+               | Special     -- ^ Everything else
     deriving (Eq, Show)
 
 
@@ -131,6 +132,10 @@ charClass :: Char -> CharClass
 charClass c | '0' <= c && c <= '9' = Digit
 charClass c | 'a' <= c && c <= 'z' = Lower
 charClass c | 'A' <= c && c <= 'Z' = Upper
+
+charClass c |       isControl c = Unprintable
+charClass c |       isMark    c = Unprintable
+charClass c | not $ isPrint   c = Unprintable
 
 charClass '_'  = Lower
 
@@ -179,13 +184,14 @@ charClass  _   = Special
 -- | Returns whether the character is probably part of a identifier.
 isIdentifierChar :: Char -> Bool
 isIdentifierChar c = case charClass c of
-                          Whitesp  -> False
-                          Digit    -> True
-                          Lower    -> True
-                          Upper    -> True
-                          Bracket  -> False
-                          Operator -> False
-                          Special  -> True
+                          Whitesp     -> False
+                          Digit       -> True
+                          Lower       -> True
+                          Upper       -> True
+                          Bracket     -> False
+                          Operator    -> False
+                          Unprintable -> False
+                          Special     -> True
 
 
 -- | Returns whether the string is probably an identifier.
