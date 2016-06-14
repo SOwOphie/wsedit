@@ -14,7 +14,7 @@ import Graphics.Vty             ( Event (EvKey)
                                 , nextEvent
                                 , shutdown
                                 )
-import Safe                     (headMay)
+import Safe                     (atDef, headMay, readDef)
 import System.Directory         (getHomeDirectory)
 import System.Environment       (getArgs)
 
@@ -27,7 +27,8 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            )
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
-                                          , readOnly, replaceTabs, status
+                                          , loadPos, readOnly, replaceTabs
+                                          , status
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
@@ -41,7 +42,7 @@ import WSEdit.Util              (getExt, mayReadFile)
 
 -- | Version number constant.
 version :: String
-version = "0.1.5.4"
+version = "0.1.6.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -97,9 +98,10 @@ main = do
     v <- mkVty def
 
     -- create the configuration object
-    -- TODO: maybe implement instance Default EdConfig?
-    let conf     = mkDefConfig v defaultKM
-        filename = headMay args
+    let filename = headMay args
+        tLnNo    = readDef 1 $ atDef "1" args 1
+        tColNo   = readDef 1 $ atDef "1" args 2
+        conf     = mkDefConfig v defaultKM
 
     -- Read the global and local config files. Use an empty string in case of
     -- nonexistence.
@@ -113,7 +115,10 @@ main = do
                ++ sw
 
     -- Run the argument loop with the default config and state objects.
-    _ <- runRWST (argLoop swChain) conf $ def { fname = fromMaybe "" filename }
+    _ <- runRWST (argLoop swChain) conf
+       $ def { fname   = fromMaybe "" filename
+             , loadPos = (tLnNo, tColNo)
+             }
 
     -- Shutdown vty
     shutdown v
@@ -289,7 +294,7 @@ usage :: String -> WSEdit ()
 usage s = quitComplain
         $ s ++ "\n"
        ++ "\n"
-       ++ "Usage: wsedit [<arguments>] [filename]\n"
+       ++ "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
        ++ "\n"
        ++ "Arguments (the uppercase options are on by default):\n"
        ++ "\n"

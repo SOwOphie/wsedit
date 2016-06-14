@@ -73,6 +73,9 @@ data EdState = EdState
     , cursorPos    :: Int
         -- ^ 1-based offset from the left end of the current line in characters.
 
+    , loadPos      :: (Int, Int)
+        -- ^ Where to place the cursor when loading the file.
+
     , wantsPos     :: Maybe Int
         -- ^ Target visual position (1-based offset in columns) of the cursor.
         --   Used to implement the cursor vertically moving over empty lines
@@ -133,6 +136,7 @@ instance Default EdState where
         , readOnly     = False
 
         , cursorPos    = 1
+        , loadPos      = (1, 1)
         , wantsPos     = Nothing
         , markPos      = Nothing
         , scrollOffset = (0, 0)

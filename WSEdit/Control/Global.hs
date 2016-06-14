@@ -39,12 +39,14 @@ import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
 import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, edLines, fname
-                                              , markPos, readOnly, replaceTabs
+                                              , loadPos, markPos, readOnly
+                                              , replaceTabs
                                               )
                                    , WSEdit
                                    , popHist, setStatus
                                    )
 import WSEdit.Output               (drawExitFrame)
+import WSEdit.Util                 (withPair)
 
 import qualified WSEdit.Buffer as B
 
@@ -223,8 +225,8 @@ load = alterState $ do
                                     ++ p'
                                     ++ " , check permissions and disk state."
 
-    -- Wiggle the cursor to ensure its position is valid.
-    moveCursor 0 0
+    -- Move the cursor to where it should be placed.
+    uncurry moveCursor $ withPair id (\h -> h-1) $ loadPos s
 
     dictAddRec
 
