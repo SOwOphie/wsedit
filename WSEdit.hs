@@ -46,7 +46,7 @@ import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
 
 -- | Version number constant.
 version :: String
-version = "0.2.0.0"
+version = "0.2.0.1"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -231,9 +231,9 @@ argLoop (('-':'r'    :x ):xs) = do
     modify (\s -> s { readOnly = True })
     argLoop (('-':x):xs)
 
-argLoop (('-':'i': n :x ):xs) = do
-    local (\c -> c { tabWidth = read [n] })
-        $ argLoop (('-':x):xs)
+argLoop (('-':'i': n    ):xs) = do
+    local (\c -> c { tabWidth = read n })
+        $ argLoop xs
 
 argLoop (('-':'R'    :x ):xs) = do
     modify (\s -> s { readOnly = False })
@@ -279,7 +279,7 @@ argLoop (('-':'s'    :_ ):_ ) = do
     put st
     local (const conf) $ mainLoop >> drawExitFrame
 
-argLoop []                    = do
+argLoop []                      = do
     f <- fname <$> get
     if f == ""
        then usage "No file specified."
@@ -297,10 +297,10 @@ argLoop (['-']           :xs) =
     argLoop xs
 
 argLoop (('-': x     :_ ):_ ) =
-    usage $ "Unknown argument: " ++ [x]
+    usage $ "Unknown argument: -" ++ [x]
 
 argLoop (x               :_ ) =
-    usage $ "Unexpected argument: " ++ x
+    usage $ "Unexpected parameter: " ++ x
 
 
 
@@ -396,7 +396,7 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-i<0-9>\tSet indentation width to n (default = -i4).\n"
+       ++ "\t-i<n>\tSet indentation width to n (default = -i 4).\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

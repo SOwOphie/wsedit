@@ -41,7 +41,7 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                            , dColNoInterval, dCurrLnMod
                                            , dFrameFormat, dLineNoFormat
                                            , dLineNoInterv, dSelFormat
-                                           , dStatusFormat, dTabStr
+                                           , dStatusFormat, dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
@@ -89,11 +89,14 @@ charRep pos n '\t' = do
 
         selSty  = dSelFormat  d
         tW      = tabWidth    c
+        tExt    = dTabExt     d
         tStr    = dTabStr     d
         tSty    = dCharStyles d
         currSty = dCurrLnMod  d
 
         tabSty  = lookupJustDef def Whitesp tSty
+
+        extTab  = padLeft tW tExt tStr
 
         s       = if isJust firstSel
                         && fromJust firstSel <= pos
@@ -107,7 +110,7 @@ charRep pos n '\t' = do
                         then currSty s
                         else s
                     )
-           $ drop (length tStr - (tW - n `mod` tW)) tStr
+           $ drop (length extTab - (tW - n `mod` tW)) extTab
 
 charRep pos _ c = do
     firstSel <- getFirstSelected

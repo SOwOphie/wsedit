@@ -470,9 +470,13 @@ data EdDesign = EdDesign
 
 
     , dTabStr        :: String
-        -- ^ String to display tab characters as. Will get truncated from the
-        --   left as needed. Make sure this is at least as long as your intended
-        --   indentation width (wsedit supports a maximum of 9).
+        -- ^ String to display tab characters as.  Will get truncated from the
+        --   left as needed.
+
+    , dTabExt        :: Char
+        -- ^ If 'dTabStr' is too short, this will be used to pad it to the
+        --   required length.
+
 
     , dSelFormat     :: Attr
         -- ^ vty attribute for selected text
@@ -507,7 +511,8 @@ instance Default EdDesign where
 
         , dCurrLnMod     = flip withBackColor black
 
-        , dTabStr        = "        |"
+        , dTabStr        = "|"
+        , dTabExt        = ' '
 
         , dSelFormat     = defAttr
                             `withForeColor` black
@@ -571,7 +576,8 @@ brightTheme = EdDesign
 
         , dCurrLnMod     = flip withBackColor white
 
-        , dTabStr        = "        |"
+        , dTabStr        = "|"
+        , dTabExt        = ' '
 
         , dSelFormat     = defAttr
                             `withForeColor` white

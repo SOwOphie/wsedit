@@ -9,8 +9,6 @@ module WSEdit.Data.Pretty
     , prettyKeymap
     ) where
 
-
-import Control.Exception (SomeException)
 import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
@@ -21,9 +19,8 @@ import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                                     , dColChar, dColNoFormat, dColNoInterval
                                     , dCurrLnMod, dFrameFormat, dLineNoFormat
                                     , dLineNoInterv, dSelFormat, dStatusFormat
-                                    , dTabStr
+                                    , dTabExt, dTabStr
                                     )
-                         , EdState
                          , Keymap
                          )
 import WSEdit.Util       (CharClass, withSnd)
@@ -85,6 +82,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDBGFormat      :: Attr
     , pDCurrLnMod     :: ()
     , pDTabStr        :: String
+    , pDTabExt        :: Char
     , pDSelFormat     :: Attr
     , pDCharStyles    :: [(CharClass, Attr)]
     }
@@ -104,6 +102,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDBGFormat      = dBGFormat      d
     , pDCurrLnMod     = ()
     , pDTabStr        = dTabStr        d
+    , pDTabExt        = dTabExt        d
     , pDSelFormat     = dSelFormat     d
     , pDCharStyles    = dCharStyles    d
     }
@@ -122,6 +121,7 @@ unPrettyEdDesign f p = EdDesign
     , dBGFormat      = pDBGFormat      p
     , dCurrLnMod     = f
     , dTabStr        = pDTabStr        p
+    , dTabExt        = pDTabExt        p
     , dSelFormat     = pDSelFormat     p
     , dCharStyles    = pDCharStyles    p
     }
