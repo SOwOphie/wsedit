@@ -62,8 +62,7 @@ Sometimes the build may fail due to obscure reasons, deleting the local
 * `wsedit` may be a bit on the slow side on older systems. Use `-b` to disable
   background rendering, which remedies this for the most part.
 
-## Current keybindings (at the moment not to be found anywhere else beside
-`Keymaps.hs`)
+## Current keybindings
 
 Key | Action
 ----|--------
