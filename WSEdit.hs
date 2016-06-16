@@ -4,7 +4,7 @@ module Main where
 
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, local, modify, runRWST)
+import Control.Monad.RWS.Strict (ask, get, local, modify, put, runRWST)
 import Data.Default             (def)
 import Data.List                (isPrefixOf, partition, stripPrefix)
 import Data.Maybe               (fromMaybe)
@@ -25,6 +25,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , keymap, purgeOnClose, vtyObj
                                            , tabWidth
                                            )
+                                , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
                                           , loadPos, readOnly, replaceTabs
@@ -34,15 +35,18 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                 , brightTheme, catchEditor, mkDefConfig
                                 , setStatus
                                 )
+import WSEdit.Data.Pretty       (prettyKeymap, unPrettyEdConfig)
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw, drawExitFrame)
-import WSEdit.Util              (getExt, mayReadFile)
+import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
+                                , withSnd
+                                )
 
 
 
 -- | Version number constant.
 version :: String
-version = "0.1.6.0"
+version = "0.2.0.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -65,7 +69,8 @@ mainLoop = do
     -- look up the event in the keymap
     -- if not found: insert the pressed key
     -- if it's not alphanumeric: show an "event not bound" warning
-    fromMaybe (case ev of
+    catchEditor
+        ( fromMaybe (case ev of
                     EvKey (KChar k) [] -> deleteSelection
                                        >> insert k
                                        >> listAutocomplete
@@ -73,8 +78,22 @@ mainLoop = do
                     _                  -> setStatus $ "Event not bound: "
                                                    ++ show ev
               )
+        $ fmap fst
         $ lookup ev
         $ keymap c
+        )  $ \e -> do
+            b <- changed <$> get
+            if b
+               then do
+                    modify (\s -> s { fname = "CRASH-RESCUE" })
+                    save
+                    bail $ "An error occured: " ++ show e
+                        ++ "\n\n"
+                        ++ "Your unsaved work has been rescued to"
+                        ++ " ./CRASH-RESCUE ."
+
+               else bail $ "An error occured: " ++ show e
+
 
     when (dumpEvents c) $ do
         s <- get
@@ -153,6 +172,9 @@ main = do
 argLoop :: [String] -> WSEdit ()
 argLoop (('-':'V'    :_ ):_ ) =
     versionInfo
+
+argLoop (('-':'h':'k':_ ):_ ) =
+    keymapInfo
 
 
 argLoop (('-':'b'    :x ):xs) = do
@@ -236,14 +258,26 @@ argLoop (('-':'T'    :x ):xs) = do
     argLoop (('-':x):xs)
 
 
-argLoop (['-']           :xs) =
-    argLoop xs
+argLoop (('-':'s'    :_ ):_ ) = do
+    c <- ask
+    s <- get
 
-argLoop (('-': x     :_ ):_ ) =
-    usage $ "Unknown argument: " ++ [x]
+    r <- liftIO $ readFile $ fname s
 
-argLoop (x               :_ ) =
-    usage $ "Unexpected argument: " ++ x
+    let (cLines, sLines) = withSnd (drop 2)
+                         $ span (/= "")
+                         $ drop 3
+                         $ lines r
+
+        conf = unPrettyEdConfig (vtyObj c) (keymap c) (dCurrLnMod $ edDesign c)
+             $ read
+             $ unlines cLines
+
+        st   = read
+             $ unlines sLines
+
+    put st
+    local (const conf) $ mainLoop >> drawExitFrame
 
 argLoop []                    = do
     f <- fname <$> get
@@ -255,18 +289,18 @@ argLoop []                    = do
                             ++ show e
                             ++ "\n\nAre you trying to open a binary file?"
 
-            catchEditor (mainLoop >> drawExitFrame) $ \e -> do
-                b <- changed <$> get
-                if b
-                   then do
-                        modify (\s -> s { fname = "CRASH-RESCUE" })
-                        save
-                        bail $ "An error occured: " ++ show e
-                            ++ "\n\n"
-                            ++ "Your unsaved work has been rescued to"
-                            ++ " ./CRASH-RESCUE ."
+            mainLoop
+            drawExitFrame
 
-                   else bail $ "An error occured: " ++ show e
+
+argLoop (['-']           :xs) =
+    argLoop xs
+
+argLoop (('-': x     :_ ):_ ) =
+    usage $ "Unknown argument: " ++ [x]
+
+argLoop (x               :_ ) =
+    usage $ "Unexpected argument: " ++ x
 
 
 
@@ -285,6 +319,22 @@ versionInfo = quitComplain
            ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
            ++ "by the software is to blame on failure to implement sufficient safety measures\n"
            ++ "and therefore on the user, not on the developer of the software.\n"
+
+
+
+-- | Dumps the keymap, then exits with code 1.
+keymapInfo :: WSEdit ()
+keymapInfo = do
+    k <- keymap <$> ask
+
+    let tbl  = map (withFst show) $ prettyKeymap k
+        maxW = maximum $ map (length . fst) tbl
+        tbl' = map (withFst (padRight maxW ' ')) tbl
+
+    quitComplain $ "Dumping keymap:\n"
+                ++ unlines ( map (\(e, s) -> e ++ "\t" ++ s)
+                             tbl'
+                           )
 
 
 
@@ -342,6 +392,10 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
+       ++ "\t-hk\tShow current keybinds.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
        ++ "\t-i<0-9>\tSet indentation width to n (default = -i4).\n"
        ++ "\n"
        ++ "\n"
@@ -361,6 +415,18 @@ usage s = quitComplain
        ++ "\t-R\tOpen file in read-write mode.\n"
        ++ "\n"
        ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-s\tResume state from crash file instead of opening it.\n"
+       ++ "\t\tThere are currently a few limiting factors to exactly resuming\n"
+       ++ "\t\twhere a crash occured.  The following properties cannot be\n"
+       ++ "\t\trestored:\n"
+       ++ "\n"
+       ++ "\t\t\t*The keymap\n"
+       ++ "\t\t\t*The shading of the active line\n"
+       ++ "\n"
+       ++ "\t\tThese properties will be replaced with local defaults.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

@@ -123,7 +123,7 @@ data CharClass = Whitesp     -- ^ Whitespace (@"\t\n\r "@)
                | Operator    -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|@"@)
                | Unprintable -- ^ Unprintable or unicode mark characters.
                | Special     -- ^ Everything else
-    deriving (Eq, Show)
+    deriving (Eq, Read, Show)
 
 
 

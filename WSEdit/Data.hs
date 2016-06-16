@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances
            , LambdaCase
+           , StandaloneDeriving
            , TypeSynonymInstances
            #-}
 
@@ -37,7 +38,8 @@ import Data.Default             (Default (def))
 import Data.Maybe               (fromJust, fromMaybe, isJust)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Attr
-                                , Event
+                                , Button (..)
+                                , Event (..)
                                 , Vty (outputIface)
                                 , black, blue, bold, green, defAttr
                                 , displayBounds, green, magenta, red, white
@@ -127,7 +129,10 @@ data EdState = EdState
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
     }
-    deriving (Show)
+    deriving (Read, Show)
+
+deriving instance Read Button
+deriving instance Read Event
 
 instance Default EdState where
     def = EdState
@@ -409,14 +414,6 @@ data EdConfig = EdConfig
         -- ^ Whether the clipboard file is to be deleted on close.
     }
 
-instance Show EdConfig where
-    show c = "{histSize="     ++ show (histSize     c)
-          ++ ",tabWidth="     ++ show (tabWidth     c)
-          ++ ",drawBg="       ++ show (drawBg       c)
-          ++ ",dumpEvents="   ++ show (dumpEvents   c)
-          ++ ",purgeOnClose=" ++ show (purgeOnClose c)
-          ++ "}"
-
 -- | Create a default `EdConfig`.
 mkDefConfig :: Vty -> Keymap -> EdConfig
 mkDefConfig v k = EdConfig
@@ -632,5 +629,5 @@ catchEditor a e = do
 
 
 
--- | Map of events to actions.
-type Keymap = [(Event, WSEdit ())]
+-- | Map of events to actions (and their descriptions).
+type Keymap = [(Event, (WSEdit (), String))]
