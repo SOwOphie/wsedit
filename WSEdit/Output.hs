@@ -20,7 +20,7 @@ import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
 import Data.Default             (def)
-import Data.Maybe               (fromJust, fromMaybe, isJust)
+import Data.Maybe               (fromJust, fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Background (ClearBackground)
                                 , Cursor (Cursor, NoCursor)
@@ -48,8 +48,8 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                           , status
                                           )
                                 , WSEdit
-                                , getCursor, getFirstSelected, getDisplayBounds
-                                , getLastSelected, getOffset
+                                , getCursor, getDisplayBounds, getOffset
+                                , getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
                                 , charClass, padLeft, padRight, withSnd
@@ -78,11 +78,10 @@ stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n'+1) c) $ n - 1
 --   and in a given display column.
 charRep :: (Int, Int) -> Int -> Char -> WSEdit Image
 charRep pos n '\t' = do
-    firstSel <- getFirstSelected
-    lastSel  <- getLastSelected
-    (r, _)   <- getCursor
-    st       <- get
-    c        <- ask
+    maySel <- getSelBounds
+    (r, _) <- getCursor
+    st     <- get
+    c      <- ask
 
     let
         d       = edDesign    c
@@ -98,11 +97,12 @@ charRep pos n '\t' = do
 
         extTab  = padLeft tW tExt tStr
 
-        s       = if isJust firstSel
-                        && fromJust firstSel <= pos
-                        && pos <= fromJust lastSel
-                     then selSty
-                     else tabSty
+        s       = case maySel of
+                       Nothing     -> tabSty
+                       Just (f, l) ->
+                          if f <= pos && pos <= l
+                             then selSty
+                             else tabSty
 
     return $ string (if r == fst pos
                             && s /= selSty
@@ -113,11 +113,10 @@ charRep pos n '\t' = do
            $ drop (length extTab - (tW - n `mod` tW)) extTab
 
 charRep pos _ c = do
-    firstSel <- getFirstSelected
-    lastSel  <- getLastSelected
-    (r, _)   <- getCursor
-    st       <- get
-    d        <- edDesign <$> ask
+    maySel <- getSelBounds
+    (r, _) <- getCursor
+    st     <- get
+    d      <- edDesign <$> ask
 
     let
         currSty = dCurrLnMod d
@@ -125,11 +124,12 @@ charRep pos _ c = do
         charSty = lookupJustDef def (charClass c)
                 $ dCharStyles d
 
-        s       = if isJust firstSel
-                        && fromJust firstSel <= pos
-                        && pos <= fromJust lastSel
-                     then selSty
-                     else charSty
+        s       = case maySel of
+                       Nothing     -> charSty
+                       Just (f, l) ->
+                          if f <= pos && pos <= l
+                             then selSty
+                             else charSty
 
     return $ char (if r == fst pos
                             && s /= selSty

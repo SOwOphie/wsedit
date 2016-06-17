@@ -13,6 +13,7 @@ module WSEdit.Data
     , clearMark
     , getFirstSelected
     , getLastSelected
+    , getSelBounds
     , getOffset
     , setOffset
     , setStatus
@@ -229,6 +230,25 @@ getLastSelected =
                          LT -> return $ Just (cR, cC - 1)
                          GT -> return $ Just (mR, mC - 1)
                          EQ -> return Nothing
+
+
+-- | Faster combination of 'getFirstSelected' and 'getLastSelected'.
+getSelBounds :: WSEdit (Maybe ((Int, Int), (Int, Int)))
+getSelBounds =
+    getMark >>= \case
+        Nothing -> return Nothing
+        Just (mR, mC) -> do
+            (cR, cC) <- getCursor
+
+            case compare mR cR of
+                 LT -> return $ Just ((mR, mC), (cR, cC - 1))
+                 GT -> return $ Just ((cR, cC), (mR, mC - 1))
+                 EQ ->
+                    case compare mC cC of
+                         LT -> return $ Just ((mR, mC), (cR, cC - 1))
+                         GT -> return $ Just ((cR, cC), (mR, mC - 1))
+                         EQ -> return Nothing
+
 
 
 
