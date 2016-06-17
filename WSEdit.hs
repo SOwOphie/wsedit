@@ -33,7 +33,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
-                                , setStatus
+                                , setStatus, version
                                 )
 import WSEdit.Data.Pretty       (prettyKeymap, unPrettyEdConfig)
 import WSEdit.Keymaps           (defaultKM)
@@ -43,10 +43,6 @@ import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
                                 )
 
 
-
--- | Version number constant.
-version :: String
-version = "0.2.1.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -176,6 +172,9 @@ argLoop (('-':'V'    :_ ):_ ) =
 argLoop (('-':'h':'k':_ ):_ ) =
     keymapInfo
 
+argLoop (('-':'h'    :_ ):_ ) =
+    usage
+
 
 argLoop (('-':'b'    :x ):xs) = do
     local (\c -> c { drawBg = False })
@@ -286,7 +285,7 @@ argLoop (('-':'s'    :_ ):_ ) = do
 argLoop []                      = do
     f <- fname <$> get
     if f == ""
-       then usage "No file specified."
+       then quitComplain "Error: no file specified (try wsedit -h)."
        else do
             catchEditor load $ \e ->
                 quitComplain $ "An I/O error occured:\n\n"
@@ -301,10 +300,10 @@ argLoop (['-']           :xs) =
     argLoop xs
 
 argLoop (('-': x     :_ ):_ ) =
-    usage $ "Unknown argument: -" ++ [x]
+    quitComplain $ "Unknown argument: -" ++ [x] ++ " (try wsedit -h)"
 
 argLoop (x               :_ ) =
-    usage $ "Unexpected parameter: " ++ x
+    quitComplain $ "Unexpected parameter: " ++ x ++ " (try wsedit -h)"
 
 
 
@@ -344,11 +343,9 @@ keymapInfo = do
 
 -- | Prints an error message, followed by the usage help. Shuts down vty and
 --   exits with code 1.
-usage :: String -> WSEdit ()
-usage s = quitComplain
-        $ s ++ "\n"
-       ++ "\n"
-       ++ "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
+usage :: WSEdit ()
+usage = quitComplain
+        $ "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
        ++ "\n"
        ++ "Arguments (the uppercase options are on by default):\n"
        ++ "\n"
@@ -380,7 +377,7 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-d<n>\tEnable dictionary building at indentation depth n.\n"
+       ++ "\t-d<n>\tEnable dictionary building at indentation depth <n>.\n"
        ++ "\t-D\tDisable dictionary building.\n"
        ++ "\n"
        ++ "\t\tWith dictionary building enabled, wsedit will scan all files and\n"
@@ -400,6 +397,7 @@ usage s = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
+       ++ "\t-h\tShow this help.\n"
        ++ "\t-hk\tShow current keybinds.\n"
        ++ "\n"
        ++ "\n"

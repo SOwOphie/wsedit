@@ -5,7 +5,8 @@
            #-}
 
 module WSEdit.Data
-    ( EdState (..)
+    ( version
+    , EdState (..)
     , getCursor
     , setCursor
     , getMark
@@ -56,6 +57,12 @@ import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
 import WSEdit.WordTree          (WordTree, empty)
 
 import qualified WSEdit.Buffer as B
+
+
+
+-- | Version number constant.
+version :: String
+version = "0.2.1.1"
 
 
 

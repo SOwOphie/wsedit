@@ -43,7 +43,7 @@ import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                               , replaceTabs
                                               )
                                    , WSEdit
-                                   , popHist, setStatus
+                                   , popHist, setStatus, version
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
@@ -76,7 +76,7 @@ bail s = do
         putStrLn s
         putStrLn "Writing state dump to ./CRASH-DUMP ..."
         writeFile "CRASH-DUMP"
-            $ "WSEDIT CRASH LOG"
+            $ "WSEDIT " ++ version ++ " CRASH LOG"
            ++ "\n\nEditor configuration:\n"
            ++ indent (ppShow $ prettyEdConfig c)
            ++ "\nEditor state:\n"
