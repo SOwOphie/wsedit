@@ -4,7 +4,7 @@ module WSEdit.Output
     ( charWidth
     , stringWidth
     , charRep
-    , stringRep
+    , lineRep
     , visToTxtPos
     , txtToVisPos
     , lineNoWidth
@@ -20,7 +20,7 @@ import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
 import Data.Default             (def)
-import Data.Maybe               (fromJust, fromMaybe)
+import Data.Maybe               (catMaybes, fromJust, fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Background (ClearBackground)
                                 , Cursor (Cursor, NoCursor)
@@ -35,13 +35,16 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 )
 import Safe                     (lookupJustDef)
 
-import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
+import WSEdit.Data              ( EdConfig ( drawBg, edDesign, lineComment
+                                           , tabWidth, vtyObj
+                                           )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
-                                           , dColNoInterval, dCurrLnMod
-                                           , dFrameFormat, dLineNoFormat
-                                           , dLineNoInterv, dSelFormat
-                                           , dStatusFormat, dTabExt, dTabStr
+                                           , dColNoInterval, dCommentFormat
+                                           , dCurrLnMod, dFrameFormat
+                                           , dLineNoFormat, dLineNoInterv
+                                           , dSelFormat, dStatusFormat, dTabExt
+                                           , dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
@@ -52,7 +55,7 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                 , getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, padLeft, padRight, withSnd
+                                , charClass, findInStr, padLeft, padRight
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -76,8 +79,8 @@ stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n'+1) c) $ n - 1
 
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column.
-charRep :: (Int, Int) -> Int -> Char -> WSEdit Image
-charRep pos n '\t' = do
+charRep :: Bool -> (Int, Int) -> Int -> Char -> WSEdit Image
+charRep _ pos n '\t' = do
     maySel <- getSelBounds
     (r, _) <- getCursor
     st     <- get
@@ -112,7 +115,7 @@ charRep pos n '\t' = do
                     )
            $ drop (length extTab - (tW - n `mod` tW)) extTab
 
-charRep pos _ c = do
+charRep com pos _ c = do
     maySel <- getSelBounds
     (r, _) <- getCursor
     st     <- get
@@ -124,6 +127,8 @@ charRep pos _ c = do
         charSty = lookupJustDef def (charClass c)
                 $ dCharStyles d
 
+        comSty  = dCommentFormat d
+
         s       = case maySel of
                        Nothing     -> charSty
                        Just (f, l) ->
@@ -131,10 +136,14 @@ charRep pos _ c = do
                              then selSty
                              else charSty
 
-    return $ char (if r == fst pos
-                            && s /= selSty
-                            && not (readOnly st)
-                        then currSty s
+    return $ char ((if r == fst pos
+                        && s /= selSty
+                        && not (readOnly st)
+                      then currSty
+                      else id
+                   )
+                   $ if com
+                        then comSty
                         else s
                   ) $ if charClass c /= Unprintable
                          then c
@@ -142,17 +151,30 @@ charRep pos _ c = do
 
 
 
--- | Returns the visual representation of a string at a given buffer position
---   and in a given display column.
-stringRep :: Int -> (Int, Int) -> String -> WSEdit Image
-stringRep n p s =
+-- | Returns the visual representation of a line with a given line number.
+lineRep :: Int -> String -> WSEdit Image
+lineRep lNo s = do
+    cs <- lineComment <$> ask
+
     let
+        comL :: [Int]
+        comL = catMaybes $ map (flip findInStr s) cs
+
+        comAt :: Maybe Int
+        comAt = if null comL
+                   then Nothing
+                   else Just $ minimum comL
+
         f :: (Image, Int, Int) -> Char -> WSEdit (Image, Int, Int)
-        f (im, n', d) c = do
-            i <- charRep (withSnd (+n') p) d c
-            return (im <|> i, n' + 1, d + imageWidth i)
-    in
-        (\(r, _, _) -> r) <$> foldM f (string def "", 0, n) s
+        f (im, tPos, vPos) c = do
+            i <- charRep (case comAt of
+                               Nothing -> False
+                               Just n  -> n < tPos
+                         ) (lNo, tPos) vPos c
+
+            return (im <|> i, tPos + 1, vPos + imageWidth i)
+
+    (\(r, _, _) -> r) <$> foldM f (string def "", 1, 1) s
 
 
 
@@ -385,8 +407,8 @@ makeTextFrame = do
     (scrollRows, scrollCols) <- getOffset
     (   txtRows, _         ) <- getViewportDimensions
 
-    txt <- mapM (uncurry (stringRep 0))
-         $ zip [(x,1) | x <- [1 + scrollRows ..]]
+    txt <- mapM (uncurry lineRep)
+         $ zip [1 + scrollRows ..]
          $ B.sub scrollRows (scrollRows + txtRows - 1)
          $ edLines s
 

@@ -12,14 +12,14 @@ module WSEdit.Data.Pretty
 import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
-                                    , histSize, keymap, purgeOnClose, tabWidth
-                                    , vtyObj
+                                    , histSize, keymap, lineComment
+                                    , purgeOnClose, tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
-                                    , dCurrLnMod, dFrameFormat, dLineNoFormat
-                                    , dLineNoInterv, dSelFormat, dStatusFormat
-                                    , dTabExt, dTabStr
+                                    , dCommentFormat, dCurrLnMod, dFrameFormat
+                                    , dLineNoFormat, dLineNoInterv, dSelFormat
+                                    , dStatusFormat, dTabExt, dTabStr
                                     )
                          , Keymap
                          )
@@ -37,6 +37,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pDrawBg       :: Bool
     , pDumpEvents   :: Bool
     , pPurgeOnClose :: Bool
+    , pLineComment  :: [String]
     }
     deriving (Read, Show)
 
@@ -51,6 +52,7 @@ prettyEdConfig c = PrettyEdConfig
     , pDrawBg       =                  drawBg       c
     , pDumpEvents   =                  dumpEvents   c
     , pPurgeOnClose =                  purgeOnClose c
+    , pLineComment  =                  lineComment  c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -59,11 +61,12 @@ unPrettyEdConfig v k f p = EdConfig
     { vtyObj       = v
     , edDesign     = unPrettyEdDesign f $ pEdDesign p
     , keymap       = k
-    , histSize     = pHistSize                    p
-    , tabWidth     = pTabWidth                    p
-    , drawBg       = pDrawBg                      p
-    , dumpEvents   = pDumpEvents                  p
-    , purgeOnClose = pPurgeOnClose                p
+    , histSize     = pHistSize                      p
+    , tabWidth     = pTabWidth                      p
+    , drawBg       = pDrawBg                        p
+    , dumpEvents   = pDumpEvents                    p
+    , purgeOnClose = pPurgeOnClose                  p
+    , lineComment  = pLineComment                   p
     }
 
 
@@ -84,6 +87,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDTabStr        :: String
     , pDTabExt        :: Char
     , pDSelFormat     :: Attr
+    , pDCommentFormat :: Attr
     , pDCharStyles    :: [(CharClass, Attr)]
     }
     deriving (Read, Show)
@@ -104,6 +108,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDTabStr        = dTabStr        d
     , pDTabExt        = dTabExt        d
     , pDSelFormat     = dSelFormat     d
+    , pDCommentFormat = dCommentFormat d
     , pDCharStyles    = dCharStyles    d
     }
 
@@ -123,6 +128,7 @@ unPrettyEdDesign f p = EdDesign
     , dTabStr        = pDTabStr        p
     , dTabExt        = pDTabExt        p
     , dSelFormat     = pDSelFormat     p
+    , dCommentFormat = pDCommentFormat p
     , dCharStyles    = pDCharStyles    p
     }
 

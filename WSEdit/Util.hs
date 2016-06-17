@@ -18,6 +18,7 @@ module WSEdit.Util
     , getKeywordAtCursor
     , longestCommonPrefix
     , checkClipboardSupport
+    , findInStr
     ) where
 
 import Control.Exception (SomeException, try)
@@ -255,3 +256,16 @@ checkClipboardSupport = do
         ok (Right (ExitSuccess, _, _)) = True
         ok _                           = False
 
+
+
+-- | Find the position of the first string within the second one.
+findInStr :: (Eq a) => [a] -> [a] -> Maybe Int
+findInStr []   _                          = Just 0
+findInStr _    []                         = Nothing
+findInStr pat  str@(_:xs) | match pat str = Just 0
+                          | otherwise     = (+1) <$> findInStr pat xs
+    where
+        match :: (Eq a) => [a] -> [a] -> Bool
+        match (p:ps) (y:ys) | p == y = match ps ys
+        match []     _               = True
+        match _      _               = False

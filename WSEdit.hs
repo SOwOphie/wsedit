@@ -22,8 +22,8 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , keymap, purgeOnClose, vtyObj
-                                           , tabWidth
+                                           , keymap, lineComment, purgeOnClose
+                                           , vtyObj, tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -46,7 +46,7 @@ import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
 
 -- | Version number constant.
 version :: String
-version = "0.2.0.2"
+version = "0.2.1.0"
 
 -- | License version number constant.
 licenseVersion :: String
@@ -184,6 +184,10 @@ argLoop (('-':'b'    :x ):xs) = do
 argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
         $ argLoop (('-':x):xs)
+
+argLoop (('-':'f':'l':'c':x):xs) = do
+    local (\c -> c { lineComment = x : lineComment c })
+        $ argLoop xs
 
 argLoop (('-':'p'    :x ):xs) = do
     local (\c -> c { purgeOnClose = True })
@@ -389,6 +393,10 @@ usage s = quitComplain
        ++ "\t\tsafe or load.\n"
        ++ "\t\tSETTING THIS GLOBALLY WILL MAKE YOUR EDITOR TAKE AGES TO\n"
        ++ "\t\tSTART UP, E.G. WHEN RUNNING FROM THE HOME DIRECTORY!\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\n"
+       ++ "\t-flc<str>\tMark everything from <str> to the end of the line as a comment.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

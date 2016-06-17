@@ -407,31 +407,34 @@ getDisplayBounds = ask
 
 -- | Editor configuration container (static part).
 data EdConfig = EdConfig
-    { vtyObj     :: Vty
+    { vtyObj       :: Vty
         -- ^ vty object container, used to issue draw calls and receive events.
 
-    , edDesign   :: EdDesign
+    , edDesign     :: EdDesign
         -- ^ Design object, see below.
 
-    , keymap     :: Keymap
+    , keymap       :: Keymap
         -- ^ What to do when a button is pressed. Inserting a character when the
         --   corresponding key is pressed (e.g. 'a') is not included here, but
         --   may be overridden with this table. (Why would you want to do that?)
 
-    , histSize   :: Int
+    , histSize     :: Int
         -- ^ Number of undo states to keep.
 
-    , tabWidth   :: Int
+    , tabWidth     :: Int
         -- ^ Width of a tab character.
 
-    , drawBg     :: Bool
+    , drawBg       :: Bool
         -- ^ Whether or not to draw the background.
 
-    , dumpEvents :: Bool
+    , dumpEvents   :: Bool
         -- ^ Whether or not to dump every received event to the status line.
 
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
+
+    , lineComment  :: [String]
+        -- ^ List of strings that mark the beginning of a comment.
     }
 
 -- | Create a default `EdConfig`.
@@ -445,6 +448,7 @@ mkDefConfig v k = EdConfig
                 , drawBg       = True
                 , dumpEvents   = False
                 , purgeOnClose = False
+                , lineComment  = []
               }
 
 
@@ -501,6 +505,9 @@ data EdDesign = EdDesign
     , dSelFormat     :: Attr
         -- ^ vty attribute for selected text
 
+    , dCommentFormat :: Attr
+        -- ^ vty attribute for comments
+
     , dCharStyles    :: [(CharClass, Attr)]
     }
 
@@ -537,6 +544,10 @@ instance Default EdDesign where
         , dSelFormat     = defAttr
                             `withForeColor` black
                             `withBackColor` white
+
+        , dCommentFormat = defAttr
+                            `withForeColor` magenta
+                            `withStyle`     bold
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
@@ -602,6 +613,10 @@ brightTheme = EdDesign
         , dSelFormat     = defAttr
                             `withForeColor` white
                             `withBackColor` black
+
+        , dCommentFormat = defAttr
+                            `withForeColor` magenta
+                            `withStyle`     bold
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
