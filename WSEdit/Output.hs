@@ -116,7 +116,7 @@ charRep _ pos n '\t' = do
                         then currSty s
                         else s
                     )
-           $ drop (length extTab - (tW - n `mod` tW)) extTab
+           $ drop (length extTab - (tW - (n-1) `mod` tW)) extTab
 
 charRep hl pos _ c = do
     maySel <- getSelBounds
@@ -164,20 +164,26 @@ lineRep lNo s = do
     st <- strDelim    <$> ask
 
     let
+        -- Initial list of comment starting points
         comL :: [Int]
         comL = concatMap (flip findInStr s) cs
 
+        -- Initial list of string bounds
         strL :: [(Int, Int)]
         strL = findDelimBy st s
 
+        -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]
         comL' = filter (\c -> not $ any (\r -> inRange r c) strL) comL
 
+        -- First comment starting point in the line
         comAt :: Maybe Int
         comAt = if null comL'
                    then Nothing
                    else Just $ minimum comL
 
+        -- List of string bounds, minus those that are behind the comment
+        -- starting point
         strL' :: [(Int, Int)]
         strL' = map (withPair (+1) (+1))
               $ filter ((< fromMaybe maxBound comAt) . fst) strL
