@@ -30,6 +30,7 @@ module WSEdit.Data
     , WSEdit
     , catchEditor
     , Keymap
+    , HighlightMode (..)
     ) where
 
 
@@ -43,7 +44,7 @@ import Graphics.Vty             ( Attr
                                 , Button (..)
                                 , Event (..)
                                 , Vty (outputIface)
-                                , black, blue, bold, green, defAttr
+                                , black, blue, bold, cyan, green, defAttr
                                 , displayBounds, green, magenta, red, white
                                 , withBackColor, withForeColor, withStyle
                                 , yellow
@@ -62,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.2.1.1"
+version = "0.2.2.0"
 
 
 
@@ -440,8 +441,12 @@ data EdConfig = EdConfig
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
 
+
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
+
+    , strDelim     :: [(Char, Char)]
+        -- ^ List of string delimiters.
     }
 
 -- | Create a default `EdConfig`.
@@ -456,6 +461,7 @@ mkDefConfig v k = EdConfig
                 , dumpEvents   = False
                 , purgeOnClose = False
                 , lineComment  = []
+                , strDelim     = []
               }
 
 
@@ -512,10 +518,15 @@ data EdDesign = EdDesign
     , dSelFormat     :: Attr
         -- ^ vty attribute for selected text
 
+    , dCharStyles    :: [(CharClass, Attr)]
+        -- ^ vty attributes list for the different character classes
+
+
     , dCommentFormat :: Attr
         -- ^ vty attribute for comments
 
-    , dCharStyles    :: [(CharClass, Attr)]
+    , dStrFormat     :: Attr
+        -- ^ vty attribute for strings
     }
 
 
@@ -552,10 +563,6 @@ instance Default EdDesign where
                             `withForeColor` black
                             `withBackColor` white
 
-        , dCommentFormat = defAttr
-                            `withForeColor` magenta
-                            `withStyle`     bold
-
         , dCharStyles    =
             [ (Whitesp    , defAttr
                             `withForeColor` blue
@@ -583,6 +590,13 @@ instance Default EdDesign where
                             `withForeColor` magenta
               )
             ]
+
+        , dCommentFormat = defAttr
+                            `withForeColor` magenta
+                            `withStyle`     bold
+
+        , dStrFormat     = defAttr
+                            `withForeColor` cyan
 
         }
 
@@ -621,10 +635,6 @@ brightTheme = EdDesign
                             `withForeColor` white
                             `withBackColor` black
 
-        , dCommentFormat = defAttr
-                            `withForeColor` magenta
-                            `withStyle`     bold
-
         , dCharStyles    =
             [ (Whitesp    , defAttr
                             `withForeColor` blue
@@ -653,6 +663,13 @@ brightTheme = EdDesign
               )
             ]
 
+        , dCommentFormat = defAttr
+                            `withForeColor` magenta
+                            `withStyle`     bold
+
+        , dStrFormat     = defAttr
+                            `withForeColor` cyan
+
         }
 
 
@@ -679,3 +696,11 @@ catchEditor a e = do
 
 -- | Map of events to actions (and their descriptions).
 type Keymap = [(Event, (WSEdit (), String))]
+
+
+
+-- | Mode for syntax highlighting.
+data HighlightMode = HNone
+                   | HComment
+                   | HString
+    deriving (Eq, Read, Show)

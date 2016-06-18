@@ -23,7 +23,7 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , keymap, lineComment, purgeOnClose
-                                           , vtyObj, tabWidth
+                                           , strDelim, vtyObj, tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -186,6 +186,10 @@ argLoop (('-':'B'    :x ):xs) = do
 
 argLoop (('-':'f':'l':'c':x):xs) = do
     local (\c -> c { lineComment = x : lineComment c })
+        $ argLoop xs
+
+argLoop (('-':'f':'s':a:b:[]):xs) = do
+    local (\c -> c { strDelim = (a, b) : strDelim c })
         $ argLoop xs
 
 argLoop (('-':'p'    :x ):xs) = do
@@ -394,6 +398,7 @@ usage = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\t-flc<str>\tMark everything from <str> to the end of the line as a comment.\n"
+       ++ "\t-fs<c1><c1>\tMark everything form char <c1> to char <c2> as a string.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

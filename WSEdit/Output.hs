@@ -20,7 +20,8 @@ import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
 import Data.Default             (def)
-import Data.Maybe               (catMaybes, fromJust, fromMaybe)
+import Data.Ix                  (inRange)
+import Data.Maybe               (fromJust, fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Background (ClearBackground)
                                 , Cursor (Cursor, NoCursor)
@@ -36,26 +37,28 @@ import Graphics.Vty             ( Background (ClearBackground)
 import Safe                     (lookupJustDef)
 
 import WSEdit.Data              ( EdConfig ( drawBg, edDesign, lineComment
-                                           , tabWidth, vtyObj
+                                           , strDelim, tabWidth, vtyObj
                                            )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
                                            , dColNoInterval, dCommentFormat
                                            , dCurrLnMod, dFrameFormat
                                            , dLineNoFormat, dLineNoInterv
-                                           , dSelFormat, dStatusFormat, dTabExt
-                                           , dTabStr
+                                           , dSelFormat, dStatusFormat
+                                           , dStrFormat, dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
                                           , status
                                           )
+                                , HighlightMode (HComment, HNone, HString)
                                 , WSEdit
                                 , getCursor, getDisplayBounds, getOffset
                                 , getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, findInStr, padLeft, padRight
+                                , charClass, findDelimBy, findInStr, padLeft
+                                , padRight, withPair
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -79,7 +82,7 @@ stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n'+1) c) $ n - 1
 
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column.
-charRep :: Bool -> (Int, Int) -> Int -> Char -> WSEdit Image
+charRep :: HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Image
 charRep _ pos n '\t' = do
     maySel <- getSelBounds
     (r, _) <- getCursor
@@ -115,7 +118,7 @@ charRep _ pos n '\t' = do
                     )
            $ drop (length extTab - (tW - n `mod` tW)) extTab
 
-charRep com pos _ c = do
+charRep hl pos _ c = do
     maySel <- getSelBounds
     (r, _) <- getCursor
     st     <- get
@@ -128,23 +131,26 @@ charRep com pos _ c = do
                 $ dCharStyles d
 
         comSty  = dCommentFormat d
+        strSty  = dStrFormat     d
+
+        synSty  = case hl of
+                       HComment -> comSty
+                       HString  -> strSty
+                       _        -> charSty
 
         s       = case maySel of
-                       Nothing     -> charSty
+                       Nothing     -> synSty
                        Just (f, l) ->
                           if f <= pos && pos <= l
                              then selSty
-                             else charSty
+                             else synSty
 
     return $ char ((if r == fst pos
                         && s /= selSty
                         && not (readOnly st)
                       then currSty
                       else id
-                   )
-                   $ if com
-                        then comSty
-                        else s
+                   ) $ s
                   ) $ if charClass c /= Unprintable
                          then c
                          else '?'
@@ -155,22 +161,37 @@ charRep com pos _ c = do
 lineRep :: Int -> String -> WSEdit Image
 lineRep lNo s = do
     cs <- lineComment <$> ask
+    st <- strDelim    <$> ask
 
     let
         comL :: [Int]
-        comL = catMaybes $ map (flip findInStr s) cs
+        comL = concatMap (flip findInStr s) cs
+
+        strL :: [(Int, Int)]
+        strL = findDelimBy st s
+
+        comL' :: [Int]
+        comL' = filter (\c -> not $ any (\r -> inRange r c) strL) comL
 
         comAt :: Maybe Int
-        comAt = if null comL
+        comAt = if null comL'
                    then Nothing
                    else Just $ minimum comL
 
+        strL' :: [(Int, Int)]
+        strL' = map (withPair (+1) (+1))
+              $ filter ((< fromMaybe maxBound comAt) . fst) strL
+
+
         f :: (Image, Int, Int) -> Char -> WSEdit (Image, Int, Int)
         f (im, tPos, vPos) c = do
-            i <- charRep (case comAt of
-                               Nothing -> False
-                               Just n  -> n < tPos
-                         ) (lNo, tPos) vPos c
+            i <- charRep
+                    (if any (\r -> inRange r tPos) strL'
+                        then HString
+                        else case comAt of
+                            Nothing -> HNone
+                            Just n  -> if n < tPos then HComment else HNone
+                    ) (lNo, tPos) vPos c
 
             return (im <|> i, tPos + 1, vPos + imageWidth i)
 

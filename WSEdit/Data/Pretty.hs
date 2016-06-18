@@ -13,13 +13,14 @@ import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                                     , histSize, keymap, lineComment
-                                    , purgeOnClose, tabWidth, vtyObj
+                                    , purgeOnClose, strDelim, tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
                                     , dCommentFormat, dCurrLnMod, dFrameFormat
                                     , dLineNoFormat, dLineNoInterv, dSelFormat
-                                    , dStatusFormat, dTabExt, dTabStr
+                                    , dStatusFormat, dStrFormat, dTabExt
+                                    , dTabStr
                                     )
                          , Keymap
                          )
@@ -38,6 +39,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pDumpEvents   :: Bool
     , pPurgeOnClose :: Bool
     , pLineComment  :: [String]
+    , pStrDelim     :: [(Char, Char)]
     }
     deriving (Read, Show)
 
@@ -53,6 +55,7 @@ prettyEdConfig c = PrettyEdConfig
     , pDumpEvents   =                  dumpEvents   c
     , pPurgeOnClose =                  purgeOnClose c
     , pLineComment  =                  lineComment  c
+    , pStrDelim     =                  strDelim     c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -67,6 +70,7 @@ unPrettyEdConfig v k f p = EdConfig
     , dumpEvents   = pDumpEvents                    p
     , purgeOnClose = pPurgeOnClose                  p
     , lineComment  = pLineComment                   p
+    , strDelim     = pStrDelim                      p
     }
 
 
@@ -87,8 +91,9 @@ data PrettyEdDesign = PrettyEdDesign
     , pDTabStr        :: String
     , pDTabExt        :: Char
     , pDSelFormat     :: Attr
-    , pDCommentFormat :: Attr
     , pDCharStyles    :: [(CharClass, Attr)]
+    , pDCommentFormat :: Attr
+    , pDStrFormat     :: Attr
     }
     deriving (Read, Show)
 
@@ -108,8 +113,9 @@ prettyEdDesign d = PrettyEdDesign
     , pDTabStr        = dTabStr        d
     , pDTabExt        = dTabExt        d
     , pDSelFormat     = dSelFormat     d
-    , pDCommentFormat = dCommentFormat d
     , pDCharStyles    = dCharStyles    d
+    , pDCommentFormat = dCommentFormat d
+    , pDStrFormat     = dStrFormat     d
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -128,8 +134,9 @@ unPrettyEdDesign f p = EdDesign
     , dTabStr        = pDTabStr        p
     , dTabExt        = pDTabExt        p
     , dSelFormat     = pDSelFormat     p
-    , dCommentFormat = pDCommentFormat p
     , dCharStyles    = pDCharStyles    p
+    , dCommentFormat = pDCommentFormat p
+    , dStrFormat     = pDStrFormat     p
     }
 
 

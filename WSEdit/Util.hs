@@ -19,11 +19,12 @@ module WSEdit.Util
     , longestCommonPrefix
     , checkClipboardSupport
     , findInStr
+    , findDelimBy
     ) where
 
 import Control.Exception (SomeException, try)
 import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
-import Data.List         (inits, intersect, tails)
+import Data.List         (elemIndex, inits, intersect, tails)
 import Safe              (headMay, lastDef)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
@@ -259,13 +260,33 @@ checkClipboardSupport = do
 
 
 -- | Find the position of the first string within the second one.
-findInStr :: (Eq a) => [a] -> [a] -> Maybe Int
-findInStr []   _                          = Just 0
-findInStr _    []                         = Nothing
-findInStr pat  str@(_:xs) | match pat str = Just 0
-                          | otherwise     = (+1) <$> findInStr pat xs
+findInStr :: (Eq a) => [a] -> [a] -> [Int]
+findInStr []      (_:xs)                 = 0 : (map (+1) $ findInStr []  xs)
+findInStr _       []                     = []
+findInStr pat str@(_:xs) | match pat str = 0 : (map (+1) $ findInStr pat xs)
+                         | otherwise     =     (map (+1) $ findInStr pat xs)
     where
         match :: (Eq a) => [a] -> [a] -> Bool
         match (p:ps) (y:ys) | p == y = match ps ys
         match []     _               = True
         match _      _               = False
+
+
+
+-- | Returns a list of subranges of a string which are delimited by one of the
+--   given pairs.
+findDelimBy :: [(Char, Char)] -> String -> [(Int, Int)]
+findDelimBy _     []     = []
+findDelimBy delim (x:xs) =
+    case lookup x delim of
+         Nothing -> map (withPair (+1) (+1)) $ findDelimBy delim xs
+         Just  c ->
+            case elemIndex c xs of
+                 Nothing -> (0, 0) : ( map (withPair (+1) (+1))
+                                     $ findDelimBy delim xs
+                                     )
+
+                 Just  p -> (0, p+1) : ( map (withPair (+(p+2)) (+(p+2)))
+                                       $ findDelimBy delim
+                                       $ drop (p + 1) xs
+                                       )
