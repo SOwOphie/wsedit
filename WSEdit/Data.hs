@@ -63,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.2.2.1"
+version = "0.2.3.0"
 
 
 
@@ -447,6 +447,9 @@ data EdConfig = EdConfig
 
     , strDelim     :: [(Char, Char)]
         -- ^ List of string delimiters.
+
+    , keywords     :: [String]
+        -- ^ List of keywords to highlight.
     }
 
 -- | Create a default `EdConfig`.
@@ -462,6 +465,7 @@ mkDefConfig v k = EdConfig
                 , purgeOnClose = False
                 , lineComment  = []
                 , strDelim     = []
+                , keywords     = []
               }
 
 
@@ -527,6 +531,9 @@ data EdDesign = EdDesign
 
     , dStrFormat     :: Attr
         -- ^ vty attribute for strings
+
+    , dKeywordFormat :: Attr
+        -- ^ vty attribute for keywords
     }
 
 
@@ -597,6 +604,9 @@ instance Default EdDesign where
 
         , dStrFormat     = defAttr
                             `withForeColor` cyan
+
+        , dKeywordFormat = defAttr
+                            `withForeColor` green
 
         }
 
@@ -670,6 +680,9 @@ brightTheme = EdDesign
         , dStrFormat     = defAttr
                             `withForeColor` cyan
 
+        , dKeywordFormat = defAttr
+                            `withForeColor` green
+
         }
 
 
@@ -702,5 +715,6 @@ type Keymap = [(Event, (WSEdit (), String))]
 -- | Mode for syntax highlighting.
 data HighlightMode = HNone
                    | HComment
+                   | HKeyword
                    | HString
     deriving (Eq, Read, Show)

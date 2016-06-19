@@ -19,6 +19,7 @@ module WSEdit.Util
     , longestCommonPrefix
     , checkClipboardSupport
     , findInStr
+    , findIsolated
     , findDelimBy
     ) where
 
@@ -261,14 +262,41 @@ checkClipboardSupport = do
 
 -- | Find the position of the first string within the second one.
 findInStr :: (Eq a) => [a] -> [a] -> [Int]
-findInStr []      (_:xs)                 = 0 : (map (+1) $ findInStr []  xs)
-findInStr _       []                     = []
-findInStr pat str@(_:xs) | match pat str = 0 : (map (+1) $ findInStr pat xs)
-                         | otherwise     =     (map (+1) $ findInStr pat xs)
+findInStr []      _      = error "findInStr: empty pattern"
+findInStr _       []     = []
+findInStr pat str@(_:xs)
+    | match pat str = 0 : (map (+1) $ findInStr pat xs)
+    | otherwise     =     (map (+1) $ findInStr pat xs)
+
     where
         match :: (Eq a) => [a] -> [a] -> Bool
         match (p:ps) (y:ys) | p == y = match ps ys
         match []     _               = True
+        match _      _               = False
+
+
+
+-- | Find the position of the first string as a whole word within the second one.
+findIsolated :: String -> String -> [Int]
+findIsolated []  _  = error "findIsolated: empty pattern"
+findIsolated _   [] = []
+findIsolated pa str
+    | match pa str = 0 : findIs pa str
+    | otherwise    =     findIs pa str
+
+    where
+        findIs :: String -> String -> [Int]
+        findIs []  _      = error "findIsolated: empty pattern"
+        findIs _   []     = []
+        findIs pat (x:xs)
+            | isIdentifierChar x =      map (+1) $ findIs pat xs
+            | match pat xs       = 1 : (map (+1) $ findIs pat xs)
+            | otherwise          =      map (+1) $ findIs pat xs
+
+        match :: String -> String -> Bool
+        match (p:ps) (y:ys) | p == y = match ps ys
+        match []     []              = True
+        match []     (y:_ )          = not $ isIdentifierChar y
         match _      _               = False
 
 

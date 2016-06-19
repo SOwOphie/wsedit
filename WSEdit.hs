@@ -2,6 +2,7 @@
 
 module Main where
 
+
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, local, modify, put, runRWST)
@@ -22,8 +23,9 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , keymap, lineComment, purgeOnClose
-                                           , strDelim, vtyObj, tabWidth
+                                           , keymap, keywords, lineComment
+                                           , purgeOnClose, strDelim, vtyObj
+                                           , tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -183,6 +185,10 @@ argLoop (('-':'b'    :x ):xs) = do
 argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
         $ argLoop (('-':x):xs)
+
+argLoop (('-':'f':'k':x ):xs) = do
+    local (\c -> c { keywords = x : keywords c })
+        $ argLoop xs
 
 argLoop (('-':'f':'l':'c':x):xs) = do
     local (\c -> c { lineComment = x : lineComment c })
@@ -397,6 +403,7 @@ usage = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
+       ++ "\t-fk<str>\tMark <str> as a keyword.\n"
        ++ "\t-flc<str>\tMark everything from <str> to the end of the line as a comment.\n"
        ++ "\t-fs<c1><c1>\tMark everything form char <c1> to char <c2> as a string.\n"
        ++ "\n"

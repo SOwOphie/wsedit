@@ -1,26 +1,26 @@
 module WSEdit.Data.Pretty
-    ( PrettyEdConfig
-    , prettyEdConfig
-    , unPrettyEdConfig
-    , PrettyEdDesign
-    , prettyEdDesign
-    , unPrettyEdDesign
-    , PrettyKeymap
-    , prettyKeymap
-    ) where
+     ( PrettyEdConfig
+     , prettyEdConfig
+     , unPrettyEdConfig
+     , PrettyEdDesign
+     , prettyEdDesign
+     , unPrettyEdDesign
+     , PrettyKeymap
+     , prettyKeymap
+     ) where
 
 import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
-                                    , histSize, keymap, lineComment
+                                    , histSize, keymap, keywords, lineComment
                                     , purgeOnClose, strDelim, tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
                                     , dCommentFormat, dCurrLnMod, dFrameFormat
-                                    , dLineNoFormat, dLineNoInterv, dSelFormat
-                                    , dStatusFormat, dStrFormat, dTabExt
-                                    , dTabStr
+                                    , dKeywordFormat, dLineNoFormat
+                                    , dLineNoInterv, dSelFormat, dStatusFormat
+                                    , dStrFormat, dTabExt, dTabStr
                                     )
                          , Keymap
                          )
@@ -40,6 +40,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pPurgeOnClose :: Bool
     , pLineComment  :: [String]
     , pStrDelim     :: [(Char, Char)]
+    , pKeywords     :: [String]
     }
     deriving (Read, Show)
 
@@ -56,6 +57,7 @@ prettyEdConfig c = PrettyEdConfig
     , pPurgeOnClose =                  purgeOnClose c
     , pLineComment  =                  lineComment  c
     , pStrDelim     =                  strDelim     c
+    , pKeywords     =                  keywords     c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -71,6 +73,7 @@ unPrettyEdConfig v k f p = EdConfig
     , purgeOnClose = pPurgeOnClose                  p
     , lineComment  = pLineComment                   p
     , strDelim     = pStrDelim                      p
+    , keywords     = pKeywords                      p
     }
 
 
@@ -94,6 +97,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDCharStyles    :: [(CharClass, Attr)]
     , pDCommentFormat :: Attr
     , pDStrFormat     :: Attr
+    , pDKeywordFormat :: Attr
     }
     deriving (Read, Show)
 
@@ -116,6 +120,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDCharStyles    = dCharStyles    d
     , pDCommentFormat = dCommentFormat d
     , pDStrFormat     = dStrFormat     d
+    , pDKeywordFormat = dKeywordFormat d
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -137,6 +142,7 @@ unPrettyEdDesign f p = EdDesign
     , dCharStyles    = pDCharStyles    p
     , dCommentFormat = pDCommentFormat p
     , dStrFormat     = pDStrFormat     p
+    , dKeywordFormat = pDKeywordFormat p
     }
 
 

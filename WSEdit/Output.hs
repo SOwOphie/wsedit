@@ -36,29 +36,33 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 )
 import Safe                     (lookupJustDef)
 
-import WSEdit.Data              ( EdConfig ( drawBg, edDesign, lineComment
-                                           , strDelim, tabWidth, vtyObj
+import WSEdit.Data              ( EdConfig ( drawBg, edDesign, keywords
+                                           , lineComment, strDelim, tabWidth
+                                           , vtyObj
                                            )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
                                            , dColNoInterval, dCommentFormat
                                            , dCurrLnMod, dFrameFormat
-                                           , dLineNoFormat, dLineNoInterv
-                                           , dSelFormat, dStatusFormat
-                                           , dStrFormat, dTabExt, dTabStr
+                                           , dKeywordFormat, dLineNoFormat
+                                           , dLineNoInterv, dSelFormat
+                                           , dStatusFormat, dStrFormat, dTabExt
+                                           , dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
                                           , status
                                           )
-                                , HighlightMode (HComment, HNone, HString)
+                                , HighlightMode ( HComment, HKeyword, HNone
+                                                , HString
+                                                )
                                 , WSEdit
                                 , getCursor, getDisplayBounds, getOffset
                                 , getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, findDelimBy, findInStr, padLeft
-                                , padRight, withPair
+                                , charClass, findDelimBy, findInStr
+                                , findIsolated, padLeft, padRight, withPair
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -132,9 +136,11 @@ charRep hl pos _ c = do
 
         comSty  = dCommentFormat d
         strSty  = dStrFormat     d
+        keywSty = dKeywordFormat d
 
         synSty  = case hl of
                        HComment -> comSty
+                       HKeyword -> keywSty
                        HString  -> strSty
                        _        -> charSty
 
@@ -162,15 +168,22 @@ lineRep :: Int -> String -> WSEdit Image
 lineRep lNo s = do
     cs <- lineComment <$> ask
     st <- strDelim    <$> ask
+    kw <- keywords    <$> ask
 
     let
         -- Initial list of comment starting points
         comL :: [Int]
-        comL = concatMap (flip findInStr s) cs
+        comL = map (+1) $ concatMap (flip findInStr s) cs
 
-        -- Initial list of string bounds
+        -- List of string bounds
         strL :: [(Int, Int)]
-        strL = findDelimBy st s
+        strL = map (withPair (+1) (+1)) $ findDelimBy st s
+
+        -- List of keyword bounds
+        kwL :: [(Int, Int)]
+        kwL = concatMap (\k -> map (\p -> (p + 1, p + length k))
+                            $ findIsolated k s
+                        ) kw
 
         -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]
@@ -182,21 +195,14 @@ lineRep lNo s = do
                    then Nothing
                    else Just $ minimum comL
 
-        -- List of string bounds, minus those that are behind the comment
-        -- starting point
-        strL' :: [(Int, Int)]
-        strL' = map (withPair (+1) (+1))
-              $ filter ((< fromMaybe maxBound comAt) . fst) strL
-
 
         f :: (Image, Int, Int) -> Char -> WSEdit (Image, Int, Int)
         f (im, tPos, vPos) c = do
             i <- charRep
-                    (if any (\r -> inRange r tPos) strL'
-                        then HString
-                        else case comAt of
-                            Nothing -> HNone
-                            Just n  -> if n < tPos then HComment else HNone
+                    (case () of _ | fromMaybe maxBound comAt <= tPos -> HComment
+                                  | any (flip inRange tPos) strL     -> HString
+                                  | any (flip inRange tPos) kwL      -> HKeyword
+                                  | otherwise                        -> HNone
                     ) (lNo, tPos) vPos c
 
             return (im <|> i, tPos + 1, vPos + imageWidth i)
