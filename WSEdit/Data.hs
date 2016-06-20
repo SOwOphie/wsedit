@@ -63,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.2.3.0"
+version = "0.2.3.1"
 
 
 
@@ -450,6 +450,9 @@ data EdConfig = EdConfig
 
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
+
+    , escape       :: Maybe Char
+        -- ^ Escape character for strings.
     }
 
 -- | Create a default `EdConfig`.
@@ -466,6 +469,7 @@ mkDefConfig v k = EdConfig
                 , lineComment  = []
                 , strDelim     = []
                 , keywords     = []
+                , escape       = Nothing
               }
 
 

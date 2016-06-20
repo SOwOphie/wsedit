@@ -23,9 +23,9 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , keymap, keywords, lineComment
-                                           , purgeOnClose, strDelim, vtyObj
-                                           , tabWidth
+                                           , escape, keymap, keywords
+                                           , lineComment, purgeOnClose, strDelim
+                                           , vtyObj, tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -184,6 +184,10 @@ argLoop (('-':'b'    :x ):xs) = do
 
 argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
+        $ argLoop (('-':x):xs)
+
+argLoop (('-':'f':'e':e:x):xs) = do
+    local (\c -> c { escape = Just e })
         $ argLoop (('-':x):xs)
 
 argLoop (('-':'f':'k':x ):xs) = do
@@ -403,6 +407,7 @@ usage = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
+       ++ "\t-fe<char>\tSet <char> as an escape character for strings.\n"
        ++ "\t-fk<str>\tMark <str> as a keyword.\n"
        ++ "\t-flc<str>\tMark everything from <str> to the end of the line as a comment.\n"
        ++ "\t-fs<c1><c1>\tMark everything form char <c1> to char <c2> as a string.\n"

@@ -25,7 +25,7 @@ module WSEdit.Util
 
 import Control.Exception (SomeException, try)
 import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
-import Data.List         (elemIndex, inits, intersect, tails)
+import Data.List         (inits, intersect, tails)
 import Safe              (headMay, lastDef)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
@@ -302,19 +302,28 @@ findIsolated pa str
 
 
 -- | Returns a list of subranges of a string which are delimited by one of the
---   given pairs.
-findDelimBy :: [(Char, Char)] -> String -> [(Int, Int)]
-findDelimBy _     []     = []
-findDelimBy delim (x:xs) =
+--   given pairs, except after the given escape character.
+findDelimBy :: Maybe Char -> [(Char, Char)] -> String -> [(Int, Int)]
+findDelimBy _        _     []                = []
+findDelimBy (Just c) delim (x:_:xs) | c == x = map (withPair (+2) (+2))
+                                             $ findDelimBy (Just c) delim xs
+
+findDelimBy mC       delim (x:  xs)          =
     case lookup x delim of
-         Nothing -> map (withPair (+1) (+1)) $ findDelimBy delim xs
+         Nothing -> map (withPair (+1) (+1)) $ findDelimBy mC delim xs
          Just  c ->
-            case elemIndex c xs of
+            case find mC c xs of
                  Nothing -> (0, 0) : ( map (withPair (+1) (+1))
-                                     $ findDelimBy delim xs
+                                     $ findDelimBy mC delim xs
                                      )
 
                  Just  p -> (0, p+1) : ( map (withPair (+(p+2)) (+(p+2)))
-                                       $ findDelimBy delim
+                                       $ findDelimBy mC delim
                                        $ drop (p + 1) xs
                                        )
+    where
+        find :: Maybe Char -> Char -> String -> Maybe Int
+        find _        _ []                   = Nothing
+        find (Just e) c (y:_:ys) | e == y    = (+2) <$> find (Just e) c ys
+        find mE       c (y  :ys) | c == y    = Just 0
+                                 | otherwise = (+1) <$> find mE       c ys

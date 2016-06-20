@@ -36,7 +36,7 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 )
 import Safe                     (lookupJustDef)
 
-import WSEdit.Data              ( EdConfig ( drawBg, edDesign, keywords
+import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , lineComment, strDelim, tabWidth
                                            , vtyObj
                                            )
@@ -166,24 +166,26 @@ charRep hl pos _ c = do
 -- | Returns the visual representation of a line with a given line number.
 lineRep :: Int -> String -> WSEdit Image
 lineRep lNo s = do
-    cs <- lineComment <$> ask
-    st <- strDelim    <$> ask
-    kw <- keywords    <$> ask
+    conf <- ask
 
     let
         -- Initial list of comment starting points
         comL :: [Int]
-        comL = map (+1) $ concatMap (flip findInStr s) cs
+        comL = map (+1)
+             $ concatMap (flip findInStr s)
+             $ lineComment conf
 
         -- List of string bounds
         strL :: [(Int, Int)]
-        strL = map (withPair (+1) (+1)) $ findDelimBy st s
+        strL = map (withPair (+1) (+1))
+             $ findDelimBy (escape conf) (strDelim conf) s
 
         -- List of keyword bounds
         kwL :: [(Int, Int)]
         kwL = concatMap (\k -> map (\p -> (p + 1, p + length k))
                             $ findIsolated k s
-                        ) kw
+                        )
+            $ keywords conf
 
         -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]

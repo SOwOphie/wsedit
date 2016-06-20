@@ -12,8 +12,9 @@ module WSEdit.Data.Pretty
 import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
-                                    , histSize, keymap, keywords, lineComment
-                                    , purgeOnClose, strDelim, tabWidth, vtyObj
+                                    , escape, histSize, keymap, keywords
+                                    , lineComment, purgeOnClose, strDelim
+                                    , tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
@@ -41,6 +42,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pLineComment  :: [String]
     , pStrDelim     :: [(Char, Char)]
     , pKeywords     :: [String]
+    , pEscape       :: Maybe Char
     }
     deriving (Read, Show)
 
@@ -58,6 +60,7 @@ prettyEdConfig c = PrettyEdConfig
     , pLineComment  =                  lineComment  c
     , pStrDelim     =                  strDelim     c
     , pKeywords     =                  keywords     c
+    , pEscape       =                  escape       c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -74,6 +77,7 @@ unPrettyEdConfig v k f p = EdConfig
     , lineComment  = pLineComment                   p
     , strDelim     = pStrDelim                      p
     , keywords     = pKeywords                      p
+    , escape       = pEscape                        p
     }
 
 
