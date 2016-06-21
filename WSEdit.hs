@@ -170,216 +170,87 @@ main = do
 
 
 
--- | Parse all switches passed to it, then starts the main loop.
-argLoop :: [String] -> WSEdit ()
-argLoop (('-':'V'    :_ ):_ ) =
-    versionInfo
+-- | Parse all switches passed to it.
+argLoop :: String -> [String] -> (EdConfig, EdState) -> Either (ExitCode, String) (EdConfig, EdState)
+argLoop h (('-':'V'            :_ ):_ ) _      = versionInfo
+argLoop h (('-':'h':'k'        :_ ):_ ) _      = keymapInfo
+argLoop h (('-':'h'            :_ ):_ ) _      = usage
+argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { drawBg       = False                           }, s)
+argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { drawBg       = True                            }, s)
+argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop          xs  (c { escape       = Just e                          }, s)
+argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop          xs  (c { escape       = Nothing                         }, s)
+argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop          xs  (c { keywords     = x : keywords c                  }, s)
+argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
+argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop          xs  (c { lineComment  = x : lineComment c               }, s)
+argLoop h (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop          xs  (c { lineComment  = filter (/= x) $ lineComment c   }, s)
+argLoop h (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
+argLoop h (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
+argLoop h (('-':'i'            :n ):xs) (c, s) = argLoop          xs  (c { tabWidth     = read n                          }, s)
+argLoop h (('-':'p'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { purgeOnClose = True                            }, s)
+argLoop h (('-':'P'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { purgeOnClose = False                           }, s)
+argLoop h (('-':'x'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { edDesign     = brightTheme                     }, s)
+argLoop h (('-':'X'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { edDesign     = def                             }, s)
+argLoop h (('-':'y'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { dumpEvents   = True                            }, s)
+argLoop h (('-':'Y'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { dumpEvents   = False                           }, s)
+argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf" })
+argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
+argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
+argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { buildDict   = Nothing                       })
+argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { readOnly    = True                          })
+argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { readOnly    = False                         })
+argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { replaceTabs = True
+                                                                            , detectTabs  = False                         })
+argLoop h (('-':'t':'t'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { replaceTabs = False
+                                                                            , detectTabs  = False                         })
+argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { detectTabs  = True                          })
 
-argLoop (('-':'h':'k':_ ):_ ) =
-    keymapInfo
+argLoop h (['-']                   :xs) (c, s) = argLoop          xs  (c, s)
+argLoop _ []                            (c, s) = if fname s == ""
+                                                    then Left  (ExitFailure 1, "No file specified (try wsedit -h).")
+                                                    else Right (c, s)
 
-argLoop (('-':'h'    :_ ):_ ) =
-    usage
+argLoop _ (('-'                :x ):_ ) _      = Left (ExitFailure 1, "Unknown argument: -" ++ x ++ " (try wsedit -h)")
 
-
-argLoop (('-':'b'    :x ):xs) = do
-    local (\c -> c { drawBg = False })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'B'    :x ):xs) = do
-    local (\c -> c { drawBg = True })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'f':'e':'+':e:[]):xs) = do
-    local (\c -> c { escape = Just e })
-        $ argLoop xs
-
-argLoop (('-':'f':'e':'-':[]):xs) = do
-    local (\c -> c { escape = Nothing })
-        $ argLoop xs
-
-argLoop (('-':'f':'k':'+':x ):xs) = do
-    local (\c -> c { keywords = x : keywords c })
-        $ argLoop xs
-
-argLoop (('-':'f':'k':'-':x ):xs) = do
-    local (\c -> c { keywords = filter (/= x) $ keywords c })
-        $ argLoop xs
-
-argLoop (('-':'f':'l':'c':'+':x):xs) = do
-    local (\c -> c { lineComment = x : lineComment c })
-        $ argLoop xs
-
-argLoop (('-':'f':'l':'c':'-':x):xs) = do
-    local (\c -> c { lineComment = filter (/= x) $ lineComment c })
-        $ argLoop xs
-
-argLoop (('-':'f':'s':'+':a:b:[]):xs) = do
-    local (\c -> c { strDelim = (a, b) : strDelim c })
-        $ argLoop xs
-
-argLoop (('-':'f':'s':'-':a:b:[]):xs) = do
-    local (\c -> c { strDelim = filter (/= (a, b)) $ strDelim c })
-        $ argLoop xs
-
-argLoop (('-':'p'    :x ):xs) = do
-    local (\c -> c { purgeOnClose = True })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'P'    :x ):xs) = do
-    local (\c -> c { purgeOnClose = False })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'x'    :x ):xs) = do
-    local (\c -> c { edDesign = brightTheme })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'X'    :x ):xs) = do
-    local (\c -> c { edDesign = def })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'y'    :x ):xs) = do
-    local (\c -> c { dumpEvents = True })
-        $ argLoop (('-':x):xs)
-
-argLoop (('-':'Y'    :x ):xs) = do
-    local (\c -> c { dumpEvents = False })
-        $ argLoop (('-':x):xs)
-
-
-argLoop (('-':'c':'g':x ):xs) = do
-    h <- liftIO getHomeDirectory
-    modify (\s -> s { fname = h ++ "/.config/wsedit.wsconf" })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'c':'l':x ):xs) = do
-    modify (\s -> s { fname = "./.local.wsconf" })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'d': c :x ):xs) = do
-    modify (\s -> s { buildDict = Just $ read [c] })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'D'    :x ):xs) = do
-    modify (\s -> s { buildDict = Nothing })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'r'    :x ):xs) = do
-    modify (\s -> s { readOnly = True })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'i': n    ):xs) = do
-    local (\c -> c { tabWidth = read n })
-        $ argLoop xs
-
-argLoop (('-':'R'    :x ):xs) = do
-    modify (\s -> s { readOnly = False })
-    argLoop (('-':x):xs)
-
-argLoop (('-':'t':'s':x ):xs) = do
-    modify (\s -> s { replaceTabs = True
-                    , detectTabs  = False
-                    }
-           )
-    argLoop (('-':x):xs)
-
-argLoop (('-':'t':'t':x ):xs) = do
-    modify (\s -> s { replaceTabs = False
-                    , detectTabs  = False
-                    }
-           )
-    argLoop (('-':x):xs)
-
-argLoop (('-':'T'    :x ):xs) = do
-    modify (\s -> s { detectTabs  = True })
-    argLoop (('-':x):xs)
-
-
-argLoop (('-':'s'    :_ ):_ ) = do
-    c <- ask
-    s <- get
-
-    r <- liftIO $ readFile $ fname s
-
-    let (cLines, sLines) = withSnd (drop 2)
-                         $ span (/= "")
-                         $ drop 3
-                         $ lines r
-
-        conf = unPrettyEdConfig (vtyObj c) (keymap c) (dCurrLnMod $ edDesign c)
-             $ read
-             $ unlines cLines
-
-        st   = read
-             $ unlines sLines
-
-    put st
-    local (const conf) $ mainLoop >> drawExitFrame
-
-argLoop []                      = do
-    f <- fname <$> get
-    if f == ""
-       then quitComplain "Error: no file specified (try wsedit -h)."
-       else do
-            catchEditor load $ \e ->
-                quitComplain $ "An I/O error occured:\n\n"
-                            ++ show e
-                            ++ "\n\nAre you trying to open a binary file?"
-
-            mainLoop
-            drawExitFrame
-
-
-argLoop (['-']           :xs) =
-    argLoop xs
-
-argLoop (('-': x        ):_ ) =
-    quitComplain $ "Unknown argument: -" ++ x ++ " (try wsedit -h)"
-
-argLoop (x               :_ ) =
-    quitComplain $ "Unexpected parameter: " ++ x ++ " (try wsedit -h)"
+argLoop _ (x                       :_ ) _      = Left (ExitFailure 1, "Unexpected parameter: " ++ x ++ " (try wsedit -h)")
 
 
 
--- | Prints out version and licensing information, then exits with code 1.
-versionInfo :: WSEdit ()
-versionInfo = quitComplain
-            $ "Wyvernscale Source Code Editor (wsedit) Version "
-                ++ version ++ "\n"
-           ++ "\n"
-           ++ "Licensed under the Wyvernscale Source Code License Version "
-                ++ licenseVersion ++ ".\n"
-           ++ "\n"
-           ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
-           ++ "hack job.  It should only be used in a secured environment that prevents the\n"
-           ++ "software from causing any damage, including, but not limited to damage from\n"
-           ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
-           ++ "by the software is to blame on failure to implement sufficient safety measures\n"
-           ++ "and therefore on the user, not on the developer of the software.\n"
+-- | Prints out version and licensing information, then exits with code 0.
+versionInfo :: Either (ExitCode, String) (EdConfig, EdState)
+versionInfo = Left (ExitSuccess, "Wyvernscale Source Code Editor (wsedit) Version "
+                                ++ version ++ "\n"
+                              ++ "\n"
+                              ++ "Licensed under the Wyvernscale Source Code License Version "
+                                ++ licenseVersion ++ ".\n"
+                              ++ "\n"
+                              ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
+                              ++ "hack job.  It should only be used in a secured environment that prevents the\n"
+                              ++ "software from causing any damage, including, but not limited to damage from\n"
+                              ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
+                              ++ "by the software is to blame on failure to implement sufficient safety measures\n"
+                              ++ "and therefore on the user, not on the developer of the software.\n"
+                   )
 
 
 
--- | Dumps the keymap, then exits with code 1.
-keymapInfo :: WSEdit ()
-keymapInfo = do
-    k <- keymap <$> ask
+-- | Dumps the keymap, then exits with code 0.
+keymapInfo :: EdConfig -> Either (ExitCode, String) (EdConfig, EdState)
+keymapInfo c =
+    let
+        tbl  = map (withFst show)
+             $ prettyKeymap
+             $ keymap c
 
-    let tbl  = map (withFst show) $ prettyKeymap k
         maxW = maximum $ map (length . fst) tbl
-        tbl' = map (withFst (padRight maxW ' ')) tbl
-
-    quitComplain $ "Dumping keymap:\n"
-                ++ unlines ( map (\(e, s) -> e ++ "\t" ++ s)
-                             tbl'
-                           )
+    in
+        (ExitSuccess, "Dumping keymap:\n" ++ unlines . map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s)) tbl)
 
 
 
--- | Prints an error message, followed by the usage help. Shuts down vty and
---   exits with code 1.
-usage :: WSEdit ()
-usage = quitComplain
-        $ "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
+-- | Prints the usage help, then exits with code 0.
+usage :: Either (ExitCode, String) (EdConfig, EdState)
+usage = (ExitSuccess
+        , "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
        ++ "\n"
        ++ "Arguments (the uppercase options are on by default):\n"
        ++ "\n"
@@ -508,3 +379,39 @@ usage = quitComplain
        ++ "\n"
        ++ "\t-y\tDebug: enable event dumping (y as in \"y u no work?!?\").\n"
        ++ "\t-Y\tDebug: disable event dumping.\n"
+        )
+
+
+
+{-
+argLoop _ (('-':'s'            :_ ):_ ) (c, s) = do
+    r <- readFile $ fname s
+
+    let (cLines, sLines) = withSnd (drop 2)
+                         $ span (/= "")
+                         $ drop 3
+                         $ lines r
+
+        conf = unPrettyEdConfig (vtyObj c) (keymap c) (dCurrLnMod $ edDesign c)
+             $ read
+             $ unlines cLines
+
+        st   = read
+             $ unlines sLines
+
+    return (conf, st)
+-}
+{-
+       do
+            catchEditor load $ \e ->
+                quitComplain $ "An I/O error occured:\n\n"
+                            ++ show e
+                            ++ "\n\nAre you trying to open a binary file?"
+
+            mainLoop
+            drawExitFrame
+-}
+
+
+
+
