@@ -1,0 +1,46 @@
+################################################################################
+#                                                                              #
+#     ##  #                                                             ##  #  #
+#   ###  #                                                            ###  #   #
+#  ########                  Lua files                               ########  #
+#   ######                                                            ######   #
+#     ##                                                                ##     #
+#                                                                              #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+lua: -flc--
+lua: -fs""
+lua: -fs''
+lua: -fe\
+#                                                                              #
+# Keywords                                                                     #
+lua: -fk+and
+lua: -fk+break
+lua: -fk+do
+lua: -fk+else
+lua: -fk+elseif
+lua: -fk+end
+lua: -fk+false
+lua: -fk+for
+lua: -fk+function
+lua: -fk+goto
+lua: -fk+if
+lua: -fk+in
+lua: -fk+local
+lua: -fk+nil
+lua: -fk+not
+lua: -fk+or
+lua: -fk+repeat
+lua: -fk+return
+lua: -fk+then
+lua: -fk+true
+lua: -fk+until
+lua: -fk+while
+#                                                                              #
+################################################################################
+#                                                                              #
+# Custom options                                                               #
+lua:
+#                                                                              #
+################################################################################

@@ -7,7 +7,7 @@ import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, local, modify, put, runRWST)
 import Data.Default             (def)
-import Data.List                (isPrefixOf, partition, stripPrefix)
+import Data.List                (isInfixOf, isPrefixOf, partition, stripPrefix)
 import Data.Maybe               (fromMaybe)
 import Graphics.Vty             ( Event (EvKey)
                                 , Key (KChar)
@@ -123,12 +123,16 @@ main = do
     -- Read the global and local config files. Use an empty string in case of
     -- nonexistence.
     h <- liftIO $ getHomeDirectory
-    glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.conf")
-    loc  <- fromMaybe "" <$> mayReadFile "./.wsedit"
+    glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.wsconf")
+    loc  <- fromMaybe "" <$> mayReadFile "./.local.wsconf"
 
     -- Assemble the switches from all possible config locations
-    let swChain = filterFileArgs (getExt <$> filename) glob
-               ++ filterFileArgs (getExt <$> filename) loc
+    let fext = if any (isInfixOf "-c") sw
+                  then Just "wsconf"
+                  else getExt <$> filename
+
+        swChain = filterFileArgs fext glob
+               ++ filterFileArgs fext loc
                ++ sw
 
     -- Run the argument loop with the default config and state objects.
@@ -186,20 +190,36 @@ argLoop (('-':'B'    :x ):xs) = do
     local (\c -> c { drawBg = True })
         $ argLoop (('-':x):xs)
 
-argLoop (('-':'f':'e':e:x):xs) = do
+argLoop (('-':'f':'e':'+':e:[]):xs) = do
     local (\c -> c { escape = Just e })
-        $ argLoop (('-':x):xs)
+        $ argLoop xs
 
-argLoop (('-':'f':'k':x ):xs) = do
+argLoop (('-':'f':'e':'-':[]):xs) = do
+    local (\c -> c { escape = Nothing })
+        $ argLoop xs
+
+argLoop (('-':'f':'k':'+':x ):xs) = do
     local (\c -> c { keywords = x : keywords c })
         $ argLoop xs
 
-argLoop (('-':'f':'l':'c':x):xs) = do
+argLoop (('-':'f':'k':'-':x ):xs) = do
+    local (\c -> c { keywords = filter (/= x) $ keywords c })
+        $ argLoop xs
+
+argLoop (('-':'f':'l':'c':'+':x):xs) = do
     local (\c -> c { lineComment = x : lineComment c })
         $ argLoop xs
 
-argLoop (('-':'f':'s':a:b:[]):xs) = do
+argLoop (('-':'f':'l':'c':'-':x):xs) = do
+    local (\c -> c { lineComment = filter (/= x) $ lineComment c })
+        $ argLoop xs
+
+argLoop (('-':'f':'s':'+':a:b:[]):xs) = do
     local (\c -> c { strDelim = (a, b) : strDelim c })
+        $ argLoop xs
+
+argLoop (('-':'f':'s':'-':a:b:[]):xs) = do
+    local (\c -> c { strDelim = filter (/= (a, b)) $ strDelim c })
         $ argLoop xs
 
 argLoop (('-':'p'    :x ):xs) = do
@@ -229,11 +249,11 @@ argLoop (('-':'Y'    :x ):xs) = do
 
 argLoop (('-':'c':'g':x ):xs) = do
     h <- liftIO getHomeDirectory
-    modify (\s -> s { fname = h ++ "/.config/wsedit.conf" })
+    modify (\s -> s { fname = h ++ "/.config/wsedit.wsconf" })
     argLoop (('-':x):xs)
 
 argLoop (('-':'c':'l':x ):xs) = do
-    modify (\s -> s { fname = "./.wsedit" })
+    modify (\s -> s { fname = "./.local.wsconf" })
     argLoop (('-':x):xs)
 
 argLoop (('-':'d': c :x ):xs) = do
@@ -313,8 +333,8 @@ argLoop []                      = do
 argLoop (['-']           :xs) =
     argLoop xs
 
-argLoop (('-': x     :_ ):_ ) =
-    quitComplain $ "Unknown argument: -" ++ [x] ++ " (try wsedit -h)"
+argLoop (('-': x        ):_ ) =
+    quitComplain $ "Unknown argument: -" ++ x ++ " (try wsedit -h)"
 
 argLoop (x               :_ ) =
     quitComplain $ "Unexpected parameter: " ++ x ++ " (try wsedit -h)"
@@ -369,8 +389,8 @@ usage = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-cg\tOpen global configuration file (~/.config/wsedit.conf).\n"
-       ++ "\t-cl\tOpen local configuration file (./.wsedit).\n"
+       ++ "\t-cg\tOpen global configuration file (~/.config/wsedit.wsconf).\n"
+       ++ "\t-cl\tOpen local configuration file (./.local.wsconf).\n"
        ++ "\n"
        ++ "\t\tThose files will be concatenated with the command line arguments\n"
        ++ "\t\tand then evaluated. You can prefix lines with \"<ext>:\" so that\n"
@@ -407,10 +427,17 @@ usage = quitComplain
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-fe<char>\tSet <char> as an escape character for strings.\n"
-       ++ "\t-fk<str>\tMark <str> as a keyword.\n"
-       ++ "\t-flc<str>\tMark everything from <str> to the end of the line as a comment.\n"
-       ++ "\t-fs<c1><c1>\tMark everything form char <c1> to char <c2> as a string.\n"
+       ++ "\t-fe+<c>\tSet <c> as an escape character for strings.\n"
+       ++ "\t-fe-\tUnset the existing escape character.\n"
+       ++ "\n"
+       ++ "\t-fk+<s>\tMark <s> as a keyword.\n"
+       ++ "\t-fk-<s>\tRemove <s> from the keywords list.\n"
+       ++ "\n"
+       ++ "\t-flc+<s>\tMark everything from <s> to the end of the line as a comment.\n"
+       ++ "\t-flc-<s>\tRemove <s> from the line comment delimiters list.\n"
+       ++ "\n"
+       ++ "\t-fs+<c1><c2>\tMark everything form char <c1> to char <c2> as a string.\n"
+       ++ "\t-fs-<c1><c2>\tRemove <c1>, <c2> from the string delimiters list.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"

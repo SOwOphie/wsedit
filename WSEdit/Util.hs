@@ -249,8 +249,8 @@ longestCommonPrefix s  = lastDef []
 -- | Checks whether either `xclip` or `xsel` is ready for action.
 checkClipboardSupport :: IO Bool
 checkClipboardSupport = do
-    r1 <- try $ readProcessWithExitCode "xclip" ["-o"] ""
-    r2 <- try $ readProcessWithExitCode "xsel"  []     ""
+    r1 <- try $ readProcessWithExitCode "xclip" ["-version"] ""
+    r2 <- try $ readProcessWithExitCode "xsel"  []           ""
     return $ ok r1 || ok r2
 
     where

@@ -1,5 +1,25 @@
 # Wyvernscale Source Code Editor (wsedit)
 
+# IMPORTANT NOTICE regarding the `0.3.*` update
+
+* The parameter syntax for highlighting has changed slightly, therefore your old
+  config files may be invalid.  To avoid breakage, we now use new file locations:
+
+  * `~/.config/wsedit.wsconf` instead of `~/.config/wsedit.conf`
+  * `./.local.wsconf` instead of `./.wsedit`
+
+  Check out the new syntax for `-f*` parameters with `wsedit -h`.
+
+* Entire language definitions are now available in the `lang/` subdirectory.
+  Install them as follows:
+
+  * `cd` into the main git directory, `git pull origin master` to ensure you
+    have the latest version.
+  * Run `lang/install.sh` to list all available languages.
+  * Use `lang/install.sh <language name>` to append a definition to your
+    global config.
+  * Pull requests for your favourite language are always welcome!
+
 ## Introduction
 
 `wsedit` is a neat **little** (as in *don't expect too much from a student's
@@ -19,12 +39,15 @@ conceivable language and to require only a minimal amount of configuration.
   you're currently editing, filter all lines by indentation depth and build a
   dictionary out of those at a specified level.
 
+* __Rudimentary syntax highlighting__: Highlights keywords, strings and
+  comments according to your configuration file.  Default patterns are availabe
+  in `lang/*.wsconf`.
+
 * __Character class highlighting__: Not as powerful as full-on syntax
   highlighting, it will instead color your text by character class (e.g.
-  operators -> yellow, brackets -> brown, numbers -> red, ...).  This looks
-  almost as good as the real deal in most modern languages, will hardly
-  misbehave, and work with every language out there (even natural ones, like
-  English) without requiring anyone to write syntax files!
+  operators -> yellow, brackets -> brown, numbers -> red, ...).  This, in
+  combination with the syntax highlighting, will offer a comfortable editing
+  experience while being easy to tweak yourself.
 
 * __The usual selection editing, interacting directly with the system
   clipboard__: Make sure to have `xclip` or `xsel` installed; an internal

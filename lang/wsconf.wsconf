@@ -1,0 +1,50 @@
+################################################################################
+#                                                                              #
+#  #   ##   #                                                      #   ##   #  #
+#   # #  # #                                                        # #  # #   #
+#    ##  ##                  WSEdit Config files                     #    #    #
+#     #  #                                                            #  #     #
+#      ##                                                              ##      #
+#                                                                              #
+################################################################################
+#                                                                              #
+# Always use spaces for indentation                                            #
+wsconf: -ts
+#                                                                              #
+# Syntax highlighting                                                          #
+wsconf: -flc+#
+#                                                                              #
+# Keywords                                                                     #
+wsconf: -fk+-b
+wsconf: -fk+-B
+wsconf: -fk+-cg
+wsconf: -fk+-cl
+wsconf: -fk+-d
+wsconf: -fk+-D
+wsconf: -fk+-fe
+wsconf: -fk+-fk
+wsconf: -fk+-flc
+wsconf: -fk+-fs
+wsconf: -fk+-h
+wsconf: -fk+-hk
+wsconf: -fk+-i
+wsconf: -fk+-p
+wsconf: -fk+-P
+wsconf: -fk+-r
+wsconf: -fk+-R
+wsconf: -fk+-s
+wsconf: -fk+-ts
+wsconf: -fk+-tt
+wsconf: -fk+-T
+wsconf: -fk+-V
+wsconf: -fk+-x
+wsconf: -fk+-X
+wsconf: -fk+-y
+wsconf: -fk+-Y
+#                                                                              #
+################################################################################
+#                                                                              #
+# Custom options:                                                              #
+wsconf:
+#                                                                              #
+################################################################################
