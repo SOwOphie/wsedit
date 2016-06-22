@@ -56,22 +56,40 @@ licenseVersion = "1.1"
 
 
 
+-- | Splits up commandline arguments, global, and local config contents into
+--   @(Maybe target file, target line no, target col no, list of switches,
+--   whether -s is present)@.
+splitArgs :: [String] -> String -> String
+          -> (Maybe FilePath, Int, Int, [String], Bool)
+splitArgs args glob loc =
+    let
+        (sw, ar) = partition (isPrefixOf "-") args
+        filename = headMay ar
+        tLnNo    = readDef 1 $ atDef "1" ar 1
+        tColNo   = readDef 1 $ atDef "1" ar 2
+
+        fext     = if any (isInfixOf "-c") sw
+                      then Just "wsconf"
+                      else getExt <$> filename
+
+        swChain  = filterFileArgs fext glob
+                ++ filterFileArgs fext loc
+                ++ sw
+
+        dashS    = headDef "" sw == "-s"
+    in
+        (filename, tLnNo, tColNo, swChain, dashS)
+
+
+
+
 
 -- | Main function. Reads in the parameters, then passes control to the main
 --   loop.
 start :: IO ()
 start = do
     -- partition the parameters into switches and arguments
-    (sw, args) <- partition (isPrefixOf "-") <$> getArgs
-
-    -- initialize vty
-    v <- mkVty def
-
-    -- create the configuration object
-    let filename = headMay args
-        tLnNo    = readDef 1 $ atDef "1" args 1
-        tColNo   = readDef 1 $ atDef "1" args 2
-        conf     = mkDefConfig v defaultKM
+    args <- getArgs
 
     -- Read the global and local config files. Use an empty string in case of
     -- nonexistence.
@@ -79,16 +97,14 @@ start = do
     glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.wsconf")
     loc  <- fromMaybe "" <$> mayReadFile "./.local.wsconf"
 
-    -- Assemble the switches from all possible config locations
-    let fext = if any (isInfixOf "-c") sw
-                  then Just "wsconf"
-                  else getExt <$> filename
+    -- split the parameters into a more comfortable format
+    let (filename, tLnNo, tColNo, sw, dashS) = splitArgs args glob loc
 
-        swChain = filterFileArgs fext glob
-               ++ filterFileArgs fext loc
-               ++ sw
+    -- initialize vty
+    v <- mkVty def
 
-        dashS = headDef "" sw == "-s"
+    -- create the configuration object
+    let conf = mkDefConfig v defaultKM
 
     -- If the "-s" switch is set: read starting conf and state from the file
     -- passed, otherwise use defaults.
@@ -124,7 +140,7 @@ start = do
                                             }
                                  )
 
-    _ <- case argLoop h swChain (conf', st) of
+    _ <- case argLoop h sw (conf', st) of
               Right (c, s)    -> runRWST (exec $ not dashS) c s
               Left  (ex, msg) -> do
                                     shutdown v
@@ -318,7 +334,7 @@ keymapInfo c =
 usage :: Either (ExitCode, String) (EdConfig, EdState)
 usage = Left
         (ExitSuccess
-        , "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
+        , "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]\n"
        ++ "\n"
        ++ "Arguments (the uppercase options are on by default):\n"
        ++ "\n"
@@ -407,15 +423,15 @@ usage = Left
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-s\tResume state from crash file instead of opening it.\n"
-       ++ "\t\tThere are currently a few limiting factors to exactly resuming\n"
-       ++ "\t\twhere a crash occured.  The following properties cannot be\n"
-       ++ "\t\trestored:\n"
+       ++ "\t-s\tResume state from crash file instead of opening it.  If present,\n"
+       ++ "\t\tthis must be the first argument passed.  There are currently a\n"
+       ++ "\t\tfew limiting factors to exactly resuming where a crash occured.\n"
+       ++ "\t\tThe following properties cannot be restored:\n"
        ++ "\n"
        ++ "\t\t\t*The keymap\n"
        ++ "\t\t\t*The shading of the active line\n"
        ++ "\n"
-       ++ "\t\tThese properties will be replaced with local defaults.\n"
+       ++ "\t\tThey will be replaced with the local defaults, which should be *fine*.\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"
