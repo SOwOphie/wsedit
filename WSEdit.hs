@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Main where
+module WSEdit where
 
 
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, local, modify, put, runRWST)
+import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
 import Data.List                (isInfixOf, isPrefixOf, partition, stripPrefix)
 import Data.Maybe               (fromMaybe)
@@ -15,9 +15,12 @@ import Graphics.Vty             ( Event (EvKey)
                                 , nextEvent
                                 , shutdown
                                 )
-import Safe                     (atDef, headMay, readDef)
+import Safe                     (atDef, headDef, headMay, readDef)
 import System.Directory         (getHomeDirectory)
 import System.Environment       (getArgs)
+import System.Exit              ( ExitCode (ExitFailure, ExitSuccess)
+                                , exitFailure, exitWith
+                                )
 
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
@@ -49,6 +52,175 @@ import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
 -- | License version number constant.
 licenseVersion :: String
 licenseVersion = "1.1"
+
+
+
+
+
+-- | Main function. Reads in the parameters, then passes control to the main
+--   loop.
+start :: IO ()
+start = do
+    -- partition the parameters into switches and arguments
+    (sw, args) <- partition (isPrefixOf "-") <$> getArgs
+
+    -- initialize vty
+    v <- mkVty def
+
+    -- create the configuration object
+    let filename = headMay args
+        tLnNo    = readDef 1 $ atDef "1" args 1
+        tColNo   = readDef 1 $ atDef "1" args 2
+        conf     = mkDefConfig v defaultKM
+
+    -- Read the global and local config files. Use an empty string in case of
+    -- nonexistence.
+    h <- liftIO $ getHomeDirectory
+    glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.wsconf")
+    loc  <- fromMaybe "" <$> mayReadFile "./.local.wsconf"
+
+    -- Assemble the switches from all possible config locations
+    let fext = if any (isInfixOf "-c") sw
+                  then Just "wsconf"
+                  else getExt <$> filename
+
+        swChain = filterFileArgs fext glob
+               ++ filterFileArgs fext loc
+               ++ sw
+
+        dashS = headDef "" sw == "-s"
+
+    -- If the "-s" switch is set: read starting conf and state from the file
+    -- passed, otherwise use defaults.
+    (conf', st) <- if dashS
+                     then case filename of
+                               Nothing -> do
+                                            shutdown v
+                                            putStrLn "-s: file expected."
+                                            exitFailure
+
+                               Just  f -> do
+                                    r <- readFile f
+
+                                    let (cLines, sLines) = withSnd (drop 2)
+                                                         $ span (/= "")
+                                                         $ drop 3
+                                                         $ lines r
+
+                                        conf' = unPrettyEdConfig
+                                                (vtyObj conf)
+                                                (keymap conf)
+                                                (dCurrLnMod $ edDesign conf)
+                                             $ read
+                                             $ unlines cLines
+
+                                        st   = read
+                                             $ unlines sLines
+
+                                    return (conf', st)
+
+                     else return (conf, def { fname   = fromMaybe "" filename
+                                            , loadPos = (tLnNo, tColNo)
+                                            }
+                                 )
+
+    _ <- case argLoop h swChain (conf', st) of
+              Right (c, s)    -> runRWST (exec $ not dashS) c s
+              Left  (ex, msg) -> do
+                                    shutdown v
+                                    putStrLn msg
+                                    exitWith ex
+
+    -- Shutdown vty
+    shutdown v
+
+    where
+        -- | Possibly loads the file specified in `fname`, then runs the editor.
+        exec :: Bool -> WSEdit ()
+        exec b = do
+            when b $ catchEditor load $ \e ->
+                quitComplain $ "An I/O error occured:\n\n"
+                            ++ show e
+                            ++ "\n\nAre you trying to open a binary file?"
+
+            mainLoop
+            drawExitFrame
+
+
+
+-- | Takes maybe the file extension and the raw string read from a
+--   config location and returns a list of switches, throwing out
+--   comment lines as well as those specific to other extensions.
+filterFileArgs :: Maybe String -> String -> [String]
+filterFileArgs Nothing    s = concatMap words
+                            $ filter (\x -> ':' `notElem` takeWhile (/= '-') x
+                                         && not (isPrefixOf "#" x)
+                                     )
+                            $ lines s
+
+filterFileArgs (Just ext) s =
+    let
+        (loc, gl) = partition (\x -> ':' `elem` takeWhile (/= '-') x)
+                  $ filter (not . isPrefixOf "#")
+                  $ lines s
+    in
+        concatMap words
+      $ gl
+     ++ ( filter (/= "")
+        $ map (fromMaybe "" . stripPrefix (ext ++ ":"))
+          loc
+        )
+
+
+
+
+
+-- | Parse all switches passed to it.  The first parameter takes the user's home
+--   directory.
+argLoop :: String -> [String] -> (EdConfig, EdState) -> Either (ExitCode, String) (EdConfig, EdState)
+argLoop _ (('-':'h':'k'        :_ ):_ ) (c, _) = keymapInfo c
+argLoop _ (('-':'h'            :_ ):_ ) _      = usage
+argLoop _ (('-':'V'            :_ ):_ ) _      = versionInfo
+argLoop h (('-':'s'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s) -- gets handled elsewhere, ignore it here.
+argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = False                           }, s)
+argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = True                            }, s)
+argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Just e                          }, s)
+argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Nothing                         }, s)
+argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = x : keywords c                  }, s)
+argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
+argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = x : lineComment c               }, s)
+argLoop h (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = filter (/= x) $ lineComment c   }, s)
+argLoop h (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
+argLoop h (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
+argLoop h (('-':'i'            :n ):xs) (c, s) = argLoop h          xs  (c { tabWidth     = read n                          }, s)
+argLoop h (('-':'p'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { purgeOnClose = True                            }, s)
+argLoop h (('-':'P'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { purgeOnClose = False                           }, s)
+argLoop h (('-':'x'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edDesign     = brightTheme                     }, s)
+argLoop h (('-':'X'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edDesign     = def                             }, s)
+argLoop h (('-':'y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = True                            }, s)
+argLoop h (('-':'Y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = False                           }, s)
+argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf" })
+argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
+argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
+argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                       })
+argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                          })
+argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                         })
+argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = True
+                                                                              , detectTabs  = False                         })
+argLoop h (('-':'t':'t'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = False
+                                                                              , detectTabs  = False                         })
+argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { detectTabs  = True                          })
+
+argLoop h (['-']                   :xs) (c, s) = argLoop h          xs  (c, s)
+argLoop _ []                            (c, s) = if fname s == ""
+                                                    then Left  (ExitFailure 1, "No file specified (try wsedit -h).")
+                                                    else Right (c, s)
+
+argLoop _ (('-'                :x ):_ ) _      = Left (ExitFailure 1, "Unknown argument: -" ++ x ++ " (try wsedit -h)")
+
+argLoop _ (x                       :_ ) _      = Left (ExitFailure 1, "Unexpected parameter: " ++ x ++ " (try wsedit -h)")
+
+
 
 
 
@@ -104,117 +276,6 @@ mainLoop = do
 
 
 
--- | Main function. Reads in the parameters, then passes control to the main
---   loop.
-main :: IO ()
-main = do
-    -- partition the parameters into switches and arguments
-    (sw, args) <- partition (isPrefixOf "-") <$> getArgs
-
-    -- initialize vty
-    v <- mkVty def
-
-    -- create the configuration object
-    let filename = headMay args
-        tLnNo    = readDef 1 $ atDef "1" args 1
-        tColNo   = readDef 1 $ atDef "1" args 2
-        conf     = mkDefConfig v defaultKM
-
-    -- Read the global and local config files. Use an empty string in case of
-    -- nonexistence.
-    h <- liftIO $ getHomeDirectory
-    glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.wsconf")
-    loc  <- fromMaybe "" <$> mayReadFile "./.local.wsconf"
-
-    -- Assemble the switches from all possible config locations
-    let fext = if any (isInfixOf "-c") sw
-                  then Just "wsconf"
-                  else getExt <$> filename
-
-        swChain = filterFileArgs fext glob
-               ++ filterFileArgs fext loc
-               ++ sw
-
-    -- Run the argument loop with the default config and state objects.
-    _ <- runRWST (argLoop swChain) conf
-       $ def { fname   = fromMaybe "" filename
-             , loadPos = (tLnNo, tColNo)
-             }
-
-    -- Shutdown vty
-    shutdown v
-
-    where
-        -- | Takes maybe the file extension and the raw string read from a
-        --   config location and returns a list of switches, throwing out
-        --   comment lines as well as those specific to other extensions.
-        filterFileArgs :: Maybe String -> String -> [String]
-        filterFileArgs Nothing    s = concatMap words
-                                    $ filter (\x -> notElem ':' x
-                                                 && not (isPrefixOf "#" x)
-                                             )
-                                    $ lines s
-
-        filterFileArgs (Just ext) s =
-            let
-                (loc, gl) = partition (elem ':')
-                          $ filter (not . isPrefixOf "#")
-                          $ lines s
-            in
-                concatMap words
-              $ gl
-             ++ ( filter (/= "")
-                $ map (fromMaybe "" . stripPrefix (ext ++ ":"))
-                  loc
-                )
-
-
-
--- | Parse all switches passed to it.
-argLoop :: String -> [String] -> (EdConfig, EdState) -> Either (ExitCode, String) (EdConfig, EdState)
-argLoop h (('-':'V'            :_ ):_ ) _      = versionInfo
-argLoop h (('-':'h':'k'        :_ ):_ ) _      = keymapInfo
-argLoop h (('-':'h'            :_ ):_ ) _      = usage
-argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { drawBg       = False                           }, s)
-argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { drawBg       = True                            }, s)
-argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop          xs  (c { escape       = Just e                          }, s)
-argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop          xs  (c { escape       = Nothing                         }, s)
-argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop          xs  (c { keywords     = x : keywords c                  }, s)
-argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
-argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop          xs  (c { lineComment  = x : lineComment c               }, s)
-argLoop h (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop          xs  (c { lineComment  = filter (/= x) $ lineComment c   }, s)
-argLoop h (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
-argLoop h (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
-argLoop h (('-':'i'            :n ):xs) (c, s) = argLoop          xs  (c { tabWidth     = read n                          }, s)
-argLoop h (('-':'p'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { purgeOnClose = True                            }, s)
-argLoop h (('-':'P'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { purgeOnClose = False                           }, s)
-argLoop h (('-':'x'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { edDesign     = brightTheme                     }, s)
-argLoop h (('-':'X'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { edDesign     = def                             }, s)
-argLoop h (('-':'y'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { dumpEvents   = True                            }, s)
-argLoop h (('-':'Y'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c { dumpEvents   = False                           }, s)
-argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf" })
-argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
-argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
-argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { buildDict   = Nothing                       })
-argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { readOnly    = True                          })
-argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { readOnly    = False                         })
-argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { replaceTabs = True
-                                                                            , detectTabs  = False                         })
-argLoop h (('-':'t':'t'        :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { replaceTabs = False
-                                                                            , detectTabs  = False                         })
-argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop (('-':x):xs) (c, s { detectTabs  = True                          })
-
-argLoop h (['-']                   :xs) (c, s) = argLoop          xs  (c, s)
-argLoop _ []                            (c, s) = if fname s == ""
-                                                    then Left  (ExitFailure 1, "No file specified (try wsedit -h).")
-                                                    else Right (c, s)
-
-argLoop _ (('-'                :x ):_ ) _      = Left (ExitFailure 1, "Unknown argument: -" ++ x ++ " (try wsedit -h)")
-
-argLoop _ (x                       :_ ) _      = Left (ExitFailure 1, "Unexpected parameter: " ++ x ++ " (try wsedit -h)")
-
-
-
 -- | Prints out version and licensing information, then exits with code 0.
 versionInfo :: Either (ExitCode, String) (EdConfig, EdState)
 versionInfo = Left (ExitSuccess, "Wyvernscale Source Code Editor (wsedit) Version "
@@ -243,13 +304,20 @@ keymapInfo c =
 
         maxW = maximum $ map (length . fst) tbl
     in
-        (ExitSuccess, "Dumping keymap:\n" ++ unlines . map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s)) tbl)
+        Left (ExitSuccess
+             , "Dumping keymap:\n"
+                ++ ( unlines
+                   $ map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s))
+                     tbl
+                   )
+             )
 
 
 
 -- | Prints the usage help, then exits with code 0.
 usage :: Either (ExitCode, String) (EdConfig, EdState)
-usage = (ExitSuccess
+usage = Left
+        (ExitSuccess
         , "Usage: wsedit [<arguments>] [filename [line no. [column no.]]]\n"
        ++ "\n"
        ++ "Arguments (the uppercase options are on by default):\n"
@@ -380,38 +448,3 @@ usage = (ExitSuccess
        ++ "\t-y\tDebug: enable event dumping (y as in \"y u no work?!?\").\n"
        ++ "\t-Y\tDebug: disable event dumping.\n"
         )
-
-
-
-{-
-argLoop _ (('-':'s'            :_ ):_ ) (c, s) = do
-    r <- readFile $ fname s
-
-    let (cLines, sLines) = withSnd (drop 2)
-                         $ span (/= "")
-                         $ drop 3
-                         $ lines r
-
-        conf = unPrettyEdConfig (vtyObj c) (keymap c) (dCurrLnMod $ edDesign c)
-             $ read
-             $ unlines cLines
-
-        st   = read
-             $ unlines sLines
-
-    return (conf, st)
--}
-{-
-       do
-            catchEditor load $ \e ->
-                quitComplain $ "An I/O error occured:\n\n"
-                            ++ show e
-                            ++ "\n\nAre you trying to open a binary file?"
-
-            mainLoop
-            drawExitFrame
--}
-
-
-
-

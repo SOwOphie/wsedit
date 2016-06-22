@@ -44,7 +44,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pKeywords     :: [String]
     , pEscape       :: Maybe Char
     }
-    deriving (Read, Show)
+    deriving (Eq, Read, Show)
 
 -- | Create a 'PrettyEdConfig' from an 'EdConfig'.
 prettyEdConfig :: EdConfig -> PrettyEdConfig
@@ -103,7 +103,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDStrFormat     :: Attr
     , pDKeywordFormat :: Attr
     }
-    deriving (Read, Show)
+    deriving (Eq, Read, Show)
 
 -- | Create a 'PrettyEdDesign' from an 'EdDesign'.
 prettyEdDesign :: EdDesign -> PrettyEdDesign

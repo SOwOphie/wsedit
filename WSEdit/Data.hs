@@ -63,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.0.0"
+version = "0.3.0.1"
 
 
 
@@ -138,7 +138,7 @@ data EdState = EdState
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
     }
-    deriving (Read, Show)
+    deriving (Eq, Read, Show)
 
 deriving instance Read Button
 deriving instance Read Event
