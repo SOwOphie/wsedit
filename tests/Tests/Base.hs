@@ -5,6 +5,8 @@ module Tests.Base
     ) where
 
 import Control.Monad
+import Data.Algorithm.Diff
+import Data.Algorithm.DiffOutput
 import Data.Default
 import Test.HUnit
 import Text.Show.Pretty
@@ -25,10 +27,5 @@ assertPretty :: (Eq a, Show a) => String -> a -> a -> Assertion
 assertPretty pref ex act = unless (ex == act)
                          $ assertFailure
                          $ pref
-                        ++ " failed. Expected:\n"
-                        ++ indent (ppShow ex)
-                        ++ "\n, got:\n"
-                        ++ indent (ppShow act)
-    where
-        indent :: String -> String
-        indent = unlines . map ("    " ++) . lines
+                        ++ " failed:\n"
+                        ++ ppDiff (getGroupedDiff (lines $ ppShow ex) (lines $ ppShow act))
