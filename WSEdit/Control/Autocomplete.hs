@@ -33,7 +33,7 @@ import WSEdit.Util              (getExt, getKeywordAtCursor, isIdentifierChar
                                 )
 import WSEdit.WordTree          (addWord, complete)
 
-import qualified WSEdit.Buffer as B
+-- import qualified WSEdit.Buffer as B
 
 
 

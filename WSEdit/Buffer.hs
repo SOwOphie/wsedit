@@ -1,6 +1,5 @@
 module WSEdit.Buffer
     ( Buffer (..)
-    , empty
     , singleton
     , fromList
     , toList
@@ -8,9 +7,10 @@ module WSEdit.Buffer
     , sub
     , left
     , right
+    , atMay
     , atDef
-    , firstDef
-    , lastDef
+    , first
+    , last
     , resembles
     , currPos
     , move
@@ -28,6 +28,7 @@ module WSEdit.Buffer
     , withLeft
     , withLeftDef
     , withNLeft
+    , withPos
     , withRight
     , withRightDef
     , withNRight
@@ -37,9 +38,9 @@ module WSEdit.Buffer
     ) where
 
 
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
 
-import Prelude hiding (length, map)
+import Prelude hiding (last, length, map)
 
 import qualified Data.List as L
 import qualified Prelude   as P
@@ -49,14 +50,14 @@ import qualified Safe      as S
 
 
 
--- | One-dimensional buffer with a current position between two elements.
---   Most operations' cost scales only with distance from the position, not
---   with total buffer size.
+-- | One-dimensional nonempty buffer with a current position.  Most operations
+--   scale only with distance from the position, not with total buffer size.
 data Buffer a = Buffer
-    { prefix  :: [a]
-    , prefLen :: Int
-    , suffix  :: [a]
-    , sufLen  :: Int
+    { prefix  :: [a]    -- ^ Elements in front of the position, in reversed order
+    , prefLen :: Int    -- ^ Amount of elements in front of the current position
+    , curr    :: a      -- ^ Currently focused element
+    , suffix  :: [a]    -- ^ Elements after the position
+    , sufLen  :: Int    -- ^ Amount of elements after the position
     }
     deriving ( Eq
              , Read
@@ -65,44 +66,34 @@ data Buffer a = Buffer
 
 
 
-
-
--- | An empty buffer.
-empty :: Buffer a
-empty = Buffer
+-- | Buffer containing a single element.
+singleton :: a -> Buffer a
+singleton x = Buffer
     { prefix  = []
     , prefLen = 0
+    , curr    = x
     , suffix  = []
     , sufLen  = 0
     }
 
 
--- | Buffer containing a single element. Current position is at the front.
-singleton :: a -> Buffer a
-singleton x = Buffer
-    { prefix  = []
-    , prefLen = 0
-    , suffix  = [x]
-    , sufLen  = 1
-    }
-
-
--- | Create a buffer from a list. Current position is at the front.
-fromList :: [a] -> Buffer a
-fromList l = empty
-    { suffix = l
-    , sufLen = L.length l
-    }
+-- | Create a buffer from a list.  Starts out pointed at the start.
+fromList :: [a] -> Maybe (Buffer a)
+fromList []     = Nothing
+fromList (l:ls) = Just $ (singleton l)
+                    { suffix = ls
+                    , sufLen = L.length ls
+                    }
 
 
 -- | Convert a buffer to a list.
 toList :: Buffer a -> [a]
-toList b = reverse (prefix b) ++ suffix b
+toList b = reverse (prefix b) ++ [curr b] ++ suffix b
 
 
 -- | Retrieve the amount of elements stored.
 length :: Buffer a -> Int
-length b = prefLen b + sufLen b
+length b = prefLen b + sufLen b + 1
 
 
 -- | Retrieve a sublist from the buffer. Indices are absolute and zero-based.
@@ -112,8 +103,12 @@ sub from to b = ( L.reverse
                 $ L.take (prefLen b - from)
                 $ prefix b
                 )
-             ++ ( L.drop (from - prefLen b)
-                $ L.take (to - prefLen b + 1)
+             ++ (if from <= currPos b && currPos b <= to
+                    then [curr b]
+                    else []
+                )
+             ++ ( L.drop (from - prefLen b - 1)
+                $ L.take (to - prefLen b)
                 $ suffix b
                 )
 
@@ -130,33 +125,40 @@ right b | L.null $ suffix b = Nothing
         | otherwise         = Just $ head $ suffix b
 
 
+-- | Retrieve the element at an absolute, zero-based index, if it exists.
+atMay :: Buffer a -> Int -> Maybe a
+atMay b n | n <  prefLen b = S.atMay (prefix b) $ prefLen b - n - 1
+          | n == prefLen b = Just $ curr b
+          | otherwise      = S.atMay (suffix b) $ n - prefLen b - 1
+
+
 -- | Retrieve the element at an absolute, zero-based index, or a default in
 --   case the element at the index is not defined.
 atDef :: a -> Buffer a -> Int -> a
-atDef d b n | n < prefLen b = S.atDef d (prefix b) $ prefLen b - n - 1
-            | otherwise     = S.atDef d (suffix b) $ n - prefLen b
+atDef d b n = fromMaybe d $ atMay b n
 
 
--- | Retrieve the first element in the buffer, or a default if the buffer is
---   empty.
-firstDef :: a -> Buffer a -> a
-firstDef d b = atDef d b 0
+-- | Retrieve the first element in the buffer.
+first :: Buffer a -> a
+first b | prefLen b == 0 = curr b
+        | otherwise      = L.last $ prefix b
 
 
--- | Retrieve the last element in the buffer, or a default if the buffer is
---   empty.
-lastDef :: a -> Buffer a -> a
-lastDef d b = atDef d b $ WSEdit.Buffer.length b - 1
-
-
+-- | Retrieve the last element in the buffer.
+last :: Buffer a -> a
+last b | sufLen b == 0 = curr b
+       | otherwise     = L.last $ suffix b
 
 
 
--- | Weak equality test. Compares length, position and the elements up to @n@
---   distance from the buffer position.
+
+
+-- | Rapid, but weak equality test. Compares length, position and the elements
+--   up to @n@ distance from the position.
 resembles :: (Eq a) => Int -> Buffer a -> Buffer a -> Bool
 resembles n a b =         prefLen a  ==         prefLen b
                &&         sufLen  a  ==         sufLen  b
+               &&         curr    a  ==         curr    b
                && take n (prefix  a) == take n (prefix  b)
                && take n (suffix  a) == take n (suffix  b)
 
@@ -173,10 +175,9 @@ currPos = prefLen
 -- | Move the buffer position relatively. Will silently stop at the front or
 --   back of the buffer.
 move :: Int -> Buffer a -> Buffer a
-move n b | n > 0 &&  sufLen b > 0 = move (n-1) $ fromJust $ forward  b
-         | n < 0 && prefLen b > 0 = move (n+1) $ fromJust $ backward b
-         | n == 0                 = b
-         | otherwise              = b
+move n b | n > 0     = move (n-1) $ fromMaybe b $ forward  b
+         | n < 0     = move (n+1) $ fromMaybe b $ backward b
+         | otherwise = b
 
 
 -- | Move the position absolutely. Will silently stop at the front or back of
@@ -189,8 +190,9 @@ moveTo n b = move (n - prefLen b) b
 forward :: Buffer a -> Maybe (Buffer a)
 forward b | sufLen b <= 0 = Nothing
           | otherwise     = Just Buffer
-                                { prefix  = head (suffix b) : prefix b
+                                { prefix  = curr b : prefix b
                                 , prefLen = prefLen b + 1
+                                , curr    = head $ suffix b
                                 , suffix  = tail $ suffix b
                                 , sufLen  = sufLen b - 1
                                 }
@@ -202,29 +204,26 @@ backward b | prefLen b <= 0 = Nothing
            | otherwise      = Just Buffer
                                 { prefix  = tail $ prefix b
                                 , prefLen = prefLen b - 1
-                                , suffix  = head (prefix b) : suffix b
+                                , curr    = head $ prefix b
+                                , suffix  = curr b : suffix b
                                 , sufLen  = sufLen b + 1
                                 }
 
 
 -- | Rewind the buffer position to the front.
 toFirst :: Buffer a -> Buffer a
-toFirst b = Buffer
-    { prefix  = []
-    , prefLen = 0
-    , suffix  = reverse (prefix b) ++ suffix b
-    , sufLen  = prefLen b + sufLen b
-    }
+toFirst b | prefLen b <= 0 = b
+          | otherwise      = toFirst
+                           $ fromJust
+                           $ backward b
 
 
 -- | Advance the buffer position to the back.
 toLast :: Buffer a -> Buffer a
-toLast b = Buffer
-    { prefix  = reverse (suffix b) ++ prefix b
-    , prefLen = prefLen b + sufLen b
-    , suffix  = []
-    , sufLen  = 0
-    }
+toLast b | sufLen b <= 0 = b
+         | otherwise     = toLast
+                         $ fromJust
+                         $ forward b
 
 
 
@@ -245,15 +244,11 @@ insertRight x b = b { suffix = x : suffix b
 
 
 
--- | Drop n elements before the buffer position.
+-- | Drop at most n elements before the buffer position.
 dropLeft :: Int -> Buffer a -> Buffer a
 dropLeft n b = b { prefix  = drop n $ prefix b
                  , prefLen = max  0 $ prefLen b - max 0 n
                  }
-
--- | Drop the element left of the buffer position.
-deleteLeft :: Buffer a -> Buffer a
-deleteLeft = dropLeft 1
 
 
 -- | Drop n elements after the buffer position.
@@ -262,9 +257,15 @@ dropRight n b = b { suffix = drop n $ suffix b
                   , sufLen = max  0 $ sufLen b - max 0 n
                   }
 
+-- | Drop the element left of the buffer position.
+deleteLeft :: Buffer a -> Maybe (Buffer a)
+deleteLeft b | prefLen b <= 0 = Nothing
+             | otherwise      = Just $ dropLeft 1 b
+
 -- | Drop the element right of the buffer position.
-deleteRight :: Buffer a -> Buffer a
-deleteRight = dropRight 1
+deleteRight :: Buffer a -> Maybe (Buffer a)
+deleteRight b | sufLen b <= 0 = Nothing
+              | otherwise     = Just $ dropRight 1 b
 
 
 -- | Apply a function to the element left of the buffer position.
@@ -275,9 +276,9 @@ withLeft f b | L.null $ prefix b = Nothing
                                             }
 
 
--- | Apply a function to the element left of the buffer position. Will use
---   a default element as function argument if there is no left element,
---   effectively increasing the buffer size by 1.
+-- | Apply a function to the element left of the position. Will use a default
+--   element as function argument if there is no left element, effectively
+--   increasing the buffer size by 1.
 withLeftDef :: a -> (a -> a) -> Buffer a -> Buffer a
 withLeftDef d f b | L.null $ prefix b = b { prefix  = [f d]
                                           , prefLen = 1
@@ -289,7 +290,8 @@ withLeftDef d f b | L.null $ prefix b = b { prefix  = [f d]
 
 
 -- | Apply a function to a part of the buffer, starting at most n elements in
---   front of the buffer position, and ending there.
+--   front of the position, and ending with the last element before the
+--   position.
 withNLeft :: Int -> (a -> a) -> Buffer a -> Buffer a
 withNLeft n f b =
     let
@@ -301,6 +303,10 @@ withNLeft n f b =
           }
 
 
+-- | Apply a function to the focused element.
+withPos :: (a -> a) -> Buffer a -> Buffer a
+withPos f b = b { curr = f $ curr b }
+
 
 -- | Apply a function to the element right of the buffer position.
 withRight :: (a -> a) -> Buffer a -> Maybe (Buffer a)
@@ -310,7 +316,7 @@ withRight f b | L.null $ suffix b = Nothing
                                              }
 
 
--- | Apply a function to the element right of the buffer position. Will use
+-- | Apply a function to the element right of the position. Will use
 --   a default element as function argument if there is no right element,
 --   effectively increasing the buffer size by 1.
 withRightDef :: a -> (a -> a) -> Buffer a -> Buffer a
@@ -323,8 +329,8 @@ withRightDef d f b | L.null $ suffix b = b { suffix = [f d]
                                            }
 
 
--- | Apply a function to a part of the buffer, starting at the buffer position
---   and ending n elements afterwards.
+-- | Apply a function to a part of the buffer, starting directly after the
+--   position and ending n elements afterwards.
 withNRight :: Int -> (a -> a) -> Buffer a -> Buffer a
 withNRight n f b =
     let
@@ -355,5 +361,6 @@ prepend x b = b { prefix  = prefix b ++ [x]
 -- | Map a function over all elements in the buffer.
 map :: (a -> b) -> Buffer a -> Buffer b
 map f b = b { prefix = L.map f $ prefix b
+            , curr   =       f $ curr   b
             , suffix = L.map f $ suffix b
             }
