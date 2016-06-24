@@ -3,3 +3,4 @@ CRASH-*
 dmp
 .wsedit
 .local.wsconf
+.hpc/

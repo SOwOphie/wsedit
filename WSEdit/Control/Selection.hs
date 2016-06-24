@@ -120,26 +120,25 @@ paste = alterBuffer $ do
             put $ s     -- Arcane buffer magic incoming...
                 { edLines =
                     if length c == 1
-                       then fromJust
-                          $ B.withLeft (\l -> take (cursorPos s - 1) l
+                       then B.withCurr (\l -> take (cursorPos s - 1) l
                                            ++ head c
                                            ++ drop (cursorPos s - 1) l
                                        )
                           $ edLines s
 
-                       else B.insertLeft (last c ++ drop (cursorPos s - 1)
-                                         (fromJust $ B.left $ edLines s))
+                       else B.withCurr (last c ++ drop (cursorPos s - 1)
+                                                       (B.curr $ edLines s)
+                                       )
                           $ flip (foldl (flip B.insertLeft))
                                  (drop 1 $ init c)
-                          $ fromJust
-                          $ B.withLeft (\l -> take (cursorPos s - 1) l
+                          $ B.withCurr (\l -> take (cursorPos s - 1) l
                                            ++ head c
                                        )
                           $ edLines s
                 }
 
             if length c > 1
-               then moveCursor 0 $ length $ last c
+               then moveCursor 0 $ length (last c) - length (head c)
                else moveCursor 0 $ length c1
 
             setStatus $ "Pasted "
@@ -170,15 +169,15 @@ indentSelection = alterBuffer $ do
 
             put $ s { edLines =
                         case compare sR cR of
-                             LT -> B.withNLeft (cR - sR + 1) (ind ++)
+                             LT -> B.withCurr            (ind ++)
+                                 $ B.withNLeft (cR - sR) (ind ++)
                                  $ edLines s
 
-                             EQ -> fromJust
-                                 $ B.withLeft (ind ++)
+                             EQ -> B.withCurr (ind ++)
                                  $ edLines s
 
                              GT -> fromJust
-                                 $ B.withLeft             (ind ++)
+                                 $ B.withCurr             (ind ++)
                                  $ B.withNRight (sR - cR) (ind ++)
                                  $ edLines s
                      }
@@ -203,20 +202,19 @@ unindentSelection = alterBuffer $ do
 
             put $ s { edLines =
                         case compare sR cR of
-                             LT -> B.withNLeft (cR - sR + 1) (unindent ind)
+                             LT -> B.withCurr            (unindent ind)
+                                 $ B.withNLeft (cR - sR) (unindent ind)
                                  $ edLines s
 
                              EQ -> fromJust
-                                 $ B.withLeft (unindent ind)
+                                 $ B.withCurr (unindent ind)
                                  $ edLines s
 
-                             GT -> fromJust
-                                 $ B.withLeft             (unindent ind)
+                             GT -> B.withCurr             (unindent ind)
                                  $ B.withNRight (sR - cR) (unindent ind)
                                  $ edLines s
                      }
     where
         unindent :: String -> String -> String
         unindent prf ln = fromMaybe ln
-                        $ stripPrefix prf
-                          ln
+                        $ stripPrefix prf ln

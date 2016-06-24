@@ -48,8 +48,7 @@ insertRaw s = refuseOnReadOnly $ modify (ins s)
     where
         ins :: String -> EdState -> EdState
         ins s' st = st
-            { edLines   = fromJust
-                        $ B.withLeft (\l -> take (cursorPos st - 1) l
+            { edLines   = B.withCurr (\l -> take (cursorPos st - 1) l
                                          ++ s'
                                          ++ drop (cursorPos st - 1) l
                                      )
@@ -67,14 +66,12 @@ insertTab = alterBuffer $ do
 
     -- Column the tab will sit in
     n <- (edLines <$> get)
-      >>= (stringWidth 1 . take (c - 1) . fromJust . B.left)
+     >>= (stringWidth 1 . take (c - 1) . B.curr)
 
     w <- tabWidth <$> ask
 
     if b
-       then insertRaw
-          $ replicate (w - n `mod` w) ' '
-
+       then insertRaw $ replicate (w - n `mod` w) ' '
        else insertRaw "\t"
 
 
@@ -97,16 +94,15 @@ delLeft = alterBuffer
     where
         del' :: EdState -> EdState
         del' s = s
-            { edLines = fromJust
-                      $ B.withLeft (delN (cursorPos s - 1))
+            { edLines = B.withCurr (delN (cursorPos s - 1))
                       $ edLines s
             }
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines = fromJust
-                      $ B.withLeft (++ (fromJust $ B.right $ edLines s))
-                      $ B.deleteRight
+            { edLines = B.withCurr (++ (B.curr $ edLines s))
+                      $ fromJust
+                      $ B.deleteCurr
                       $ edLines s
             }
 
@@ -138,8 +134,8 @@ delRight = alterBuffer $ do
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines = fromJust
-                      $ B.withLeft (++ (fromJust $ B.right $ edLines s))
+            { edLines = B.withCurr ((B.curr $ edLines s) ++)
+                      $ fromJust
                       $ B.deleteRight
                       $ edLines s
             }
@@ -157,8 +153,7 @@ smartHome = alterState $ do
     pos <-  (+1)
          .  length
          .  takeWhile isSpace
-         .  fromJust
-         .  B.left
+         .  B.curr
          .  edLines
         <$> get
 
@@ -180,12 +175,12 @@ smartNewLine = alterBuffer $ do
         snl :: EdState -> EdState
         snl s =
             let
-                ln = fromJust $ B.left $ edLines s
+                ln = fromJust $ B.curr $ edLines s
             in
                 s { edLines = B.insertLeft ( takeWhile isSpace ln
                                           ++ drop (cursorPos s - 1) ln
                                            )
-                            $ fromJust $ B.withLeft (take (cursorPos s - 1))
+                            $ B.withCurr (take (cursorPos s - 1))
                             $ edLines s
                   }
 
@@ -201,10 +196,10 @@ dumbNewLine = alterBuffer $ do
         nl :: EdState -> EdState
         nl s =
             let
-                ln = fromJust $ B.left $ edLines s
+                ln = fromJust $ B.curr $ edLines s
             in
                 s { edLines = B.insertLeft (drop (cursorPos s - 1) ln)
-                            $ fromJust $ B.withLeft (take (cursorPos s - 1))
+                            $ B.withCurr (take (cursorPos s - 1))
                             $ edLines s
                   }
 

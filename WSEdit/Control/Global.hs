@@ -193,9 +193,9 @@ load = alterState $ do
               then liftIO $ System.IO.Strict.readFile p'
               else return ""
 
-    let l = if null $ lines txt
-               then B.singleton ""
-               else B.fromList $ lines txt
+    let l = fromMaybe B.singleton ""
+          $ B.fromList
+          $ lines txt
 
     put $ s
         { edLines     = B.toFirst l

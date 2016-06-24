@@ -174,14 +174,14 @@ instance Default EdState where
 getCursor :: WSEdit (Int, Int)
 getCursor = do
     s <- get
-    return (B.currPos $ edLines s, cursorPos s)
+    return (1 + B.currPos $ edLines s, cursorPos s)
 
 -- | Set the current cursor position.
 setCursor :: (Int, Int) -> WSEdit ()
 setCursor (r, c) = do
     s <- get
     put $ s { cursorPos = c
-            , edLines   = B.moveTo r $ edLines s
+            , edLines   = B.moveTo (r - 1) $ edLines s
             }
 
 
@@ -359,8 +359,7 @@ delSelection = do
 
             case compare mR cR of
                  EQ -> do
-                    put $ s { edLines   = fromJust
-                                        $ B.withLeft (\l -> take (sC - 1) l
+                    put $ s { edLines   = B.withCurr (\l -> take (sC - 1) l
                                                          ++ drop  eC      l
                                                      )
                                         $ edLines s

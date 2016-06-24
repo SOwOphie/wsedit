@@ -229,17 +229,19 @@ toLast b | sufLen b <= 0 = b
 
 
 
--- | Insert an element left of the buffer position.
+-- | Insert a new element, pushing the focused element to the left.
 insertLeft :: a -> Buffer a -> Buffer a
-insertLeft x b = b { prefix  = x : prefix b
+insertLeft x b = b { prefix  = curr b : prefix b
                    , prefLen = prefLen b + 1
+                   , curr    = x
                    }
 
 
--- | Insert an element right of the buffer position.
+-- | Insert a new element, pushing the focused element to the right.
 insertRight :: a -> Buffer a -> Buffer a
-insertRight x b = b { suffix = x : suffix b
+insertRight x b = b { suffix = curr b : suffix b
                     , sufLen = sufLen b + 1
+                    , curr   = x
                     }
 
 
@@ -257,15 +259,21 @@ dropRight n b = b { suffix = drop n $ suffix b
                   , sufLen = max  0 $ sufLen b - max 0 n
                   }
 
--- | Drop the element left of the buffer position.
+-- | Drop the currently focused element, filling the void from the left.
 deleteLeft :: Buffer a -> Maybe (Buffer a)
 deleteLeft b | prefLen b <= 0 = Nothing
-             | otherwise      = Just $ dropLeft 1 b
+             | otherwise      = b { curr    = head $ prefix b
+                                  , prefix  = tail $ prefix b
+                                  , prefLen = prefLen b - 1
+                                  }
 
--- | Drop the element right of the buffer position.
+-- | Drop the currently focused element, filling the void from the right.
 deleteRight :: Buffer a -> Maybe (Buffer a)
 deleteRight b | sufLen b <= 0 = Nothing
-              | otherwise     = Just $ dropRight 1 b
+              | otherwise     = b { curr    = head $ suffix b
+                                  , prefix  = tail $ suffix b
+                                  , prefLen = sufLen b - 1
+                                  }
 
 
 -- | Apply a function to the element left of the buffer position.
