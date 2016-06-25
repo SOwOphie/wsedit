@@ -21,14 +21,14 @@ module WSEdit.Buffer
     , toLast
     , insertLeft
     , insertRight
-    , dropLeft
     , deleteLeft
-    , dropRight
     , deleteRight
+    , dropLeft
+    , dropRight
     , withLeft
     , withLeftDef
     , withNLeft
-    , withPos
+    , withCurr
     , withRight
     , withRightDef
     , withNRight
@@ -245,35 +245,39 @@ insertRight x b = b { suffix = curr b : suffix b
                     }
 
 
-
--- | Drop at most n elements before the buffer position.
-dropLeft :: Int -> Buffer a -> Buffer a
-dropLeft n b = b { prefix  = drop n $ prefix b
-                 , prefLen = max  0 $ prefLen b - max 0 n
-                 }
-
-
--- | Drop n elements after the buffer position.
-dropRight :: Int -> Buffer a -> Buffer a
-dropRight n b = b { suffix = drop n $ suffix b
-                  , sufLen = max  0 $ sufLen b - max 0 n
-                  }
-
 -- | Drop the currently focused element, filling the void from the left.
 deleteLeft :: Buffer a -> Maybe (Buffer a)
 deleteLeft b | prefLen b <= 0 = Nothing
-             | otherwise      = b { curr    = head $ prefix b
-                                  , prefix  = tail $ prefix b
-                                  , prefLen = prefLen b - 1
-                                  }
+             | otherwise      = Just b
+                              { curr    = head $ prefix b
+                              , prefix  = tail $ prefix b
+                              , prefLen = prefLen b - 1
+                              }
 
 -- | Drop the currently focused element, filling the void from the right.
 deleteRight :: Buffer a -> Maybe (Buffer a)
 deleteRight b | sufLen b <= 0 = Nothing
-              | otherwise     = b { curr    = head $ suffix b
-                                  , prefix  = tail $ suffix b
-                                  , prefLen = sufLen b - 1
-                                  }
+              | otherwise     = Just b
+                              { curr   = head $ suffix b
+                              , suffix = tail $ suffix b
+                              , sufLen = sufLen b - 1
+                              }
+
+
+-- | Apply `deleteLeft` at most n times.
+dropLeft :: Int -> Buffer a -> Buffer a
+dropLeft n b | n <= 0    = b
+             | otherwise = dropLeft (n-1)
+                         $ fromMaybe b
+                         $ deleteLeft b
+
+
+-- | Apply `deleteRight` at most n times.
+dropRight :: Int -> Buffer a -> Buffer a
+dropRight n b | n <= 0 = b
+              | otherwise = dropRight (n-1)
+                          $ fromMaybe b
+                          $ deleteRight b
 
 
 -- | Apply a function to the element left of the buffer position.
@@ -312,8 +316,8 @@ withNLeft n f b =
 
 
 -- | Apply a function to the focused element.
-withPos :: (a -> a) -> Buffer a -> Buffer a
-withPos f b = b { curr = f $ curr b }
+withCurr :: (a -> a) -> Buffer a -> Buffer a
+withCurr f b = b { curr = f $ curr b }
 
 
 -- | Apply a function to the element right of the buffer position.

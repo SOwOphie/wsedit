@@ -14,7 +14,7 @@ module WSEdit.Control.Selection
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, put)
 import Data.List                (stripPrefix)
-import Data.Maybe               (fromJust, isJust, fromMaybe)
+import Data.Maybe               (fromMaybe, isJust)
 import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
 
@@ -126,9 +126,10 @@ paste = alterBuffer $ do
                                        )
                           $ edLines s
 
-                       else B.withCurr (last c ++ drop (cursorPos s - 1)
-                                                       (B.curr $ edLines s)
-                                       )
+                       else B.insertLeft ( last c
+                                        ++ drop (cursorPos s - 1)
+                                                (B.curr $ edLines s)
+                                         )
                           $ flip (foldl (flip B.insertLeft))
                                  (drop 1 $ init c)
                           $ B.withCurr (\l -> take (cursorPos s - 1) l
@@ -176,8 +177,7 @@ indentSelection = alterBuffer $ do
                              EQ -> B.withCurr (ind ++)
                                  $ edLines s
 
-                             GT -> fromJust
-                                 $ B.withCurr             (ind ++)
+                             GT -> B.withCurr             (ind ++)
                                  $ B.withNRight (sR - cR) (ind ++)
                                  $ edLines s
                      }
@@ -206,8 +206,7 @@ unindentSelection = alterBuffer $ do
                                  $ B.withNLeft (cR - sR) (unindent ind)
                                  $ edLines s
 
-                             EQ -> fromJust
-                                 $ B.withCurr (unindent ind)
+                             EQ -> B.withCurr (unindent ind)
                                  $ edLines s
 
                              GT -> B.withCurr             (unindent ind)

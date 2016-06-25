@@ -19,6 +19,7 @@ import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
+import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
@@ -193,7 +194,7 @@ load = alterState $ do
               then liftIO $ System.IO.Strict.readFile p'
               else return ""
 
-    let l = fromMaybe B.singleton ""
+    let l = fromMaybe (B.singleton "")
           $ B.fromList
           $ lines txt
 
@@ -227,9 +228,13 @@ load = alterState $ do
                                     ++ " , check permissions and disk state."
 
     -- Move the cursor to where it should be placed.
-    uncurry moveCursor $ withPair id (\h -> h-1) $ loadPos s
+    uncurry moveCursor $ withPair h h $ loadPos s
 
     dictAddRec
+
+    where
+        h :: Int -> Int
+        h n = n - 1
 
 
 

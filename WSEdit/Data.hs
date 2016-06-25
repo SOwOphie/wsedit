@@ -63,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.0.1"
+version = "0.3.1.0"
 
 
 
@@ -174,7 +174,7 @@ instance Default EdState where
 getCursor :: WSEdit (Int, Int)
 getCursor = do
     s <- get
-    return (1 + B.currPos $ edLines s, cursorPos s)
+    return (B.currPos (edLines s) + 1, cursorPos s)
 
 -- | Set the current cursor position.
 setCursor :: (Int, Int) -> WSEdit ()
@@ -328,8 +328,7 @@ getSelection = do
                then return $ Just
                            $ drop (sC - 1)
                            $ take eC
-                           $ fromJust
-                           $ B.left l
+                           $ B.curr l
 
                else
                     let
@@ -368,11 +367,9 @@ delSelection = do
                     return True
 
                  LT -> do
-                    put $ s { edLines   = fromJust
-                                        $ B.withLeft (\l -> take (mC - 1) l
+                    put $ s { edLines   = B.withCurr (\l -> take (mC - 1) l
                                                          ++ drop (cC - 1)
-                                                              ( fromJust
-                                                              $ B.left
+                                                              ( B.curr
                                                               $ edLines s
                                                               )
                                                      )
@@ -382,22 +379,18 @@ delSelection = do
                             }
                     return True
 
-                 GT ->
-                    let
-                        b' = B.dropRight (mR - cR - 1)
-                           $ edLines s
-                    in do
-                        put $ s { edLines   = fromJust
-                                            $ B.withLeft (\l -> take (cC - 1) l
-                                                             ++ drop (mC - 1)
-                                                                  (fromMaybe ""
-                                                                  $ B.right b'
-                                                                  )
-                                                         )
-                                            $ B.deleteRight b'
-                                , cursorPos = sC
-                                }
-                        return True
+                 GT -> do
+                    put $ s { edLines   = B.withCurr (\l -> take (cC - 1)
+                                                              ( B.curr
+                                                              $ edLines s
+                                                              )
+                                                         ++ drop (mC - 1) l
+                                                     )
+                                        $ B.dropRight (mR - cR)
+                                        $ edLines s
+                            , cursorPos = sC
+                            }
+                    return True
 
 
 

@@ -4,3 +4,4 @@ dmp
 .wsedit
 .local.wsconf
 .hpc/
+*.tix

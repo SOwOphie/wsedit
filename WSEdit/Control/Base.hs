@@ -10,7 +10,6 @@ module WSEdit.Control.Base
 
 import Control.Monad            (unless)
 import Control.Monad.RWS.Strict (get, modify, put)
-import Data.Maybe               (fromMaybe)
 
 import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
                                            , readOnly, scrollOffset, wantsPos

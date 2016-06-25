@@ -84,9 +84,9 @@ delLeft = alterBuffer
     $ getCursor >>= \case
         (1, 1) -> return ()
         (_, 1) -> do
-            moveCursor (-1)      0
-            moveCursor   0   65535
+            l <- edLines <$> get
             modify merge
+            moveCursor 0 (length $ fromJust $ B.left l)
 
         (_, _) -> do
             moveCursor   0  (-   1)
@@ -102,7 +102,7 @@ delLeft = alterBuffer
         merge s = s
             { edLines = B.withCurr (++ (B.curr $ edLines s))
                       $ fromJust
-                      $ B.deleteCurr
+                      $ B.deleteLeft
                       $ edLines s
             }
 
@@ -127,8 +127,7 @@ delRight = alterBuffer $ do
     where
         del' :: EdState -> EdState
         del' s = s
-            { edLines = fromJust
-                      $ B.withLeft (delN (cursorPos s - 1))
+            { edLines = B.withCurr (delN (cursorPos s - 1))
                       $ edLines s
             }
 
@@ -175,7 +174,7 @@ smartNewLine = alterBuffer $ do
         snl :: EdState -> EdState
         snl s =
             let
-                ln = fromJust $ B.curr $ edLines s
+                ln = B.curr $ edLines s
             in
                 s { edLines = B.insertLeft ( takeWhile isSpace ln
                                           ++ drop (cursorPos s - 1) ln
@@ -196,7 +195,7 @@ dumbNewLine = alterBuffer $ do
         nl :: EdState -> EdState
         nl s =
             let
-                ln = fromJust $ B.curr $ edLines s
+                ln = B.curr $ edLines s
             in
                 s { edLines = B.insertLeft (drop (cursorPos s - 1) ln)
                             $ B.withCurr (take (cursorPos s - 1))

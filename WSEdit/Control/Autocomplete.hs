@@ -12,7 +12,7 @@ import Control.Monad            (forM_, when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
-import Data.Maybe               (fromJust, isJust)
+import Data.Maybe               (isJust)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
 import Safe                     (headDef)
 import System.Directory         ( doesDirectoryExist, doesFileExist
@@ -33,7 +33,7 @@ import WSEdit.Util              (getExt, getKeywordAtCursor, isIdentifierChar
                                 )
 import WSEdit.WordTree          (addWord, complete)
 
--- import qualified WSEdit.Buffer as B
+import qualified WSEdit.Buffer as B
 
 
 
@@ -131,8 +131,7 @@ listAutocomplete = do
 
     when (isJust (buildDict s) && not (readOnly s))
         $ case getKeywordAtCursor (cursorPos s)
-                $ fromJust
-                $ B.left
+                $ B.curr
                 $ edLines s of
 
                Nothing -> setStatus "..."
@@ -160,8 +159,7 @@ applyAutocomplete = do
 
     when (isJust (buildDict s) && canComplete s)
         $ case getKeywordAtCursor (cursorPos s)
-                $ fromJust
-                $ B.left
+                $ B.curr
                 $ edLines s of
 
                Nothing -> return ()

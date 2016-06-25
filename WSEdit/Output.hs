@@ -251,8 +251,7 @@ lineNoWidth =  length
 --   buffer.
 toCursorDispPos :: (Int, Int) -> WSEdit (Int, Int)
 toCursorDispPos (r, c) = do
-    currLine <-  fromMaybe ""
-              .  B.left
+    currLine <-  B.curr
               .  edLines
              <$> get
 
@@ -280,7 +279,7 @@ cursorOffScreen = do
     s <- get
 
     let
-        currLn       = fromJust $ B.left $ edLines s
+        currLn       = B.curr $ edLines s
         (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
