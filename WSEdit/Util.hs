@@ -29,6 +29,7 @@ import Data.List         (inits, intersect, tails)
 import Safe              (headMay, lastDef)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
+import System.Info       (os)
 import System.IO.Unsafe  (unsafePerformIO)
 import System.Process    (readProcessWithExitCode)
 import Text.Show.Pretty  (ppShow)
@@ -246,12 +247,16 @@ longestCommonPrefix s  = lastDef []
 
 
 
--- | Checks whether either `xclip` or `xsel` is ready for action.
+-- | Checks whether either `xclip` or `xsel` is ready for action.  Always
+--   returns `True` on Darwin, since HClip uses built-in features there.
 checkClipboardSupport :: IO Bool
-checkClipboardSupport = do
-    r1 <- try $ readProcessWithExitCode "xclip" ["-version"] ""
-    r2 <- try $ readProcessWithExitCode "xsel"  []           ""
-    return $ ok r1 || ok r2
+checkClipboardSupport =
+    if os == "darwin"
+       then return True
+       else do
+            r1 <- try $ readProcessWithExitCode "xclip" ["-version"] ""
+            r2 <- try $ readProcessWithExitCode "xsel"  []           ""
+            return $ ok r1 || ok r2
 
     where
         ok :: Either SomeException (ExitCode, String, String) -> Bool

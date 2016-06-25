@@ -608,6 +608,7 @@ instance Default EdDesign where
 
 
 
+-- | Alternate theme for terminals with bright backgrounds.
 brightTheme:: EdDesign
 brightTheme = EdDesign
         { dFrameFormat   = defAttr
