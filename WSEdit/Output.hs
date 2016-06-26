@@ -29,9 +29,9 @@ import Graphics.Vty             ( Background (ClearBackground)
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
-                                , char, imageWidth, pad, picForImage
-                                , reverseVideo, string, translateX, update
-                                , vertCat, withStyle
+                                , char, cropBottom, cropRight, imageWidth, pad
+                                , picForImage, reverseVideo, string, translateX
+                                , update, vertCat, withStyle
                                 , (<|>), (<->)
                                 )
 import Safe                     (lookupJustDef)
@@ -278,7 +278,7 @@ getViewportDimensions = do
     (nRows, nCols) <- getDisplayBounds
     lNoWidth <- lineNoWidth
 
-    return (nRows - 4, nCols - lNoWidth - 4)
+    return (nRows - 4, nCols - lNoWidth - 6)
 
 
 
@@ -340,6 +340,7 @@ makeHeader = do
               $ cycle
               $ 'v' : replicate (dColNoInterval d - 1) '-'
               )
+           ++ "+-"
             )
 
 
@@ -392,7 +393,8 @@ makeFooter = do
     return $ string (dFrameFormat d)
                 ( replicate (lNoWidth + 2) ' '
                ++ "+-------+"
-               ++ replicate (txtCols - 6) '-'
+               ++ replicate (txtCols - 7) '-'
+               ++ "+-"
                 )
           <-> (  string (dFrameFormat d)
                 (replicate lNoWidth ' ' ++ "  | ")
@@ -449,7 +451,7 @@ makeTextFrame = do
     lNoWidth <- lineNoWidth
 
     (scrollRows, scrollCols) <- getOffset
-    (   txtRows, _         ) <- getViewportDimensions
+    (   txtRows, txtCols   ) <- getViewportDimensions
 
     txt <- mapM (uncurry lineRep)
          $ zip [1 + scrollRows ..]
@@ -457,6 +459,7 @@ makeTextFrame = do
          $ edLines s
 
     return $ pad (lNoWidth + 3) 2 0 0
+           $ cropRight (txtCols + 1)  -- +1 to compensate for the leading blank
            $ vertCat
            $ map ( (char (dLineNoFormat d) ' ' <|>)
                  . translateX (-scrollCols)
@@ -478,7 +481,7 @@ makeBackground :: WSEdit Image
 makeBackground = do
     conf <- ask
 
-    (nRows, nCols     ) <- getDisplayBounds
+    (nRows, nCols     ) <- getViewportDimensions
     (_    , scrollCols) <- getOffset
 
     cursor   <- getCursor >>= toCursorDispPos
@@ -489,7 +492,7 @@ makeBackground = do
         bgSty   =                    dBGFormat  $ edDesign conf
         colChar = fromMaybe bgChar $ dColChar   $ edDesign conf
 
-    return $ pad(lNoWidth + 3) 0 0 0
+    return $ pad (lNoWidth + 3) 2 0 0
            $ vertCat
            $ map (\(n, l) -> string (if n == fst cursor
                                           then bgSty `withStyle` reverseVideo
@@ -497,14 +500,74 @@ makeBackground = do
                                     ) l
                  )
            $ take nRows
-           $ zip [0..]
+           $ zip [2..]
            $ repeat
            $ ('#' :)
            $ take nCols
            $ drop scrollCols
            $ cycle
-           $ colChar
-           : replicate (dColNoInterval (edDesign conf) - 1) bgChar
+           $ colChar : replicate (dColNoInterval (edDesign conf) - 1) bgChar
+
+
+
+-- | Render the scroll bar to the right.
+makeScrollbar :: WSEdit Image
+makeScrollbar = do
+    d <- edDesign <$> ask
+    s <- get
+
+    (nRows, nCols) <- getViewportDimensions
+    (sRows, _    ) <- getOffset
+    (curR , _    ) <- getCursor
+
+    lNoWidth <- lineNoWidth
+
+    let
+        -- Number of lines the document has
+        nLns   = B.length $ edLines s
+
+        -- Ratio of viewport to entire document
+        rVport = (fromIntegral nRows / fromIntegral nLns) :: Rational
+
+        -- Resulting size of the scroll bar
+        scrSz  = max 2
+               $ min nRows
+               $ round (rVport * fromIntegral nRows) + 1
+
+
+        -- Vertical document progress
+        rProg  = (fromIntegral (sRows + 1) / fromIntegral (if nLns > nRows
+                                                              then nLns - nRows
+                                                              else nLns
+                                                          )
+                 ) :: Rational
+
+        -- Resulting scroll bar offset
+        scPos  = round $ rProg * fromIntegral (if nRows > scrSz
+                                                  then nRows - scrSz
+                                                  else nRows
+                                              )
+
+        -- Vertical cursor progress
+        rCPrg  = (fromIntegral curR / fromIntegral nLns) :: Rational
+
+        -- Resulting cursor vertical position
+        cPos   = round $ rCPrg * fromIntegral (nRows - 1)
+
+    return $ pad (lNoWidth + 4 + nCols) 2 0 0
+           $ cropBottom nRows
+           $ vertCat
+           $ map (\(n, c) -> char   (dFrameFormat d) '|'
+                         <|> if n /= cPos
+                                then char (               dFrameFormat  d) c
+                                else char (dCurrLnMod d $ dLineNoFormat d) '<'
+                 )
+           $ zip [(0 :: Int)..]
+           $ replicate  scPos                  ' '
+          ++                                  ['-']
+          ++ replicate (scrSz - 2            ) '|'
+          ++                                  ['-']
+          ++ replicate (nRows - scPos - scrSz) ' '
 
 
 
@@ -523,6 +586,8 @@ draw = do
                 then makeBackground
                 else return undefined
 
+    scr   <- makeScrollbar
+
     liftIO $ update (vtyObj c)
              Picture
                 { picCursor     = if (readOnly s || ru + rd + cl + cr > 0)
@@ -532,9 +597,11 @@ draw = do
                                      then [ frame
                                           , txt
                                           , bg
+                                          , scr
                                           ]
                                      else [ frame
                                           , txt
+                                          , scr
                                           ]
                 , picBackground = ClearBackground
                 }
