@@ -524,50 +524,38 @@ makeScrollbar = do
 
     let
         -- Number of lines the document has
-        nLns   = B.length $ edLines s
+        nLns    = B.length $ edLines s
 
-        -- Ratio of viewport to entire document
-        rVport = (fromIntegral nRows / fromIntegral nLns) :: Rational
+        -- Relative position of the viewport's upper edge
+        stProg  = floor $ (fromIntegral (nRows - 1     ))
+                        * (fromIntegral  sRows          )
+                        / (fromIntegral nLns :: Rational)
 
-        -- Resulting size of the scroll bar
-        scrSz  = max 2
-               $ min nRows
-               $ round (rVport * fromIntegral nRows) + 1
+        -- Position of the viewport's lower edge
+        endProg = floor $ 1
+                        + (fromIntegral (nRows - 1     ))
+                        * (fromIntegral (sRows + nRows ))
+                        / (fromIntegral nLns :: Rational)
 
-
-        -- Vertical document progress
-        rProg  = (fromIntegral (sRows + 1) / fromIntegral (if nLns > nRows
-                                                              then nLns - nRows
-                                                              else nLns
-                                                          )
-                 ) :: Rational
-
-        -- Resulting scroll bar offset
-        scPos  = round $ rProg * fromIntegral (if nRows > scrSz
-                                                  then nRows - scrSz
-                                                  else nRows
-                                              )
-
-        -- Vertical cursor progress
-        rCPrg  = (fromIntegral curR / fromIntegral nLns) :: Rational
-
-        -- Resulting cursor vertical position
-        cPos   = round $ rCPrg * fromIntegral (nRows - 1)
+        -- Position of the cursor
+        cProg   = floor $ (fromIntegral (nRows - 1     ))
+                        * (fromIntegral  curR           )
+                        / (fromIntegral nLns :: Rational)
 
     return $ pad (lNoWidth + 4 + nCols) 2 0 0
            $ cropBottom nRows
            $ vertCat
            $ map (\(n, c) -> char   (dFrameFormat d) '|'
-                         <|> if n /= cPos || readOnly s
+                         <|> if n /= cProg || readOnly s
                                 then char (               dFrameFormat  d) c
                                 else char (dCurrLnMod d $ dLineNoFormat d) '<'
                  )
            $ zip [(0 :: Int)..]
-           $ replicate  scPos                  ' '
+           $ replicate  stProg                 ' '
           ++                                  ['-']
-          ++ replicate (scrSz - 2            ) '|'
+          ++ replicate (endProg - stProg - 2 ) '|'
           ++                                  ['-']
-          ++ replicate (nRows - scPos - scrSz) ' '
+          ++ replicate (nRows - endProg      ) ' '
 
 
 
