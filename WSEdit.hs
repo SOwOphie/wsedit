@@ -27,8 +27,9 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , escape, keymap, keywords
-                                           , lineComment, purgeOnClose, strDelim
-                                           , vtyObj, tabWidth
+                                           , lineComment, purgeOnClose
+                                           , searchTerms, strDelim, vtyObj
+                                           , tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -202,6 +203,8 @@ argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dra
 argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = True                            }, s)
 argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Just e                          }, s)
 argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Nothing                         }, s)
+argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = x : searchTerms c               }, s)
+argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = filter (/= x) $ searchTerms c   }, s)
 argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = x : keywords c                  }, s)
 argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
 argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = x : lineComment c               }, s)
@@ -384,6 +387,9 @@ usage = Left
        ++ "\n"
        ++ "\t-fe+<c>\tSet <c> as an escape character for strings.\n"
        ++ "\t-fe-\tUnset the existing escape character.\n"
+       ++ "\n"
+       ++ "\t-fh+<s>\tSearch for <s> and highlight every occurence in bright red.\n"
+       ++ "\t-fh-<s>\tRemove <s> from the search terms list.\n"
        ++ "\n"
        ++ "\t-fk+<s>\tMark <s> as a keyword.\n"
        ++ "\t-fk-<s>\tRemove <s> from the keywords list.\n"

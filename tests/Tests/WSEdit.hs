@@ -90,6 +90,7 @@ tArgLoop = TestLabel "argLoop" $ TestList
 
     , tOpt "-b"      $ withFst (\c -> c { drawBg       = False                        })
     , tOpt "-fe+\\"  $ withFst (\c -> c { escape       = Just '\\'                    })
+    , tOpt "-fh+st"  $ withFst (\c -> c { searchTerms  = ["st"]                       })
     , tOpt "-fk+kw"  $ withFst (\c -> c { keywords     = ["kw"]                       })
     , tOpt "-flc+//" $ withFst (\c -> c { lineComment  = ["//"]                       })
     , tOpt "-fs+''"  $ withFst (\c -> c { strDelim     = [('\'','\'')]                })
@@ -115,6 +116,8 @@ tArgLoop = TestLabel "argLoop" $ TestList
                   , "-B"
                   , "-fe+\\"
                   , "-fe-"
+                  , "-fh+st"
+                  , "-fh-st"
                   , "-fk+keyword"
                   , "-fk-keyword"
                   , "-flc+//"

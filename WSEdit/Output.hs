@@ -37,24 +37,24 @@ import Graphics.Vty             ( Background (ClearBackground)
 import Safe                     (lookupJustDef)
 
 import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
-                                           , lineComment, strDelim, tabWidth
-                                           , vtyObj
+                                           , lineComment, searchTerms, strDelim
+                                           , tabWidth, vtyObj
                                            )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
                                            , dColNoInterval, dCommentFormat
                                            , dCurrLnMod, dFrameFormat
                                            , dKeywordFormat, dLineNoFormat
-                                           , dLineNoInterv, dSelFormat
-                                           , dStatusFormat, dStrFormat, dTabExt
-                                           , dTabStr
+                                           , dLineNoInterv, dSearchFormat
+                                           , dSelFormat, dStatusFormat
+                                           , dStrFormat, dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
                                           , status
                                           )
                                 , HighlightMode ( HComment, HKeyword, HNone
-                                                , HString
+                                                , HSearch, HString
                                                 )
                                 , WSEdit
                                 , getCursor, getDisplayBounds, getOffset
@@ -137,10 +137,12 @@ charRep hl pos _ c = do
         comSty  = dCommentFormat d
         strSty  = dStrFormat     d
         keywSty = dKeywordFormat d
+        sSty    = dSearchFormat  d
 
         synSty  = case hl of
                        HComment -> comSty
                        HKeyword -> keywSty
+                       HSearch  -> sSty
                        HString  -> strSty
                        _        -> charSty
 
@@ -187,6 +189,13 @@ lineRep lNo s = do
                         )
             $ keywords conf
 
+        -- List of search terms
+        sL :: [(Int, Int)]
+        sL = concatMap (\k -> map (\p -> (p + 1, p + length k))
+                           $ findInStr k s
+                       )
+            $ searchTerms conf
+
         -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]
         comL' = filter (\c -> not $ any (\r -> inRange r c) strL) comL
@@ -201,7 +210,8 @@ lineRep lNo s = do
         f :: (Image, Int, Int) -> Char -> WSEdit (Image, Int, Int)
         f (im, tPos, vPos) c = do
             i <- charRep
-                    (case () of _ | fromMaybe maxBound comAt <= tPos -> HComment
+                    (case () of _ | any (flip inRange tPos) sL       -> HSearch
+                                  | fromMaybe maxBound comAt <= tPos -> HComment
                                   | any (flip inRange tPos) strL     -> HString
                                   | any (flip inRange tPos) kwL      -> HKeyword
                                   | otherwise                        -> HNone

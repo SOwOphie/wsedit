@@ -63,7 +63,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.0"
+version = "0.3.1.1"
 
 
 
@@ -445,6 +445,9 @@ data EdConfig = EdConfig
 
     , escape       :: Maybe Char
         -- ^ Escape character for strings.
+
+    , searchTerms  :: [String]
+        -- ^ List of search terms to highlight
     }
 
 -- | Create a default `EdConfig`.
@@ -462,6 +465,7 @@ mkDefConfig v k = EdConfig
                 , strDelim     = []
                 , keywords     = []
                 , escape       = Nothing
+                , searchTerms  = []
               }
 
 
@@ -530,6 +534,9 @@ data EdDesign = EdDesign
 
     , dKeywordFormat :: Attr
         -- ^ vty attribute for keywords
+
+    , dSearchFormat  :: Attr
+        -- ^ vty attribute for highlighted search terms
     }
 
 
@@ -603,6 +610,10 @@ instance Default EdDesign where
 
         , dKeywordFormat = defAttr
                             `withForeColor` green
+
+        , dSearchFormat  = defAttr
+                            `withForeColor` red
+                            `withStyle`     bold
 
         }
 
@@ -680,6 +691,10 @@ brightTheme = EdDesign
         , dKeywordFormat = defAttr
                             `withForeColor` green
 
+        , dSearchFormat  = defAttr
+                            `withForeColor` red
+                            `withStyle`     bold
+
         }
 
 
@@ -713,5 +728,6 @@ type Keymap = [(Event, (WSEdit (), String))]
 data HighlightMode = HNone
                    | HComment
                    | HKeyword
+                   | HSearch
                    | HString
     deriving (Eq, Read, Show)

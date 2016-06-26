@@ -13,15 +13,16 @@ import Graphics.Vty      (Attr, Event, Vty)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                                     , escape, histSize, keymap, keywords
-                                    , lineComment, purgeOnClose, strDelim
-                                    , tabWidth, vtyObj
+                                    , lineComment, purgeOnClose, searchTerms
+                                    , strDelim, tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
                                     , dCommentFormat, dCurrLnMod, dFrameFormat
                                     , dKeywordFormat, dLineNoFormat
-                                    , dLineNoInterv, dSelFormat, dStatusFormat
-                                    , dStrFormat, dTabExt, dTabStr
+                                    , dLineNoInterv, dSearchFormat, dSelFormat
+                                    , dStatusFormat, dStrFormat, dTabExt
+                                    , dTabStr
                                     )
                          , Keymap
                          )
@@ -43,6 +44,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pStrDelim     :: [(Char, Char)]
     , pKeywords     :: [String]
     , pEscape       :: Maybe Char
+    , pSearchTerms  :: [String]
     }
     deriving (Eq, Read, Show)
 
@@ -61,6 +63,7 @@ prettyEdConfig c = PrettyEdConfig
     , pStrDelim     =                  strDelim     c
     , pKeywords     =                  keywords     c
     , pEscape       =                  escape       c
+    , pSearchTerms  =                  searchTerms  c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -78,6 +81,7 @@ unPrettyEdConfig v k f p = EdConfig
     , strDelim     = pStrDelim                      p
     , keywords     = pKeywords                      p
     , escape       = pEscape                        p
+    , searchTerms  = pSearchTerms                   p
     }
 
 
@@ -102,6 +106,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDCommentFormat :: Attr
     , pDStrFormat     :: Attr
     , pDKeywordFormat :: Attr
+    , pDSearchFormat  :: Attr
     }
     deriving (Eq, Read, Show)
 
@@ -125,6 +130,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDCommentFormat = dCommentFormat d
     , pDStrFormat     = dStrFormat     d
     , pDKeywordFormat = dKeywordFormat d
+    , pDSearchFormat  = dSearchFormat  d
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -147,6 +153,7 @@ unPrettyEdDesign f p = EdDesign
     , dCommentFormat = pDCommentFormat p
     , dStrFormat     = pDStrFormat     p
     , dKeywordFormat = pDKeywordFormat p
+    , dSearchFormat  = pDSearchFormat  p
     }
 
 
