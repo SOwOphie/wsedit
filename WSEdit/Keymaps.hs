@@ -85,7 +85,7 @@ defaultKM =
       )
 
     , (EvKey (KChar '@')  [               MCtrl], (                                          fetchCursor                 >> clearMark
-                                                  , "Move Cursor to the first displayed line."
+                                                  , "Fetch cursor to the center of the viewport."
                                                   )
       )
 
@@ -141,7 +141,7 @@ defaultKM =
                                                   )
       )
     , (EvKey (KChar '\t') [                    ], ( ifMarked indentSelection                (completeOr insertTab        >> clearMark)
-                                                  , "Increase the indentation of the current selection OR insert a tab."
+                                                  , "Increase the indentation of the current selection OR apply autocomplete OR insert a tab."
                                                   )
       )
     , (EvKey (KChar '\t') [MMeta               ], (                                          toggleTabRepl

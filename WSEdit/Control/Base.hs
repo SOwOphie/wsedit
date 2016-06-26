@@ -18,7 +18,9 @@ import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
                                 , alter, getCursor, getOffset, setCursor
                                 , setStatus, setOffset
                                 )
-import WSEdit.Output            (cursorOffScreen, txtToVisPos, visToTxtPos)
+import WSEdit.Output            ( cursorOffScreen, getViewportDimensions
+                                , txtToVisPos, visToTxtPos
+                                )
 import WSEdit.Util              (withPair)
 
 import qualified WSEdit.Buffer as B
@@ -141,8 +143,10 @@ moveCursor r c = alterState $ do
 fetchCursor :: WSEdit ()
 fetchCursor = refuseOnReadOnly $ do
     s <- get
+    (r, _) <- getViewportDimensions
+
     put $ s { cursorPos = 1
             , edLines = B.toFirst $ edLines s
             }
 
-    moveCursor (1 + fst (scrollOffset s)) 0
+    moveCursor (fst (scrollOffset s) + (r `div` 2)) 0

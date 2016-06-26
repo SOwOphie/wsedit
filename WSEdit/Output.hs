@@ -558,7 +558,7 @@ makeScrollbar = do
            $ cropBottom nRows
            $ vertCat
            $ map (\(n, c) -> char   (dFrameFormat d) '|'
-                         <|> if n /= cPos
+                         <|> if n /= cPos || readOnly s
                                 then char (               dFrameFormat  d) c
                                 else char (dCurrLnMod d $ dLineNoFormat d) '<'
                  )
