@@ -19,7 +19,7 @@ import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
-import Data.Maybe                  (fromMaybe)
+import Data.Maybe                  (fromJust, fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
@@ -39,16 +39,18 @@ import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    )
 import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                    , EdState  ( changed, continue, cursorPos
-                                              , detectTabs, edLines, fname
+                                              , detectTabs, dict, edLines, fname
                                               , loadPos, markPos, readOnly
                                               , replaceTabs
                                               )
                                    , WSEdit
-                                   , popHist, setStatus, version
+                                   , chopHist, mapPast, popHist, setStatus
+                                   , version
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
 import WSEdit.Util                 (withPair)
+import WSEdit.WordTree             (empty)
 
 import qualified WSEdit.Buffer as B
 
@@ -81,7 +83,12 @@ bail s = do
            ++ "\n\nEditor configuration:\n"
            ++ indent (ppShow $ prettyEdConfig c)
            ++ "\nEditor state:\n"
-           ++ indent (ppShow st)
+           ++ indent ( ppShow
+                     $ mapPast (\h -> h { dict = empty })
+                     $ fromJust
+                     $ chopHist 10
+                     $ Just st
+                     )
 
         exitFailure
 

@@ -18,6 +18,8 @@ module WSEdit.Data
     , getOffset
     , setOffset
     , setStatus
+    , chopHist
+    , mapPast
     , alter
     , popHist
     , getSelection
@@ -63,7 +65,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.1"
+version = "0.3.1.2"
 
 
 
@@ -284,6 +286,25 @@ setStatus st = do
 
 
 
+-- | The 'EdState' 'history' is structured like a conventional list, and
+--   this is its 'take', with some added 'Maybe'ness.
+chopHist :: Int -> Maybe EdState -> Maybe EdState
+chopHist n _        | n <= 0 = Nothing
+chopHist _ Nothing           = Nothing
+chopHist n (Just s)          =
+    Just $ s { history = chopHist (n-1) (history s) }
+
+-- | The 'EdState' 'history' is structured like a conventional list, and
+--   this is its 'map'.  Function doesn't get applied to the present state
+--   though.
+mapPast :: (EdState -> EdState) -> EdState -> EdState
+mapPast f s =
+    case history s of
+         Nothing -> s
+         Just  h -> s { history = Just $ mapPast f $ f h }
+
+
+
 -- | Create an undo checkpoint and set the changed flag.
 alter :: WSEdit ()
 alter = do
@@ -291,14 +312,6 @@ alter = do
     modify (\s -> s { history = chopHist h (Just s)
                     , changed = True
                     } )
-    where
-        -- | The 'EdState' 'history' is structured like a conventional list, and
-        --   this is its 'take', with some added 'Maybe'ness.
-        chopHist :: Int -> Maybe EdState -> Maybe EdState
-        chopHist n _        | n <= 0 = Nothing
-        chopHist _ Nothing           = Nothing
-        chopHist n (Just s)          =
-            Just $ s { history = chopHist (n-1) (history s) }
 
 
 -- | Restore the last undo checkpoint, if available.
