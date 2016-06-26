@@ -1,0 +1,92 @@
+################################################################################
+#                                                                              #
+#       ####                                                         ####      #
+#         ####                                                         ####    #
+#    # #    ####             Cabal Files                          # #    ####  #
+#   ###    ####                                                  ###    ####   #
+#    # #  ####                                                    # #  ####    #
+#                                                                              #
+################################################################################
+#                                                                              #
+# Keywords                                                                     #
+cabal: -fk+name
+cabal: -fk+version
+cabal: -fk+cabal-version
+cabal: -fk+build-type
+cabal: -fk+license
+cabal: -fk+license-file
+cabal: -fk+copyright
+cabal: -fk+author
+cabal: -fk+maintainer
+cabal: -fk+stability
+cabal: -fk+homepage
+cabal: -fk+bug-reports
+cabal: -fk+package-url
+cabal: -fk+synopsis
+cabal: -fk+description
+cabal: -fk+category
+cabal: -fk+tested-with
+cabal: -fk+data-files
+cabal: -fk+data-dir
+cabal: -fk+extra-source-files
+cabal: -fk+extra-doc-files
+cabal: -fk+extra-tmp-files
+
+cabal: -fk+build-depends
+cabal: -fk+other-modules
+cabal: -fk+hs-source-dirs
+cabal: -fk+default-language
+cabal: -fk+extensions
+cabal: -fk+build-tools
+cabal: -fk+buildable
+cabal: -fk+ghc-options
+cabal: -fk+ghc-prof-options
+cabal: -fk+ghc-shared-options
+cabal: -fk+includes
+cabal: -fk+install-includes
+cabal: -fk+include-dirs
+cabal: -fk+c-sources
+cabal: -fk+js-sources
+cabal: -fk+extra-libraries
+cabal: -fk+extra-ghci-libraries
+cabal: -fk+extra-lib-dirs
+cabal: -fk+cc-options
+cabal: -fk+cpp-options
+cabal: -fk+ld-options
+cabal: -fk+frameworks
+
+cabal: -fk+library
+cabal: -fk+exposed-modules
+cabal: -fk+exposed
+cabal: -fk+reexported-modules
+
+cabal: -fk+executable
+cabal: -fk+main-is
+
+cabal: -fk+test-suite
+cabal: -fk+type
+cabal: -fk+test-module
+
+cabal: -fk+flag
+cabal: -fk+description
+cabal: -fk+default
+cabal: -fk+manual
+cabal: -fk+os
+cabal: -fk+arch
+cabal: -fk+impl
+cabal: -fk+true
+cabal: -fk+false
+
+cabal: -fk+source-repository
+cabal: -fk+location
+cabal: -fk+module
+cabal: -fk+branch
+cabal: -fk+tag
+cabal: -fk+subdir
+#                                                                              #
+################################################################################
+#                                                                              #
+# Custom options                                                               #
+cabal:
+#                                                                              #
+################################################################################
