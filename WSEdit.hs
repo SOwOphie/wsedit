@@ -11,7 +11,7 @@ import Data.List                ( isInfixOf, isPrefixOf, isSuffixOf, partition
                                 , stripPrefix
                                 )
 import Data.Maybe               (fromMaybe)
-import Graphics.Vty             ( Event (EvKey)
+import Graphics.Vty             ( Event (EvKey, EvResize)
                                 , Key (KChar)
                                 , mkVty
                                 , nextEvent
@@ -282,6 +282,7 @@ mainLoop = do
                                        >> insert k
                                        >> listAutocomplete
 
+                    EvResize _ _       -> return ()
                     _                  -> setStatus $ "Event not bound: "
                                                    ++ show ev
               )
