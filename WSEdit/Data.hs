@@ -65,7 +65,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.5"
+version = "0.3.1.6"
 
 
 
