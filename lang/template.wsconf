@@ -1,46 +1,24 @@
 ################################################################################
 #                                                                              #
-#  #   ##   #                                                      #   ##   #  #
-#   # #  # #                                                        # #  # #   #
-#    ##  ##                  WSEdit Config Files                     #    #    #
-#     #  #                                                            #  #     #
-#      ##                                                              ##      #
+#  ####################                                  ####################  #
+#  ####################                                  ####################  #
+#  ## Draw logo here ##      WSConf Template Files       ##### And here #####  #
+#  ####################                                  ####################  #
+#  ####################                                  ####################  #
 #                                                                              #
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
-wsconf: -ts
+wsed-template: -i8 -tt
 #                                                                              #
 # Syntax highlighting                                                          #
-wsconf: -flc+#
+wsed-template: -flc+//
+wsed-template: -fs+""
+wsed-template: -fe+\
 #                                                                              #
 # Keywords                                                                     #
-wsconf: -fk+-b
-wsconf: -fk+-B
-wsconf: -fk+-cg
-wsconf: -fk+-cl
-wsconf: -fk+-d
-wsconf: -fk+-D
-wsconf: -fk+-fe
-wsconf: -fk+-fh
-wsconf: -fk+-fk
-wsconf: -fk+-flc
-wsconf: -fk+-fs
-wsconf: -fk+-h
-wsconf: -fk+-hk
-wsconf: -fk+-i
-wsconf: -fk+-p
-wsconf: -fk+-P
-wsconf: -fk+-r
-wsconf: -fk+-R
-wsconf: -fk+-s
-wsconf: -fk+-ts
-wsconf: -fk+-tt
-wsconf: -fk+-T
-wsconf: -fk+-V
-wsconf: -fk+-x
-wsconf: -fk+-X
-wsconf: -fk+-y
-wsconf: -fk+-Y
+wsed-template: -fk+keyword1
+wsed-template: -fk+keyword2
+wsed-template: -fk+keyword3
 #                                                                              #
 ################################################################################

@@ -7,7 +7,9 @@ import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
-import Data.List                (isInfixOf, isPrefixOf, partition, stripPrefix)
+import Data.List                ( isInfixOf, isPrefixOf, isSuffixOf, partition
+                                , stripPrefix
+                                )
 import Data.Maybe               (fromMaybe)
 import Graphics.Vty             ( Event (EvKey)
                                 , Key (KChar)
@@ -106,6 +108,7 @@ start = do
                          . mayReadFile
                          . ((h ++ "/.config/wsedit/") ++ )
                          )
+                  . filter (isSuffixOf ".wsconf")
                 >>= return . concat
                else return [""]
 
@@ -185,14 +188,15 @@ start = do
 --   config location and returns a list of switches, throwing out
 --   comment lines as well as those specific to other extensions.
 filterFileArgs :: Maybe String -> [String] -> [String]
-filterFileArgs Nothing    s = concatMap words
-                            $ filter (\x -> ':' `notElem` takeWhile (/= '-') x
-                                         && not (isPrefixOf "#" x)
-                                     ) s
+filterFileArgs Nothing    s
+    = concatMap words
+    $ filter (\x -> ':' `notElem` takeWhile (/= ' ') x
+                 && not ("#" `isPrefixOf` x)
+             ) s
 
 filterFileArgs (Just ext) s =
     let
-        (loc, gl) = partition (\x -> ':' `elem` takeWhile (/= '-') x)
+        (loc, gl) = partition (\x -> ':' `elem` takeWhile (/= ' ') x)
                   $ filter (not . isPrefixOf "#") s
     in
         concatMap words

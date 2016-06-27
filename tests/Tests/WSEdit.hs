@@ -16,7 +16,7 @@ tSplitArgs :: Test
 tSplitArgs = TestLabel "splitArgs" $ TestList
     [ TestCase
         $ assertPretty "splitArgs: Nothing at all" (Nothing, 1, 1, [], False)
-        $ splitArgs [] "" ""
+        $ splitArgs [] [] []
 
     , TestCase
         $ assertBool "splitArgs: file name plain"
@@ -42,20 +42,20 @@ tSplitArgs = TestLabel "splitArgs" $ TestList
     , TestCase
         $ assertPretty "splitArgs: file extension detection" ["-b"]
         $ (\(_, _, _, sw, _) -> sw)
-        $ splitArgs ["testfile.some.ext"] "ext: -b\nsome.ext: -p" ""
+        $ splitArgs ["testfile.some.ext"] ["ext: -b", "some.ext: -p"] []
 
     , TestCase
         $ assertPretty "splitArgs: file extensions for config files" ["-a", "-cl"]
         $ (\(_, _, _, sw, _) -> sw)
-        $ splitArgs ["-cl"] "wsconf: -a" ""
+        $ splitArgs ["-cl"] ["wsconf: -a"] []
 
     , TestCase
         $ assertPretty "splitArgs: argument order"
                        ["-a", "-b", "-c", "-d", "-e", "-f"]
         $ (\(_, _, _, sw, _) -> sw)
         $ splitArgs ["-e", "testfile.some.ext", "-f"]
-                    "ext: -b\n-a"
-                    "ext: -d\n-c"
+                    ["ext: -b", "-a"]
+                    ["ext: -d", "-c"]
     ]
 
 
@@ -66,14 +66,14 @@ tFilterFileArgs = TestLabel "filterFileArgs" $ TestList
         $ assertPretty "filterFileArgs: Nothing"
             (["-bcd", "-flc+:"])
             ( filterFileArgs Nothing
-                $ unlines ["-bcd", "hs: -bcd", "-flc+:"]
+                $ ["-bcd", "hs: -bcd", " -flc+:"]
             )
 
     , TestCase
         $ assertPretty "filterFileArgs: Just"
             (["-bcd", "-flc+:", "-bcd"])
             ( filterFileArgs (Just "hs")
-                $ unlines ["-bcd", "hs: -bcd", "lua: -asdf", "-flc+:"]
+                $ ["-bcd", "hs: -bcd", "lua: -asdf", " -flc+:"]
             )
     ]
 

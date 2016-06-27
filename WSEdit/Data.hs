@@ -43,7 +43,6 @@ import Data.Default             (Default (def))
 import Data.Maybe               (fromJust, fromMaybe, isJust)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Attr
-                                , Button (..)
                                 , Event (..)
                                 , Vty (outputIface)
                                 , black, blue, bold, cyan, green, defAttr
@@ -65,7 +64,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.6"
+version = "0.3.1.7"
 
 
 
@@ -141,9 +140,6 @@ data EdState = EdState
         --   on the file's existing indentation.
     }
     deriving (Eq, Read, Show)
-
-deriving instance Read Button
-deriving instance Read Event
 
 instance Default EdState where
     def = EdState
