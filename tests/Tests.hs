@@ -2,7 +2,9 @@ import System.Exit
 
 import Control.Monad
 import Tests.Base
+
 import Tests.WSEdit
+import Tests.WSEdit.Buffer
 
 
 
@@ -10,6 +12,7 @@ import Tests.WSEdit
 allTests :: Test
 allTests = TestList
     [ testWSEdit
+    , testWSEditBuffer
     ]
 
 
