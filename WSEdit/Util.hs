@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module WSEdit.Util
     ( withPair
     , withFst
@@ -111,7 +113,10 @@ mayReadFile :: FilePath -> IO (Maybe String)
 mayReadFile f = do
     b <- doesFileExist f
     if b
-       then Just <$> readFile f
+       then try (readFile f)
+            >>= \case
+                Right s -> return $ Just s
+                Left  e -> const (return Nothing) (e :: SomeException)
        else return Nothing
 
 

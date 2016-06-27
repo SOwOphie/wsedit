@@ -36,7 +36,7 @@ library
                        safe >= 0.3.9 && < 1,
                        transformers >= 0.4.2 && < 1,
                        data-default >= 0.5.3 && < 1,
-                       directory >= 1.2.2 && < 2,
+                       directory >= 1.2.6 && < 2,
                        pretty-show >= 1.6.9 && < 2,
                        strict >= 0.3.2 && < 1,
                        process >= 1.2.3 && < 2
@@ -58,7 +58,7 @@ executable wsedit
                        safe >= 0.3.9 && < 1,
                        transformers >= 0.4.2 && < 1,
                        data-default >= 0.5.3 && < 1,
-                       directory >= 1.2.2 && < 2,
+                       directory >= 1.2.6 && < 2,
                        pretty-show >= 1.6.9 && < 2,
                        strict >= 0.3.2 && < 1,
                        process >= 1.2.3 && < 2

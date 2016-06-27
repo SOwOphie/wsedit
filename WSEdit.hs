@@ -16,7 +16,9 @@ import Graphics.Vty             ( Event (EvKey)
                                 , shutdown
                                 )
 import Safe                     (atDef, headDef, headMay, readDef)
-import System.Directory         (getHomeDirectory)
+import System.Directory         ( doesDirectoryExist, getHomeDirectory
+                                , listDirectory
+                                )
 import System.Environment       (getArgs)
 import System.Exit              ( ExitCode (ExitFailure, ExitSuccess)
                                 , exitFailure, exitWith
@@ -60,7 +62,7 @@ licenseVersion = "1.1"
 -- | Splits up commandline arguments, global, and local config contents into
 --   @(Maybe target file, target line no, target col no, list of switches,
 --   whether -s is present)@.
-splitArgs :: [String] -> String -> String
+splitArgs :: [String] -> [String] -> [String]
           -> (Maybe FilePath, Int, Int, [String], Bool)
 splitArgs args glob loc =
     let
@@ -95,11 +97,25 @@ start = do
     -- Read the global and local config files. Use an empty string in case of
     -- nonexistence.
     h <- liftIO $ getHomeDirectory
+
+    b <- doesDirectoryExist $ h ++ "/.config/wsedit"
+
+    mods <- if b
+               then listDirectory (h ++ "/.config/wsedit")
+                >>= mapM ( fmap (lines . fromMaybe "")
+                         . mayReadFile
+                         . ((h ++ "/.config/wsedit/") ++ )
+                         )
+                >>= return . concat
+               else return [""]
+
+
     glob <- fromMaybe "" <$> mayReadFile (h ++ "/.config/wsedit.wsconf")
     loc  <- fromMaybe "" <$> mayReadFile "./.local.wsconf"
 
     -- split the parameters into a more comfortable format
-    let (filename, tLnNo, tColNo, sw, dashS) = splitArgs args glob loc
+    let (filename, tLnNo, tColNo, sw, dashS)
+            = splitArgs args (mods ++ lines glob) $ lines loc
 
     -- initialize vty
     v <- mkVty def
@@ -168,18 +184,16 @@ start = do
 -- | Takes maybe the file extension and the raw string read from a
 --   config location and returns a list of switches, throwing out
 --   comment lines as well as those specific to other extensions.
-filterFileArgs :: Maybe String -> String -> [String]
+filterFileArgs :: Maybe String -> [String] -> [String]
 filterFileArgs Nothing    s = concatMap words
                             $ filter (\x -> ':' `notElem` takeWhile (/= '-') x
                                          && not (isPrefixOf "#" x)
-                                     )
-                            $ lines s
+                                     ) s
 
 filterFileArgs (Just ext) s =
     let
         (loc, gl) = partition (\x -> ':' `elem` takeWhile (/= '-') x)
-                  $ filter (not . isPrefixOf "#")
-                  $ lines s
+                  $ filter (not . isPrefixOf "#") s
     in
         concatMap words
       $ gl

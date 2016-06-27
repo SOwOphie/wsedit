@@ -39,14 +39,14 @@ conceivable language and to require only a minimal amount of configuration.
   you're currently editing, filter all lines by indentation depth and build a
   dictionary out of those at a specified level.
 
-* __Rudimentary syntax highlighting__: Highlights keywords, strings and
-  comments according to your configuration file.  Default patterns are availabe
-  in `lang/*.wsconf`.
+* __Pragmatic syntax highlighting__: Highlights keywords, strings and comments
+  according to your configuration file.  Default patterns are availabe in
+  `lang/*.wsconf`.
 
 * __Character class highlighting__: Not as powerful as full-on syntax
   highlighting, it will instead color your text by character class (e.g.
   operators -> yellow, brackets -> brown, numbers -> red, ...).  This, in
-  combination with the syntax highlighting, will offer a comfortable editing
+  combination with the syntax highlighting, offers a comfortable editing
   experience while being easy to tweak yourself.
 
 * __The usual selection editing, interacting directly with the system
@@ -57,8 +57,6 @@ conceivable language and to require only a minimal amount of configuration.
   `wsedit -cl` (directory-local) to open the configuration file, then put down
   all the command line parameters you'd like to be default.  Prefix lines with
   e.g. `hs:` to make them apply to .hs-files only.
-
-* __Numbered lines__: I know it isn't much, but hey!
 
 ## Building
 
@@ -75,33 +73,17 @@ conceivable language and to require only a minimal amount of configuration.
     * Add `~/.local/bin/` to your `$PATH`
     * Copy `~/.local/bin/wsedit` to a directory in your `$PATH`, e.g.
       `/usr/local/bin/`.
-8. Run `wsedit <some file>` to test it, see the keybinds table below.
+8. To install language definitions, create the folder `~/.config/wsedit` and
+   paste them there.  Quite a few languages and formats have pre-defined
+   highlighting rules in the `lang` subdirectory of this repository, feel free
+   to write your own and create a pull request!
+9. Run `wsedit <some file>` to test everything, or `wsed -h` for a list of all
+   the available options.
 
-Sometimes the build may fail due to obscure reasons, deleting the local
-`.stack-work` build folder fixed it everytime for me.
+**Sometimes the build may fail due to obscure reasons, deleting the local
+`.stack-work` build folder fixed it everytime for me.**
 
 ## Known issues
 
 * `wsedit` may be a bit on the slow side on older systems. Use `-b` to disable
   background rendering, which remedies this for the most part.
-
-## Current keybindings
-
-Key | Action
-----|--------
-**Ctrl + Q** | Quit.
-**Ctrl + Meta + Q** | Force quit (in case of unsaved changes blocking your way out).
-**Ctrl + Meta + C** | Crash simulator 3000. Do not press.
-**Ctrl + u/d/l/r** | Move the viewport 10 characters.
-**Ctrl + Up/Down/Left/Right** | Move the cursor 10 characters.
-**Ctrl + Space** | Move the cursor to the upper left corner of the viewport.
-**Shift + _Movement_** | Move the cursor, selecting text.
-**Tab** | Indent selection *or* apply autocomplete *or* advance to the next tab stop.
-**Shift + Tab** | Unindent selection.
-**Ctrl + C** | Copy selection to clipboard.
-**Ctrl + X** | Cut selection to clipboard.
-**Ctrl + V** | Paste clipboard over selection.
-**Ctrl + Z** | Undo last action.
-**Ctrl + S** | Remove trailing space and save.
-**Ctrl + Meta + Tab** | Toggle tab replacement (see the icon in the lower left corner).
-**Ctrl + Meta + R** | Toggle read-only mode.
