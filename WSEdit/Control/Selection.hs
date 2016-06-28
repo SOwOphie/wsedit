@@ -8,13 +8,15 @@ module WSEdit.Control.Selection
     , paste
     , indentSelection
     , unindentSelection
+    , searchFor
     ) where
 
 
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, put)
+import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.List                (stripPrefix)
 import Data.Maybe               (fromMaybe, isJust)
+import Safe                     (headMay)
 import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
 
@@ -23,7 +25,7 @@ import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
                                 )
 import WSEdit.Data              ( EdConfig (tabWidth)
                                 , EdState (cursorPos, edLines, markPos
-                                          , replaceTabs
+                                          , replaceTabs, searchTerms
                                           )
                                 , WSEdit
                                 , clearMark, delSelection, getMark, getCursor
@@ -217,3 +219,19 @@ unindentSelection = alterBuffer $ do
         unindent :: String -> String -> String
         unindent prf ln = fromMaybe ln
                         $ stripPrefix prf ln
+
+
+
+-- | Add the currently selected area to the list of search terms, or pop the
+--   last search term from the list if the selection is empty.
+searchFor :: WSEdit ()
+searchFor = getSelection >>= \case
+    Nothing -> headMay . searchTerms <$> get >>= \case
+        Nothing -> setStatus "Warning: no search terms."
+        Just  s -> do
+            modify (\c -> c { searchTerms =     drop 1       $ searchTerms c  })
+            setStatus $ "Removed \"" ++ s ++ "\" from the list of search terms."
+
+    Just  s -> do
+        modify (\c -> c { searchTerms = s : filter (/= s) (searchTerms c) })
+        setStatus $ "Added \"" ++ s ++ "\" to the list of search terms."

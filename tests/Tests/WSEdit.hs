@@ -90,7 +90,6 @@ tArgLoop = TestLabel "argLoop" $ TestList
 
     , tOpt "-b"      $ withFst (\c -> c { drawBg       = False                        })
     , tOpt "-fe+\\"  $ withFst (\c -> c { escape       = Just '\\'                    })
-    , tOpt "-fh+st"  $ withFst (\c -> c { searchTerms  = ["st"]                       })
     , tOpt "-fk+kw"  $ withFst (\c -> c { keywords     = ["kw"]                       })
     , tOpt "-flc+//" $ withFst (\c -> c { lineComment  = ["//"]                       })
     , tOpt "-fs+''"  $ withFst (\c -> c { strDelim     = [('\'','\'')]                })
@@ -101,6 +100,7 @@ tArgLoop = TestLabel "argLoop" $ TestList
     , tOpt "-cg"     $ withSnd (\s -> s { fname        = "home/.config/wsedit.wsconf" })
     , tOpt "-cl"     $ withSnd (\s -> s { fname        = "./.local.wsconf"            })
     , tOpt "-d1"     $ withSnd (\s -> s { buildDict    = Just 1                       })
+    , tOpt "-fh+st"  $ withSnd (\s -> s { searchTerms  = ["st"]                       })
     , tOpt "-r"      $ withSnd (\s -> s { readOnly     = True                         })
     , tOpt "-ts"     $ withSnd (\s -> s { replaceTabs  = True
                                         , detectTabs   = False                        })
@@ -143,6 +143,7 @@ tArgLoop = TestLabel "argLoop" $ TestList
             )
 
     , tExit "incorrect parameter" "--shit" $ ExitFailure 1
+    , tExit "keybinds help"       "-hc"    $ ExitSuccess
     , tExit "keybinds help"       "-hk"    $ ExitSuccess
     , tExit "general help"        "-h"     $ ExitSuccess
     , tExit "version info"        "-V"     $ ExitSuccess
@@ -171,17 +172,6 @@ tArgLoop = TestLabel "argLoop" $ TestList
 
 
 
-tVersionInfo :: Test
-tVersionInfo = TestLabel "versionInfo" $ TestList
-    [ TestCase
-        $ assertBool "versionInfo: exit code failed"
-        $ case versionInfo of
-               Left  (e, _) -> e == ExitSuccess
-               _            -> False
-    ]
-
-
-
 tKeymapInfo :: Test
 tKeymapInfo = TestLabel "keymapInfo" $ TestList
     [ TestCase
@@ -199,6 +189,5 @@ testWSEdit = TestLabel "WSEdit" $ TestList
     [ tSplitArgs
     , tArgLoop
     , tFilterFileArgs
-    , tVersionInfo
     , tKeymapInfo
     ]

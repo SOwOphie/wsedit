@@ -7,12 +7,14 @@ import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
-import Data.List                ( isInfixOf, isPrefixOf, isSuffixOf, partition
-                                , stripPrefix
+import Data.List                ( delete, isInfixOf, isPrefixOf, isSuffixOf
+                                , partition, stripPrefix
                                 )
 import Data.Maybe               (fromMaybe)
-import Graphics.Vty             ( Event (EvKey, EvResize)
-                                , Key (KChar)
+import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
+                                , Event (EvKey, EvMouseDown, EvResize)
+                                , Key (KBS, KChar, KFun)
+                                , Modifier (MCtrl, MMeta, MShift)
                                 , mkVty
                                 , nextEvent
                                 , shutdown
@@ -32,31 +34,25 @@ import WSEdit.Control           ( bail, deleteSelection, insert
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , escape, keymap, keywords
                                            , lineComment, purgeOnClose
-                                           , searchTerms, strDelim, vtyObj
-                                           , tabWidth
+                                           , strDelim, vtyObj, tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
                                           , loadPos, readOnly, replaceTabs
-                                          , status
+                                          , searchTerms, status
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
-                                , setStatus, version
+                                , setStatus
                                 )
 import WSEdit.Data.Pretty       (prettyKeymap, unPrettyEdConfig)
+import WSEdit.Help              (confHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
                                 , withSnd
                                 )
-
-
-
--- | License version number constant.
-licenseVersion :: String
-licenseVersion = "1.1"
 
 
 
@@ -214,15 +210,14 @@ filterFileArgs (Just ext) s =
 --   directory.
 argLoop :: String -> [String] -> (EdConfig, EdState) -> Either (ExitCode, String) (EdConfig, EdState)
 argLoop _ (('-':'h':'k'        :_ ):_ ) (c, _) = keymapInfo c
-argLoop _ (('-':'h'            :_ ):_ ) _      = usage
-argLoop _ (('-':'V'            :_ ):_ ) _      = versionInfo
+argLoop _ (('-':'h':'c'        :_ ):_ ) (_, _) = Left (ExitSuccess, confHelp   )
+argLoop _ (('-':'h'            :_ ):_ ) _      = Left (ExitSuccess, usageHelp  )
+argLoop _ (('-':'V'            :_ ):_ ) _      = Left (ExitSuccess, versionHelp)
 argLoop h (('-':'s'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s) -- gets handled elsewhere, ignore it here.
 argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = False                           }, s)
 argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = True                            }, s)
 argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Just e                          }, s)
 argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Nothing                         }, s)
-argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = x : searchTerms c               }, s)
-argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = filter (/= x) $ searchTerms c   }, s)
 argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = x : keywords c                  }, s)
 argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
 argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = x : lineComment c               }, s)
@@ -240,6 +235,8 @@ argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { 
 argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
 argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
 argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                       })
+argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s             })
+argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s })
 argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                          })
 argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                         })
 argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = True
@@ -312,180 +309,46 @@ mainLoop = do
 
 
 
-
-
--- | Prints out version and licensing information, then exits with code 0.
-versionInfo :: Either (ExitCode, String) (EdConfig, EdState)
-versionInfo = Left (ExitSuccess, "Wyvernscale Source Code Editor (wsedit) Version "
-                                ++ version ++ "\n"
-                              ++ "\n"
-                              ++ "Licensed under the Wyvernscale Source Code License Version "
-                                ++ licenseVersion ++ ".\n"
-                              ++ "\n"
-                              ++ "The licensed software is to be regarded as an awful, insecure, barely-working\n"
-                              ++ "hack job.  It should only be used in a secured environment that prevents the\n"
-                              ++ "software from causing any damage, including, but not limited to damage from\n"
-                              ++ "unexpected side effects or refusal to run at all.  Any potential damage caused\n"
-                              ++ "by the software is to blame on failure to implement sufficient safety measures\n"
-                              ++ "and therefore on the user, not on the developer of the software.\n"
-                   )
-
-
-
 -- | Dumps the keymap, then exits with code 0.
 keymapInfo :: EdConfig -> Either (ExitCode, String) (EdConfig, EdState)
-keymapInfo c =
+keymapInfo conf =
     let
-        tbl  = map (withFst show)
+        tbl  = map (withFst showEv)
              $ prettyKeymap
-             $ keymap c
+             $ keymap conf
 
         maxW = maximum $ map (length . fst) tbl
     in
         Left (ExitSuccess
-             , "Dumping keymap:\n"
+             , "Dumping keymap (Meta = Alt on most systems):\n"
                 ++ ( unlines
                    $ map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s))
                      tbl
                    )
              )
 
+    where
+        showEv :: Event -> String
+        showEv (EvKey           k ml) = showMods ml ++ showKey k
+        showEv (EvMouseDown c r b ml) = showMods ml ++ showBtn b ++ " @ "
+                                                                 ++ show (r, c)
+        showEv _                      = "<unknown event>"
 
+        showMods :: [Modifier] -> String
+        showMods ml | MCtrl  `elem` ml = "Ctrl-"  ++ showMods (delete MCtrl  ml)
+                    | MMeta  `elem` ml = "Meta-"  ++ showMods (delete MMeta  ml)
+                    | MShift `elem` ml = "Shift-" ++ showMods (delete MShift ml)
+                    | otherwise        = ""
 
--- | Prints the usage help, then exits with code 0.
-usage :: Either (ExitCode, String) (EdConfig, EdState)
-usage = Left
-        (ExitSuccess
-        , "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]\n"
-       ++ "\n"
-       ++ "Arguments (the uppercase options are on by default):\n"
-       ++ "\n"
-       ++ "\t-b\tDon't draw the background (dots + lines). May speed up the\n"
-       ++ "\t\teditor on older systems, as it seems to be quite the resource hog.\n"
-       ++ "\t-B\tDraw the usual background (dots + lines).\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-cg\tOpen global configuration file (~/.config/wsedit.wsconf).\n"
-       ++ "\t-cl\tOpen local configuration file (./.local.wsconf).\n"
-       ++ "\n"
-       ++ "\t\tThose files will be concatenated with the command line arguments\n"
-       ++ "\t\tand then evaluated. You can prefix lines with \"<ext>:\" so that\n"
-       ++ "\t\tthey are only read for files with extension .<ext> , e.g.\n"
-       ++ "\n"
-       ++ "\t\t\ths: -i4 -t\n"
-       ++ "\n"
-       ++ "\t\tLines starting with a '#' will be ignored. The order of evaluation\n"
-       ++ "\t\tis\n"
-       ++ "\n"
-       ++ "\t\t\t* Generic global options\n"
-       ++ "\t\t\t* Extension-specific global options\n"
-       ++ "\t\t\t* Generic local options\n"
-       ++ "\t\t\t* Extension-specific local options\n"
-       ++ "\t\t\t* Command line options\n"
-       ++ "\n"
-       ++ "\t\t, earlier options get overridden by later ones.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-d<n>\tEnable dictionary building at indentation depth <n>.\n"
-       ++ "\t-D\tDisable dictionary building.\n"
-       ++ "\n"
-       ++ "\t\tWith dictionary building enabled, wsedit will scan all files and\n"
-       ++ "\t\tdirectories under the current working directory, skipping hidden\n"
-       ++ "\t\tones (starting with a dot).  Every file with the same file ending\n"
-       ++ "\t\tas the opened file will be read, and a dictionary will be built\n"
-       ++ "\t\tfrom all words from lines at depth n (either n tabs or n*tabWidth\n"
-       ++ "\t\tspaces).  This dictionary will then be used to feed the\n"
-       ++ "\t\tautocomplete function.  The scan will take place everytime you\n"
-       ++ "\t\tsafe or load.\n"
-       ++ "\t\tSETTING THIS GLOBALLY WILL MAKE YOUR EDITOR TAKE AGES TO\n"
-       ++ "\t\tSTART UP, E.G. WHEN RUNNING FROM THE HOME DIRECTORY!\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-fe+<c>\tSet <c> as an escape character for strings.\n"
-       ++ "\t-fe-\tUnset the existing escape character.\n"
-       ++ "\n"
-       ++ "\t-fh+<s>\tSearch for <s> and highlight every occurence in bright red.\n"
-       ++ "\t-fh-<s>\tRemove <s> from the search terms list.\n"
-       ++ "\n"
-       ++ "\t-fk+<s>\tMark <s> as a keyword.\n"
-       ++ "\t-fk-<s>\tRemove <s> from the keywords list.\n"
-       ++ "\n"
-       ++ "\t-flc+<s>\tMark everything from <s> to the end of the line as a comment.\n"
-       ++ "\t-flc-<s>\tRemove <s> from the line comment delimiters list.\n"
-       ++ "\n"
-       ++ "\t-fs+<c1><c2>\tMark everything form char <c1> to char <c2> as a string.\n"
-       ++ "\t-fs-<c1><c2>\tRemove <c1>, <c2> from the string delimiters list.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-h\tShow this help.\n"
-       ++ "\t-hk\tShow current keybinds.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-i<n>\tSet indentation width to n (default = -i 4).\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-p\tPurge the clipboard file everytime the editor is closed.\n"
-       ++ "\t-P\tDo not purge the clipboard file.\n"
-       ++ "\n"
-       ++ "\t\twsedit normally uses xclip or xsel to provide copy/paste\n"
-       ++ "\t\tfunctionality, but defaults to ~/.wsedit-clipboard if those are\n"
-       ++ "\t\tunavailable.  When left alone, this file may sit around\n"
-       ++ "\t\tindefinitely, but you can tell wsedit to purge it everytime it\n"
-       ++ "\t\texits if you are concerned that it might compromise your privacy.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-r\tOpen file in read-only mode.\n"
-       ++ "\t-R\tOpen file in read-write mode.\n"
-       ++ "\n"
-       ++ "\t\tPressing Ctrl-Meta-R in the editor will also toggle this.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-s\tResume state from crash file instead of opening it.  If present,\n"
-       ++ "\t\tthis must be the first argument passed.  There are currently a\n"
-       ++ "\t\tfew limiting factors to exactly resuming where a crash occured.\n"
-       ++ "\t\tThe following properties cannot be restored:\n"
-       ++ "\n"
-       ++ "\t\t\t*The keymap\n"
-       ++ "\t\t\t*The shading of the active line\n"
-       ++ "\n"
-       ++ "\t\tThey will be replaced with the local defaults, which should be *fine*.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-ts\tInsert the appropriate amount of spaces instead of tabs.\n"
-       ++ "\t-tt\tInsert a tab character when pressing tab.\n"
-       ++ "\t-T\tAutomatically detect the opened file's indentation pattern.\n"
-       ++ "\t\tAssume spaces for new files.\n"
-       ++ "\n"
-       ++ "\t\tPressing Ctrl-Meta-Tab in the editor will also toggle tab\n"
-       ++ "\t\treplacement.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-V\tDisplays the current version number.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-x\tAssume a bright terminal background color.\n"
-       ++ "\t-X\tAssume a dark terminal background color.\n"
-       ++ "\n"
-       ++ "\t\tMake sure that every foreground color is clearly legible on your\n"
-       ++ "\t\tbackground and distinct from each other (many popular terminal\n"
-       ++ "\t\tcolor themes, e.g. Solarized, violate this), and that black / white\n"
-       ++ "\t\tis similar but different to your background color.  If the latter\n"
-       ++ "\t\tshould prove impossible in your environment, use -b to disable\n"
-       ++ "\t\tbackground rendering and save some performance.\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\n"
-       ++ "\t-y\tDebug: enable event dumping (y as in \"y u no work?!?\").\n"
-       ++ "\t-Y\tDebug: disable event dumping.\n"
-        )
+        showKey :: Key -> String
+        showKey (KChar '@' ) = "Space"
+        showKey (KChar '\t') = "Tab"
+        showKey (KChar  c  ) = [c]
+        showKey  KBS         = "Backspace"
+        showKey (KFun   n  ) = 'F' : show n
+        showKey  k           = drop 1 $ show k
+
+        showBtn :: Button -> String
+        showBtn BLeft   = "LMB"
+        showBtn BMiddle = "MMB"
+        showBtn BRight  = "RMB"

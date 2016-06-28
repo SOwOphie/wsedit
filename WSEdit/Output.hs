@@ -19,6 +19,7 @@ module WSEdit.Output
 import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
+import Data.Char                (toLower)
 import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromJust, fromMaybe)
@@ -37,8 +38,8 @@ import Graphics.Vty             ( Background (ClearBackground)
 import Safe                     (lookupJustDef)
 
 import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
-                                           , lineComment, searchTerms, strDelim
-                                           , tabWidth, vtyObj
+                                           , lineComment, strDelim, tabWidth
+                                           , vtyObj
                                            )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
@@ -51,7 +52,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
-                                          , status
+                                          , searchTerms, status
                                           )
                                 , HighlightMode ( HComment, HKeyword, HNone
                                                 , HSearch, HString
@@ -169,6 +170,7 @@ charRep hl pos _ c = do
 lineRep :: Int -> String -> WSEdit Image
 lineRep lNo s = do
     conf <- ask
+    st <- get
 
     let
         -- Initial list of comment starting points
@@ -192,9 +194,10 @@ lineRep lNo s = do
         -- List of search terms
         sL :: [(Int, Int)]
         sL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                           $ findInStr k s
+                           $ findInStr ( map toLower k )
+                                       $ map toLower s
                        )
-            $ searchTerms conf
+            $ searchTerms st
 
         -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]

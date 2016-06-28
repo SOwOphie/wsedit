@@ -6,6 +6,8 @@
 
 module WSEdit.Data
     ( version
+    , upstream
+    , licenseVersion
     , EdState (..)
     , getCursor
     , setCursor
@@ -64,7 +66,15 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.9"
+version = "0.3.1.12"
+
+-- | Upstream URL.
+upstream :: String
+upstream = "https://github.com/SirBoonami/wsedit"
+
+-- | License version number constant.
+licenseVersion :: String
+licenseVersion = "1.1"
 
 
 
@@ -138,6 +148,10 @@ data EdState = EdState
     , detectTabs   :: Bool
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
+
+
+    , searchTerms  :: [String]
+        -- ^ List of search terms to highlight
     }
     deriving (Eq, Read, Show)
 
@@ -165,6 +179,7 @@ instance Default EdState where
         , canComplete  = False
         , replaceTabs  = False
         , detectTabs   = True
+        , searchTerms  = []
         }
 
 
@@ -454,9 +469,6 @@ data EdConfig = EdConfig
 
     , escape       :: Maybe Char
         -- ^ Escape character for strings.
-
-    , searchTerms  :: [String]
-        -- ^ List of search terms to highlight
     }
 
 -- | Create a default `EdConfig`.
@@ -474,7 +486,6 @@ mkDefConfig v k = EdConfig
                 , strDelim     = []
                 , keywords     = []
                 , escape       = Nothing
-                , searchTerms  = []
               }
 
 

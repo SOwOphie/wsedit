@@ -13,9 +13,9 @@ import Graphics.Vty   ( Event (EvKey)
 import WSEdit.Control ( cleanse, completeOr, copy, deleteSelection, delLeft
                       , delRight, fetchCursor, forceQuit, ifMarked
                       , indentSelection, initMark, insertTab, moveCursor
-                      , moveViewport, paste, quit, save, simulateCrash
-                      , smartHome, smartNewLine, toggleReadOnly, toggleTabRepl
-                      , unindentSelection, undo
+                      , moveViewport, paste, quit, save, searchFor
+                      , simulateCrash, smartHome, smartNewLine, toggleReadOnly
+                      , toggleTabRepl, unindentSelection, undo
                       )
 import WSEdit.Data    (Keymap, clearMark)
 
@@ -186,6 +186,11 @@ defaultKM =
       )
     , (EvKey (KChar 'v' ) [               MCtrl], ( ifMarked deleteSelection (return ()) >> paste                        >> clearMark
                                                   , "Paste."
+                                                  )
+      )
+    , (EvKey (KChar 'f' ) [               MCtrl], (                                         searchFor
+                                                  , "Add the selection to the list of highlighted search terms, or pop the last one"
+                                                    ++ " if the selection is empty."
                                                   )
       )
 
