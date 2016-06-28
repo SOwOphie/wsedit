@@ -9,11 +9,11 @@ import qualified WSEdit.Buffer as B
 
 
 stallman :: B.Buffer Char
-stallman = B.Buffer { B.prefix  = "atS"
-                    , B.prefLen = 3
-                    , B.curr    = 'l'
-                    , B.suffix  = "lman"
-                    , B.sufLen  = 4
+stallman = B.Buffer { B.prefix  = "tS"
+                    , B.prefLen = 2
+                    , B.curr    = 'a'
+                    , B.suffix  = "llman"
+                    , B.sufLen  = 5
                     }
 
 
@@ -77,8 +77,8 @@ tLength = TestLabel "length"
 tSub :: Test
 tSub = TestLabel "sub" $ TestList
     [ TestCase
-        $ assertPretty "sub: prefix only" "ta"
-        $ B.sub 1 2 stallman
+        $ assertPretty "sub: prefix only" "t"
+        $ B.sub 1 1 stallman
 
     , TestCase
         $ assertPretty "sub: suffix only" "ma"
@@ -98,7 +98,7 @@ tLeft = TestLabel "left" $ TestList
         $ B.left $ B.singleton "Stallman"
 
     , TestCase
-        $ assertPretty "left: nontrivial buffer" (Just 'a')
+        $ assertPretty "left: nontrivial buffer" (Just 't')
         $ B.left stallman
     ]
 
@@ -128,16 +128,16 @@ tAtMay = TestLabel "atMay" $ TestList
         $ B.atMay stallman   0
 
     , TestCase
-        $ assertPretty "atMay: rightmost prefix element" (Just 'a')
+        $ assertPretty "atMay: rightmost prefix element" (Just 't')
+        $ B.atMay stallman   1
+
+    , TestCase
+        $ assertPretty "atMay: current element"          (Just 'a')
         $ B.atMay stallman   2
 
     , TestCase
-        $ assertPretty "atMay: current element"          (Just 'l')
-        $ B.atMay stallman   3
-
-    , TestCase
         $ assertPretty "atMay: leftmost suffix element"  (Just 'l')
-        $ B.atMay stallman   4
+        $ B.atMay stallman   3
 
     , TestCase
         $ assertPretty "atMay: rightmost suffix element" (Just 'n')
@@ -163,6 +163,113 @@ tAtDef = TestLabel "atDef" $ TestList
 
 
 
+tFirst :: Test
+tFirst = TestLabel "first" $ TestList
+    [ TestCase
+        $ assertPretty "first: empty prefix" "Stallman"
+        $ B.first $ B.singleton "Stallman"
+
+    , TestCase
+        $ assertPretty "first: nonempty prefix" 'S'
+        $ B.first stallman
+
+    ]
+
+
+
+tLast :: Test
+tLast = TestLabel "last" $ TestList
+    [ TestCase
+        $ assertPretty "last: empty suffix" "Stallman"
+        $ B.last $ B.singleton "Stallman"
+
+    , TestCase
+        $ assertPretty "last: nonempty suffix" 'n'
+        $ B.last stallman
+
+    ]
+
+
+
+tResembles :: Test
+tResembles = TestLabel "resembles" $ TestList
+    [ TestCase
+        $ assertPretty "resembles: identity check"            True
+        $ B.resembles 2 stallman stallman
+
+    , TestCase
+        $ assertPretty "resembles: curr mismatch"             False
+        $ B.resembles 2 stallman stallman { B.curr    = 'b' }
+
+    , TestCase
+        $ assertPretty "resembles: prefLen mismatch"          False
+        $ B.resembles 2 stallman stallman { B.prefix  = "atS."
+                                          , B.prefLen = 4
+                                          }
+
+    , TestCase
+        $ assertPretty "resembles: sufLen mismatch"           False
+        $ B.resembles 2 stallman stallman { B.suffix  = "llman."
+                                          , B.sufLen  = 6
+                                          }
+
+    , TestCase
+        $ assertPretty "resembles: prefix mismatch in radius" False
+        $ B.resembles 2 stallman stallman { B.prefix = "aTS" }
+
+    , TestCase
+        $ assertPretty "resembles: suffix mismatch in radius" False
+        $ B.resembles 2 stallman stallman { B.suffix = "lLman" }
+    ]
+
+
+
+tCurrPos :: Test
+tCurrPos = TestLabel "currPos"
+    $ TestCase $ assertPretty "currPos" 2 $ B.currPos stallman
+
+
+
+tMove :: Test
+tMove = TestLabel "move" $ TestList
+    [ TestCase
+        $ assertPretty "move 0" stallman
+        $ B.move 0 stallman
+
+    , TestCase
+        $ assertPretty "move: identity" stallman
+        $ B.move 1 $ B.move (-1) stallman
+
+    , TestCase
+        $ assertPretty "move: left"
+            (B.Buffer { B.prefix  = "S"
+                      , B.prefLen = 1
+                      , B.curr    = 't'
+                      , B.suffix  = "allman"
+                      , B.sufLen  = 6
+                      }
+            ) $ B.move (-1) stallman
+
+    , TestCase
+        $ assertPretty "move: left edge"
+            (B.Buffer { B.prefix  = []
+                      , B.prefLen = 0
+                      , B.curr    = 'S'
+                      , B.suffix  = "tallman"
+                      , B.sufLen  = 7
+                      }
+            ) $ B.move (-1000) stallman
+    ]
+
+
+
+tMoveTo :: Test
+tMoveTo = TestLabel "moveTo"
+    $ TestCase $ assertPretty "moveTo: identity" stallman
+    $ B.moveTo 2 stallman
+
+
+
 
 
 -- | Collection of all tests.
@@ -177,4 +284,10 @@ testWSEditBuffer = TestLabel "WSEdit.Buffer" $ TestList
     , tRight
     , tAtMay
     , tAtDef
+    , tFirst
+    , tLast
+    , tResembles
+    , tCurrPos
+    , tMove
+    , tMoveTo
     ]

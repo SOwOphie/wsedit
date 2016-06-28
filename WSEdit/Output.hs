@@ -480,6 +480,7 @@ makeTextFrame = do
 makeBackground :: WSEdit Image
 makeBackground = do
     conf <- ask
+    s <- get
 
     (nRows, nCols     ) <- getViewportDimensions
     (_    , scrollCols) <- getOffset
@@ -494,7 +495,7 @@ makeBackground = do
 
     return $ pad (lNoWidth + 3) 2 0 0
            $ vertCat
-           $ map (\(n, l) -> string (if n == fst cursor
+           $ map (\(n, l) -> string (if n == fst cursor && not (readOnly s)
                                           then bgSty `withStyle` reverseVideo
                                           else bgSty
                                     ) l
