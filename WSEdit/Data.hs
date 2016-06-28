@@ -6,6 +6,8 @@
 
 module WSEdit.Data
     ( version
+    , upstream
+    , licenseVersion
     , EdState (..)
     , getCursor
     , setCursor
@@ -64,7 +66,15 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.10"
+version = "0.3.1.11"
+
+-- | Upstream URL.
+upstream :: String
+upstream = "https://github.com/SirBoonami/wsedit"
+
+-- | License version number constant.
+licenseVersion :: String
+licenseVersion = "1.1"
 
 
 

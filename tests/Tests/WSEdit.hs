@@ -143,6 +143,7 @@ tArgLoop = TestLabel "argLoop" $ TestList
             )
 
     , tExit "incorrect parameter" "--shit" $ ExitFailure 1
+    , tExit "keybinds help"       "-hc"    $ ExitSuccess
     , tExit "keybinds help"       "-hk"    $ ExitSuccess
     , tExit "general help"        "-h"     $ ExitSuccess
     , tExit "version info"        "-V"     $ ExitSuccess
@@ -171,17 +172,6 @@ tArgLoop = TestLabel "argLoop" $ TestList
 
 
 
-tVersionInfo :: Test
-tVersionInfo = TestLabel "versionInfo" $ TestList
-    [ TestCase
-        $ assertBool "versionInfo: exit code failed"
-        $ case versionInfo of
-               Left  (e, _) -> e == ExitSuccess
-               _            -> False
-    ]
-
-
-
 tKeymapInfo :: Test
 tKeymapInfo = TestLabel "keymapInfo" $ TestList
     [ TestCase
@@ -199,6 +189,5 @@ testWSEdit = TestLabel "WSEdit" $ TestList
     [ tSplitArgs
     , tArgLoop
     , tFilterFileArgs
-    , tVersionInfo
     , tKeymapInfo
     ]

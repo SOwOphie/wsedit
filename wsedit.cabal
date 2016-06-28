@@ -1,5 +1,5 @@
 name:                wsedit
-version:             0.3.1.10
+version:             0.3.1.11
 synopsis:            A simple terminal source code editor.
 description:
 homepage:
@@ -24,6 +24,7 @@ library
                        WSEdit.Control.Text,
                        WSEdit.Data,
                        WSEdit.Data.Pretty,
+                       WSEdit.Help,
                        WSEdit.Keymaps,
                        WSEdit.Output,
                        WSEdit.Util,
@@ -81,6 +82,7 @@ executable wsedit
                        WSEdit.Control.Text,
                        WSEdit.Data,
                        WSEdit.Data.Pretty,
+                       WSEdit.Help,
                        WSEdit.Keymaps,
                        WSEdit.Output,
                        WSEdit.Util,
