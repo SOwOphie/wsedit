@@ -64,7 +64,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.8"
+version = "0.3.1.9"
 
 
 
@@ -138,6 +138,10 @@ data EdState = EdState
     , detectTabs   :: Bool
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
+
+
+    , searchTerms  :: [String]
+        -- ^ List of search terms to highlight
     }
     deriving (Eq, Read, Show)
 
@@ -165,6 +169,7 @@ instance Default EdState where
         , canComplete  = False
         , replaceTabs  = False
         , detectTabs   = True
+        , searchTerms  = []
         }
 
 
@@ -454,9 +459,6 @@ data EdConfig = EdConfig
 
     , escape       :: Maybe Char
         -- ^ Escape character for strings.
-
-    , searchTerms  :: [String]
-        -- ^ List of search terms to highlight
     }
 
 -- | Create a default `EdConfig`.
@@ -474,7 +476,6 @@ mkDefConfig v k = EdConfig
                 , strDelim     = []
                 , keywords     = []
                 , escape       = Nothing
-                , searchTerms  = []
               }
 
 

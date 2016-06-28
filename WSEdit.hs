@@ -32,14 +32,13 @@ import WSEdit.Control           ( bail, deleteSelection, insert
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                            , escape, keymap, keywords
                                            , lineComment, purgeOnClose
-                                           , searchTerms, strDelim, vtyObj
-                                           , tabWidth
+                                           , strDelim, vtyObj, tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
                                           , loadPos, readOnly, replaceTabs
-                                          , status
+                                          , searchTerms, status
                                           )
                                 , WSEdit
                                 , brightTheme, catchEditor, mkDefConfig
@@ -221,8 +220,6 @@ argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dra
 argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = True                            }, s)
 argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Just e                          }, s)
 argLoop h (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Nothing                         }, s)
-argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = x : searchTerms c               }, s)
-argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { searchTerms  = filter (/= x) $ searchTerms c   }, s)
 argLoop h (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = x : keywords c                  }, s)
 argLoop h (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
 argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = x : lineComment c               }, s)
@@ -240,6 +237,8 @@ argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { 
 argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
 argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
 argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                       })
+argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s             })
+argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s })
 argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                          })
 argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                         })
 argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = True

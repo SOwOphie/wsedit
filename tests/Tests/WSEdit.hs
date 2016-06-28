@@ -90,7 +90,6 @@ tArgLoop = TestLabel "argLoop" $ TestList
 
     , tOpt "-b"      $ withFst (\c -> c { drawBg       = False                        })
     , tOpt "-fe+\\"  $ withFst (\c -> c { escape       = Just '\\'                    })
-    , tOpt "-fh+st"  $ withFst (\c -> c { searchTerms  = ["st"]                       })
     , tOpt "-fk+kw"  $ withFst (\c -> c { keywords     = ["kw"]                       })
     , tOpt "-flc+//" $ withFst (\c -> c { lineComment  = ["//"]                       })
     , tOpt "-fs+''"  $ withFst (\c -> c { strDelim     = [('\'','\'')]                })
@@ -101,6 +100,7 @@ tArgLoop = TestLabel "argLoop" $ TestList
     , tOpt "-cg"     $ withSnd (\s -> s { fname        = "home/.config/wsedit.wsconf" })
     , tOpt "-cl"     $ withSnd (\s -> s { fname        = "./.local.wsconf"            })
     , tOpt "-d1"     $ withSnd (\s -> s { buildDict    = Just 1                       })
+    , tOpt "-fh+st"  $ withSnd (\s -> s { searchTerms  = ["st"]                       })
     , tOpt "-r"      $ withSnd (\s -> s { readOnly     = True                         })
     , tOpt "-ts"     $ withSnd (\s -> s { replaceTabs  = True
                                         , detectTabs   = False                        })
