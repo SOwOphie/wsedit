@@ -7,12 +7,14 @@ import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
-import Data.List                ( isInfixOf, isPrefixOf, isSuffixOf, partition
-                                , stripPrefix
+import Data.List                ( delete, isInfixOf, isPrefixOf, isSuffixOf
+                                , partition, stripPrefix
                                 )
 import Data.Maybe               (fromMaybe)
-import Graphics.Vty             ( Event (EvKey, EvResize)
-                                , Key (KChar)
+import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
+                                , Event (EvKey, EvMouseDown, EvResize)
+                                , Key (KBS, KChar, KFun)
+                                , Modifier (MCtrl, MMeta, MShift)
                                 , mkVty
                                 , nextEvent
                                 , shutdown
@@ -333,21 +335,47 @@ versionInfo = Left (ExitSuccess, "Wyvernscale Source Code Editor (wsedit) Versio
 
 -- | Dumps the keymap, then exits with code 0.
 keymapInfo :: EdConfig -> Either (ExitCode, String) (EdConfig, EdState)
-keymapInfo c =
+keymapInfo conf =
     let
-        tbl  = map (withFst show)
+        tbl  = map (withFst showEv)
              $ prettyKeymap
-             $ keymap c
+             $ keymap conf
 
         maxW = maximum $ map (length . fst) tbl
     in
         Left (ExitSuccess
-             , "Dumping keymap:\n"
+             , "Dumping keymap (Meta = Alt on most systems):\n"
                 ++ ( unlines
                    $ map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s))
                      tbl
                    )
              )
+
+    where
+        showEv :: Event -> String
+        showEv (EvKey           k ml) = showMods ml ++ showKey k
+        showEv (EvMouseDown c r b ml) = showMods ml ++ showBtn b ++ " @ "
+                                                                 ++ show (r, c)
+        showEv _                      = "<unknown event>"
+
+        showMods :: [Modifier] -> String
+        showMods ml | MCtrl  `elem` ml = "Ctrl-"  ++ showMods (delete MCtrl  ml)
+                    | MMeta  `elem` ml = "Meta-"  ++ showMods (delete MMeta  ml)
+                    | MShift `elem` ml = "Shift-" ++ showMods (delete MShift ml)
+                    | otherwise        = ""
+
+        showKey :: Key -> String
+        showKey (KChar '@' ) = "Space"
+        showKey (KChar '\t') = "Tab"
+        showKey (KChar  c  ) = [c]
+        showKey  KBS         = "Backspace"
+        showKey (KFun   n  ) = 'F' : show n
+        showKey  k           = drop 1 $ show k
+
+        showBtn :: Button -> String
+        showBtn BLeft   = "LMB"
+        showBtn BMiddle = "MMB"
+        showBtn BRight  = "RMB"
 
 
 
@@ -425,14 +453,14 @@ usage = Left
        ++ "\n"
        ++ "\n"
        ++ "\n"
-       ++ "\t-i<n>\tSet indentation width to n (default = -i 4).\n"
+       ++ "\t-i<n>\tSet indentation width to n (default = -i4).\n"
        ++ "\n"
        ++ "\n"
        ++ "\n"
        ++ "\t-p\tPurge the clipboard file everytime the editor is closed.\n"
        ++ "\t-P\tDo not purge the clipboard file.\n"
        ++ "\n"
-       ++ "\t\twsedit normally uses xclip or xsel to provide copy/paste\n"
+       ++ "\t\twsedit normally uses external facilities to provide copy/paste\n"
        ++ "\t\tfunctionality, but defaults to ~/.wsedit-clipboard if those are\n"
        ++ "\t\tunavailable.  When left alone, this file may sit around\n"
        ++ "\t\tindefinitely, but you can tell wsedit to purge it everytime it\n"
