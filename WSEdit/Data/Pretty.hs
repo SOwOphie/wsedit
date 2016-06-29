@@ -18,12 +18,11 @@ import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
-                                    , dCommentFormat, dCurrLnMod, dFrameFormat
-                                    , dKeywordFormat, dLineNoFormat
-                                    , dLineNoInterv, dSearchFormat, dSelFormat
-                                    , dStatusFormat, dStrFormat, dTabExt
-                                    , dTabStr
+                                    , dCurrLnMod, dFrameFormat, dHLStyles
+                                    , dLineNoFormat, dLineNoInterv
+                                    , dStatusFormat, dTabExt, dTabStr
                                     )
+                         , HighlightMode
                          , Keymap
                          )
 import WSEdit.Util       (CharClass, withSnd)
@@ -98,12 +97,8 @@ data PrettyEdDesign = PrettyEdDesign
     , pDCurrLnMod     :: ()
     , pDTabStr        :: String
     , pDTabExt        :: Char
-    , pDSelFormat     :: Attr
-    , pDCharStyles    :: [(CharClass, Attr)]
-    , pDCommentFormat :: Attr
-    , pDStrFormat     :: Attr
-    , pDKeywordFormat :: Attr
-    , pDSearchFormat  :: Attr
+    , pDCharStyles    :: [(CharClass    , Attr)]
+    , pDHLStyles      :: [(HighlightMode, Attr)]
     }
     deriving (Eq, Read, Show)
 
@@ -122,12 +117,8 @@ prettyEdDesign d = PrettyEdDesign
     , pDCurrLnMod     = ()
     , pDTabStr        = dTabStr        d
     , pDTabExt        = dTabExt        d
-    , pDSelFormat     = dSelFormat     d
     , pDCharStyles    = dCharStyles    d
-    , pDCommentFormat = dCommentFormat d
-    , pDStrFormat     = dStrFormat     d
-    , pDKeywordFormat = dKeywordFormat d
-    , pDSearchFormat  = dSearchFormat  d
+    , pDHLStyles      = dHLStyles      d
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -145,12 +136,8 @@ unPrettyEdDesign f p = EdDesign
     , dCurrLnMod     = f
     , dTabStr        = pDTabStr        p
     , dTabExt        = pDTabExt        p
-    , dSelFormat     = pDSelFormat     p
     , dCharStyles    = pDCharStyles    p
-    , dCommentFormat = pDCommentFormat p
-    , dStrFormat     = pDStrFormat     p
-    , dKeywordFormat = pDKeywordFormat p
-    , dSearchFormat  = pDSearchFormat  p
+    , dHLStyles      = pDHLStyles      p
     }
 
 

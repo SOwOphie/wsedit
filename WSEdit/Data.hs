@@ -66,7 +66,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.12"
+version = "0.3.1.13"
 
 -- | Upstream URL.
 upstream :: String
@@ -539,24 +539,11 @@ data EdDesign = EdDesign
         --   required length.
 
 
-    , dSelFormat     :: Attr
-        -- ^ vty attribute for selected text
-
     , dCharStyles    :: [(CharClass, Attr)]
         -- ^ vty attributes list for the different character classes
 
-
-    , dCommentFormat :: Attr
-        -- ^ vty attribute for comments
-
-    , dStrFormat     :: Attr
-        -- ^ vty attribute for strings
-
-    , dKeywordFormat :: Attr
-        -- ^ vty attribute for keywords
-
-    , dSearchFormat  :: Attr
-        -- ^ vty attribute for highlighted search terms
+    , dHLStyles      :: [(HighlightMode, Attr)]
+        -- ^ vty attributes list for the different highlight modes
     }
 
 
@@ -589,10 +576,6 @@ instance Default EdDesign where
         , dTabStr        = "|"
         , dTabExt        = ' '
 
-        , dSelFormat     = defAttr
-                            `withForeColor` black
-                            `withBackColor` white
-
         , dCharStyles    =
             [ (Whitesp    , defAttr
                             `withForeColor` blue
@@ -621,19 +604,26 @@ instance Default EdDesign where
               )
             ]
 
-        , dCommentFormat = defAttr
+        , dHLStyles      =
+            [ (HComment , defAttr
                             `withForeColor` magenta
                             `withStyle`     bold
-
-        , dStrFormat     = defAttr
-                            `withForeColor` cyan
-
-        , dKeywordFormat = defAttr
+              )
+            , (HKeyword , defAttr
                             `withForeColor` green
-
-        , dSearchFormat  = defAttr
+              )
+            , (HSearch  , defAttr
                             `withForeColor` red
                             `withStyle`     bold
+              )
+            , (HSelected, defAttr
+                            `withForeColor` black
+                            `withBackColor` white
+              )
+            , (HString  , defAttr
+                            `withForeColor` cyan
+              )
+            ]
 
         }
 
@@ -669,10 +659,6 @@ brightTheme = EdDesign
         , dTabStr        = "|"
         , dTabExt        = ' '
 
-        , dSelFormat     = defAttr
-                            `withForeColor` white
-                            `withBackColor` black
-
         , dCharStyles    =
             [ (Whitesp    , defAttr
                             `withForeColor` blue
@@ -701,19 +687,26 @@ brightTheme = EdDesign
               )
             ]
 
-        , dCommentFormat = defAttr
+        , dHLStyles      =
+            [ (HComment , defAttr
                             `withForeColor` magenta
                             `withStyle`     bold
-
-        , dStrFormat     = defAttr
-                            `withForeColor` cyan
-
-        , dKeywordFormat = defAttr
+              )
+            , (HKeyword , defAttr
                             `withForeColor` green
-
-        , dSearchFormat  = defAttr
+              )
+            , (HSearch  , defAttr
                             `withForeColor` red
                             `withStyle`     bold
+              )
+            , (HSelected, defAttr
+                            `withForeColor` white
+                            `withBackColor` black
+              )
+            , (HString  , defAttr
+                            `withForeColor` cyan
+              )
+            ]
 
         }
 
@@ -749,5 +742,6 @@ data HighlightMode = HNone
                    | HComment
                    | HKeyword
                    | HSearch
+                   | HSelected
                    | HString
     deriving (Eq, Read, Show)

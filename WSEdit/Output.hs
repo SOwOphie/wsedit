@@ -24,15 +24,16 @@ import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromJust, fromMaybe)
 import Data.Tuple               (swap)
-import Graphics.Vty             ( Background (ClearBackground)
+import Graphics.Vty             ( Attr
+                                , Background (ClearBackground)
                                 , Cursor (Cursor, NoCursor)
                                 , Image
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
-                                , char, cropBottom, cropRight, imageWidth, pad
-                                , picForImage, reverseVideo, string, translateX
-                                , update, vertCat, withStyle
+                                , char, cropBottom, cropRight, horizCat
+                                , pad, picForImage, reverseVideo, string
+                                , translateX, update, vertCat, withStyle
                                 , (<|>), (<->)
                                 )
 import Safe                     (lookupJustDef)
@@ -43,19 +44,17 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            )
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
-                                           , dColNoInterval, dCommentFormat
-                                           , dCurrLnMod, dFrameFormat
-                                           , dKeywordFormat, dLineNoFormat
-                                           , dLineNoInterv, dSearchFormat
-                                           , dSelFormat, dStatusFormat
-                                           , dStrFormat, dTabExt, dTabStr
+                                           , dColNoInterval, dCurrLnMod
+                                           , dFrameFormat, dHLStyles
+                                           , dLineNoFormat, dLineNoInterv
+                                           , dStatusFormat, dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
                                           , searchTerms, status
                                           )
                                 , HighlightMode ( HComment, HKeyword, HNone
-                                                , HSearch, HString
+                                                , HSearch, HSelected, HString
                                                 )
                                 , WSEdit
                                 , getCursor, getDisplayBounds, getOffset
@@ -84,110 +83,79 @@ stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n'+1) c) $ n - 1
 
 
 
+-- | Intermediate format for rendering.
+type Snippet = (Attr, String)
+
 
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column.
-charRep :: HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Image
-charRep _ pos n '\t' = do
-    maySel <- getSelBounds
+charRep :: HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
+charRep hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
     c      <- ask
 
     let
-        d       = edDesign    c
+        d       = edDesign   c
+        currSty = dCurrLnMod d
+        tW      = tabWidth c
+        extTab  = padLeft tW (dTabExt d) $ dTabStr d
 
-        selSty  = dSelFormat  d
-        tW      = tabWidth    c
-        tExt    = dTabExt     d
-        tStr    = dTabStr     d
-        tSty    = dCharStyles d
-        currSty = dCurrLnMod  d
-
-        tabSty  = lookupJustDef def Whitesp tSty
-
-        extTab  = padLeft tW tExt tStr
-
-        s       = case maySel of
-                       Nothing     -> tabSty
-                       Just (f, l) ->
-                          if f <= pos && pos <= l
-                             then selSty
-                             else tabSty
-
-    return $ string (if r == fst pos
-                            && s /= selSty
-                            && not (readOnly st)
-                        then currSty s
-                        else s
-                    )
-           $ drop (length extTab - (tW - (n-1) `mod` tW)) extTab
+    return ( (if r == fst pos
+                   && hl /= HSelected
+                   && not (readOnly st)
+                 then currSty
+                 else id
+             ) $ case hl of
+                      HSelected -> lookupJustDef def HSelected $ dHLStyles   d
+                      _         -> lookupJustDef def Whitesp   $ dCharStyles d
+           , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
+           )
 
 charRep hl pos _ c = do
-    maySel <- getSelBounds
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    let
-        currSty = dCurrLnMod d
-        selSty  = dSelFormat d
-        charSty = lookupJustDef def (charClass c)
-                $ dCharStyles d
-
-        comSty  = dCommentFormat d
-        strSty  = dStrFormat     d
-        keywSty = dKeywordFormat d
-        sSty    = dSearchFormat  d
-
-        synSty  = case hl of
-                       HComment -> comSty
-                       HKeyword -> keywSty
-                       HSearch  -> sSty
-                       HString  -> strSty
-                       _        -> charSty
-
-        s       = case maySel of
-                       Nothing     -> synSty
-                       Just (f, l) ->
-                          if f <= pos && pos <= l
-                             then selSty
-                             else synSty
-
-    return $ char ((if r == fst pos
-                        && s /= selSty
-                        && not (readOnly st)
-                      then currSty
-                      else id
-                   ) $ s
-                  ) $ if charClass c /= Unprintable
-                         then c
-                         else '?'
+    return ( (if r == fst pos
+                   && hl /= HSelected
+                   && not (readOnly st)
+                 then dCurrLnMod d
+                 else id
+             ) $ lookupJustDef
+                    (lookupJustDef def (charClass c) (dCharStyles d))
+                    hl
+                    (dHLStyles d)
+           , if charClass c == Unprintable
+                then "?"
+                else [c]
+           )
 
 
 
 -- | Returns the visual representation of a line with a given line number.
 lineRep :: Int -> String -> WSEdit Image
-lineRep lNo s = do
+lineRep lNo str = do
     conf <- ask
     st <- get
+    maySel <- getSelBounds
 
     let
         -- Initial list of comment starting points
         comL :: [Int]
         comL = map (+1)
-             $ concatMap (flip findInStr s)
+             $ concatMap (flip findInStr str)
              $ lineComment conf
 
         -- List of string bounds
         strL :: [(Int, Int)]
         strL = map (withPair (+1) (+1))
-             $ findDelimBy (escape conf) (strDelim conf) s
+             $ findDelimBy (escape conf) (strDelim conf) str
 
         -- List of keyword bounds
         kwL :: [(Int, Int)]
         kwL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                            $ findIsolated k s
+                            $ findIsolated k str
                         )
             $ keywords conf
 
@@ -195,7 +163,7 @@ lineRep lNo s = do
         sL :: [(Int, Int)]
         sL = concatMap (\k -> map (\p -> (p + 1, p + length k))
                            $ findInStr ( map toLower k )
-                                       $ map toLower s
+                                       $ map toLower str
                        )
             $ searchTerms st
 
@@ -210,19 +178,37 @@ lineRep lNo s = do
                    else Just $ minimum comL
 
 
-        f :: (Image, Int, Int) -> Char -> WSEdit (Image, Int, Int)
+
+        f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
             i <- charRep
-                    (case () of _ | any (flip inRange tPos) sL       -> HSearch
-                                  | fromMaybe maxBound comAt <= tPos -> HComment
-                                  | any (flip inRange tPos) strL     -> HString
-                                  | any (flip inRange tPos) kwL      -> HKeyword
-                                  | otherwise                        -> HNone
+                    (case maySel of
+                          Just (sS, sE) | sS <= (lNo, tPos)
+                                             && (lNo, tPos) <= sE -> HSelected
+                          _ | any (flip inRange tPos) sL          -> HSearch
+                          _ | fromMaybe maxBound comAt <= tPos    -> HComment
+                          _ | any (flip inRange tPos) strL        -> HString
+                          _ | any (flip inRange tPos) kwL         -> HKeyword
+                          _ | otherwise                           -> HNone
                     ) (lNo, tPos) vPos c
 
-            return (im <|> i, tPos + 1, vPos + imageWidth i)
+            return (i:im, tPos + 1, vPos + length i)
 
-    (\(r, _, _) -> r) <$> foldM f (string def "", 1, 1) s
+    (r,_ ,_) <- foldM f ([], 1, 1) str
+
+    return $ horizCat
+           $ map (uncurry string)
+           $ groupSnippet Nothing
+           $ reverse r
+
+    where
+        groupSnippet :: Maybe Snippet -> [Snippet] -> [Snippet]
+        groupSnippet  Nothing      []             = []
+        groupSnippet (Just x     ) []             = [x]
+        groupSnippet  Nothing      (x       :xs ) = groupSnippet (Just x) xs
+        groupSnippet (Just (a, s)) ((xa, xs):xxs)
+            | a == xa   =          groupSnippet (Just (a , s ++ xs)) xxs
+            | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
 
 
 
