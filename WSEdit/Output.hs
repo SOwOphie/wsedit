@@ -22,7 +22,7 @@ import Control.Monad.RWS.Strict (ask, get)
 import Data.Char                (toLower)
 import Data.Default             (def)
 import Data.Ix                  (inRange)
-import Data.Maybe               (fromJust, fromMaybe)
+import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Attr
                                 , Background (ClearBackground)
@@ -441,6 +441,7 @@ makeTextFrame = do
 
     (scrollRows, scrollCols) <- getOffset
     (   txtRows, txtCols   ) <- getViewportDimensions
+    (cR        , _         ) <- getCursor
 
     txt <- mapM (uncurry lineRep)
          $ zip [1 + scrollRows ..]
@@ -450,18 +451,22 @@ makeTextFrame = do
     return $ pad (lNoWidth + 3) 2 0 0
            $ cropRight (txtCols + 1)  -- +1 to compensate for the leading blank
            $ vertCat
-           $ map ( (char (dLineNoFormat d) ' ' <|>)
-                 . translateX (-scrollCols)
-                 . pad 0 0 (scrollCols + 1) 0
-                 . if drawBg c
-                      then id
-                      else (<|> char ( fromJust
-                                     $ lookup Whitesp
-                                     $ dCharStyles d
-                                     ) (dBGChar d)
-                           )
+           $ map (\(l, ln) -> (char (dLineNoFormat d) ' ' <|>)
+                            $ translateX (-scrollCols)
+                            $ pad 0 0 (scrollCols + 1) 0
+                            $ (if drawBg c
+                                  then id
+                                  else (<|> char ( (if l == cR
+                                                       then dCurrLnMod d
+                                                       else id
+                                                   )
+                                                 $ lookupJustDef def Whitesp
+                                                 $ dCharStyles d
+                                                 ) (dBGChar d)
+                                       )
+                              ) ln
                  )
-             txt
+           $ zip [1 + scrollRows ..] txt
 
 
 
@@ -478,7 +483,9 @@ makeBackground = do
     lNoWidth <- lineNoWidth
 
     let
-        bgChar  =                    dBGChar    $ edDesign conf
+        bgChar  = if drawBg conf
+                     then            dBGChar    $ edDesign conf
+                     else ' '
         bgSty   =                    dBGFormat  $ edDesign conf
         colChar = fromMaybe bgChar $ dColChar   $ edDesign conf
 
@@ -560,9 +567,7 @@ draw = do
 
     frame <- makeFrame
     txt   <- makeTextFrame
-    bg    <- if drawBg c
-                then makeBackground
-                else return undefined
+    bg    <- makeBackground
 
     scr   <- makeScrollbar
 
@@ -571,16 +576,11 @@ draw = do
                 { picCursor     = if (readOnly s || ru + rd + cl + cr > 0)
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
-                , picLayers     = if drawBg c
-                                     then [ frame
-                                          , txt
-                                          , bg
-                                          , scr
-                                          ]
-                                     else [ frame
-                                          , txt
-                                          , scr
-                                          ]
+                , picLayers     = [ frame
+                                  , txt
+                                  , bg
+                                  , scr
+                                  ]
                 , picBackground = ClearBackground
                 }
 

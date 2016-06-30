@@ -47,7 +47,9 @@ import Data.Tuple               (swap)
 import Graphics.Vty             ( Attr
                                 , Event (..)
                                 , Vty (outputIface)
-                                , black, blue, bold, cyan, green, defAttr
+                                , black, blue, bold, brightBlack, brightGreen
+                                , brightMagenta, brightRed, brightWhite
+                                , brightYellow, cyan, green, defAttr
                                 , displayBounds, green, magenta, red, white
                                 , withBackColor, withForeColor, withStyle
                                 , yellow
@@ -66,7 +68,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.13"
+version = "0.3.1.14"
 
 -- | Upstream URL.
 upstream :: String
@@ -553,17 +555,17 @@ instance Default EdDesign where
                             `withForeColor` green
 
         , dStatusFormat  = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
 
         , dLineNoFormat  = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
         , dLineNoInterv  = 10
 
         , dColNoInterval = 40
         , dColNoFormat   = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
 
         , dBGChar        = '·'
@@ -592,11 +594,11 @@ instance Default EdDesign where
                             `withForeColor` yellow
               )
             , (Operator   , defAttr
-                            `withForeColor` yellow
+                            `withForeColor` brightYellow
                             `withStyle`     bold
               )
             , (Unprintable, defAttr
-                            `withForeColor` red
+                            `withForeColor` brightRed
                             `withStyle`     bold
               )
             , (Special    , defAttr
@@ -606,18 +608,18 @@ instance Default EdDesign where
 
         , dHLStyles      =
             [ (HComment , defAttr
-                            `withForeColor` magenta
+                            `withForeColor` brightMagenta
                             `withStyle`     bold
               )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
             , (HSearch  , defAttr
-                            `withForeColor` red
+                            `withForeColor` brightRed
                             `withStyle`     bold
               )
             , (HSelected, defAttr
-                            `withForeColor` black
+                            `withForeColor` brightBlack
                             `withBackColor` white
               )
             , (HString  , defAttr
@@ -636,17 +638,17 @@ brightTheme = EdDesign
                             `withForeColor` green
 
         , dStatusFormat  = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
 
         , dLineNoFormat  = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
         , dLineNoInterv  = 10
 
         , dColNoInterval = 40
         , dColNoFormat   = defAttr
-                            `withForeColor` green
+                            `withForeColor` brightGreen
                             `withStyle`     bold
 
         , dBGChar        = '·'
@@ -675,11 +677,11 @@ brightTheme = EdDesign
                             `withForeColor` yellow
               )
             , (Operator   , defAttr
-                            `withForeColor` yellow
+                            `withForeColor` brightYellow
                             `withStyle`     bold
               )
             , (Unprintable, defAttr
-                            `withForeColor` red
+                            `withForeColor` brightRed
                             `withStyle`     bold
               )
             , (Special    , defAttr
@@ -689,18 +691,18 @@ brightTheme = EdDesign
 
         , dHLStyles      =
             [ (HComment , defAttr
-                            `withForeColor` magenta
+                            `withForeColor` brightMagenta
                             `withStyle`     bold
               )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
             , (HSearch  , defAttr
-                            `withForeColor` red
+                            `withForeColor` brightRed
                             `withStyle`     bold
               )
             , (HSelected, defAttr
-                            `withForeColor` white
+                            `withForeColor` brightWhite
                             `withBackColor` black
               )
             , (HString  , defAttr
