@@ -80,10 +80,38 @@ conceivable language and to require only a minimal amount of configuration.
 9. Run `wsedit <some file>` to test everything, or `wsed -h` for a list of all
    the available options.
 
-**Sometimes the build may fail due to obscure reasons, deleting the local
-`.stack-work` build folder fixed it everytime for me.**
+## Known issues / Troubleshooting
 
-## Known issues
+### wsedit is slow on older machines
 
-* `wsedit` may be a bit on the slow side on older systems. Use `-b` to disable
-  background rendering, which remedies this for the most part.
+  * Use `-b` to disable background rendering, which remedies this for the most
+    part.
+  * Consider switching to a faster terminal emulator, e.g. rxvt-unicode.
+
+### The build fails with some obscure error message
+
+  * Try `stack clean`.
+  * If that doesn't work, delete the `.stack-work` folder and try again.
+
+### wsedit destroys Unicode on XTerm
+
+__Symptoms:__ After running `wsedit`, any unicode output by other programs (e.g.
+`tree`) will be garbled.
+
+This seems to be a problem wit vty, the terminal library wsedit uses, since
+yi, another terminal editor based on vty, suffers from the same issue. For now I
+can only recommend using another terminal emulator.
+
+### Some inputs (e.g. Ctrl-Down) don't work in urxvt
+
+Yeah, input in urxvt is a mess. Try adding this to your .Xresources:
+
+    ! From http://thedarnedestthing.com/urxvt
+    urxvt*keysym.C-Up: \033[1;5A
+    urxvt*keysym.C-Down: \033[1;5B
+    urxvt*keysym.C-Right: \033[1;5C
+    urxvt*keysym.C-Left: \033[1;5D
+    urxvt*keysym.S-Up: \033[1;2A
+    urxvt*keysym.S-Down: \033[1;2B
+    urxvt*keysym.S-Right: \033[1;2C
+    urxvt*keysym.S-Left: \033[1;2D
