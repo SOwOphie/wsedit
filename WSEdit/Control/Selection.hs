@@ -16,7 +16,7 @@ import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.List                (stripPrefix)
 import Data.Maybe               (fromMaybe, isJust)
-import Safe                     (headMay)
+import Safe                     (headMay, headNote, initNote, lastNote)
 import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
 
@@ -34,6 +34,13 @@ import WSEdit.Data              ( EdConfig (tabWidth)
 import WSEdit.Util              (checkClipboardSupport, mayReadFile)
 
 import qualified WSEdit.Buffer as B
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Control.Selection." ++)
+
+
 
 
 
@@ -123,19 +130,20 @@ paste = alterBuffer $ do
                 { edLines =
                     if length c == 1
                        then B.withCurr (\l -> take (cursorPos s - 1) l
-                                           ++ head c
+                                           ++ headNote (fqn "paste") c
                                            ++ drop (cursorPos s - 1) l
                                        )
                           $ edLines s
 
-                       else B.insertLeft ( last c
+                       else B.insertLeft ( lastNote (fqn "paste") c
                                         ++ drop (cursorPos s - 1)
                                                 (B.curr $ edLines s)
                                          )
                           $ flip (foldl (flip B.insertLeft))
-                                 (drop 1 $ init c)
+                                 (drop 1 $ initNote (fqn "paste") c
+                                 )
                           $ B.withCurr (\l -> take (cursorPos s - 1) l
-                                           ++ head c
+                                           ++ headNote (fqn "paste") c
                                        )
                           $ edLines s
                 }

@@ -38,13 +38,19 @@ module WSEdit.Buffer
     ) where
 
 
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromMaybe)
+import Safe       (fromJustNote, headNote, lastNote, tailNote)
 
 import Prelude hiding (last, length, map)
 
 import qualified Data.List as L
 import qualified Prelude   as P
 import qualified Safe      as S
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Buffer." ++)
 
 
 
@@ -116,13 +122,13 @@ sub from to b = ( L.reverse
 -- | Retrieve the element left of the current position.
 left :: Buffer a -> Maybe a
 left b | L.null $ prefix b = Nothing
-       | otherwise         = Just $ head $ prefix b
+       | otherwise         = Just $ headNote (fqn "left") $ prefix b
 
 
 -- | Retrieve the element right of the current position.
 right :: Buffer a -> Maybe a
 right b | L.null $ suffix b = Nothing
-        | otherwise         = Just $ head $ suffix b
+        | otherwise         = Just $ headNote (fqn "right") $ suffix b
 
 
 -- | Retrieve the element at an absolute, zero-based index, if it exists.
@@ -141,13 +147,13 @@ atDef d b n = fromMaybe d $ atMay b n
 -- | Retrieve the first element in the buffer.
 first :: Buffer a -> a
 first b | prefLen b == 0 = curr b
-        | otherwise      = L.last $ prefix b
+        | otherwise      = lastNote (fqn "first") $ prefix b
 
 
 -- | Retrieve the last element in the buffer.
 last :: Buffer a -> a
 last b | sufLen b == 0 = curr b
-       | otherwise     = L.last $ suffix b
+       | otherwise     = lastNote (fqn "last") $ suffix b
 
 
 
@@ -192,8 +198,8 @@ forward b | sufLen b <= 0 = Nothing
           | otherwise     = Just Buffer
                                 { prefix  = curr b : prefix b
                                 , prefLen = prefLen b + 1
-                                , curr    = head $ suffix b
-                                , suffix  = tail $ suffix b
+                                , curr    = headNote (fqn "forward") $ suffix b
+                                , suffix  = tailNote (fqn "forward") $ suffix b
                                 , sufLen  = sufLen b - 1
                                 }
 
@@ -202,9 +208,10 @@ forward b | sufLen b <= 0 = Nothing
 backward :: Buffer a -> Maybe (Buffer a)
 backward b | prefLen b <= 0 = Nothing
            | otherwise      = Just Buffer
-                                { prefix  = tail $ prefix b
+                                { prefix  = tailNote (fqn "backward") $ prefix b
                                 , prefLen = prefLen b - 1
-                                , curr    = head $ prefix b
+                                , curr    = headNote (fqn "backward") $ prefix b
+
                                 , suffix  = curr b : suffix b
                                 , sufLen  = sufLen b + 1
                                 }
@@ -214,7 +221,7 @@ backward b | prefLen b <= 0 = Nothing
 toFirst :: Buffer a -> Buffer a
 toFirst b | prefLen b <= 0 = b
           | otherwise      = toFirst
-                           $ fromJust
+                           $ fromJustNote (fqn "toFirst")
                            $ backward b
 
 
@@ -222,7 +229,7 @@ toFirst b | prefLen b <= 0 = b
 toLast :: Buffer a -> Buffer a
 toLast b | sufLen b <= 0 = b
          | otherwise     = toLast
-                         $ fromJust
+                         $ fromJustNote (fqn "toLast")
                          $ forward b
 
 
@@ -249,8 +256,12 @@ insertRight x b = b { suffix = curr b : suffix b
 deleteLeft :: Buffer a -> Maybe (Buffer a)
 deleteLeft b | prefLen b <= 0 = Nothing
              | otherwise      = Just b
-                              { curr    = head $ prefix b
-                              , prefix  = tail $ prefix b
+                              { curr    = headNote (fqn "deleteLeft")
+                                        $ prefix b
+
+                              , prefix  = tailNote (fqn "deleteLeft")
+                                        $ prefix b
+
                               , prefLen = prefLen b - 1
                               }
 
@@ -258,8 +269,12 @@ deleteLeft b | prefLen b <= 0 = Nothing
 deleteRight :: Buffer a -> Maybe (Buffer a)
 deleteRight b | sufLen b <= 0 = Nothing
               | otherwise     = Just b
-                              { curr   = head $ suffix b
-                              , suffix = tail $ suffix b
+                              { curr   = headNote (fqn "deleteRight")
+                                       $ suffix b
+
+                              , suffix = tailNote (fqn "deleteRight")
+                                       $ suffix b
+
                               , sufLen = sufLen b - 1
                               }
 
@@ -283,9 +298,12 @@ dropRight n b | n <= 0 = b
 -- | Apply a function to the element left of the buffer position.
 withLeft :: (a -> a) -> Buffer a -> Maybe (Buffer a)
 withLeft f b | L.null $ prefix b = Nothing
-             | otherwise         = Just $ b { prefix = f (head $ prefix b)
-                                                     : drop 1 (prefix b)
-                                            }
+             | otherwise         = Just
+                                 $ b { prefix = f ( headNote (fqn "withLeft")
+                                                  $ prefix b
+                                                  )
+                                              : drop 1 (prefix b)
+                                     }
 
 
 -- | Apply a function to the element left of the position. Will use a default
@@ -296,7 +314,9 @@ withLeftDef d f b | L.null $ prefix b = b { prefix  = [f d]
                                           , prefLen = 1
                                           }
 
-                  | otherwise         = b { prefix = f (head $ prefix b)
+                  | otherwise         = b { prefix = f ( headNote (fqn "withLeftDef")
+                                                     $ prefix b
+                                                     )
                                                    : drop 1 (prefix b)
                                           }
 
@@ -323,7 +343,9 @@ withCurr f b = b { curr = f $ curr b }
 -- | Apply a function to the element right of the buffer position.
 withRight :: (a -> a) -> Buffer a -> Maybe (Buffer a)
 withRight f b | L.null $ suffix b = Nothing
-              | otherwise         = Just $ b { suffix = f (head $ suffix b)
+              | otherwise         = Just $ b { suffix = f ( headNote (fqn "withRight")
+                                                          $ suffix b
+                                                          )
                                                       : drop 1 (suffix b)
                                              }
 
@@ -336,7 +358,9 @@ withRightDef d f b | L.null $ suffix b = b { suffix = [f d]
                                            , sufLen = 1
                                            }
 
-                   | otherwise         = b { suffix = f (head $ suffix b)
+                   | otherwise         = b { suffix = f ( headNote (fqn "withRightDef")
+                                                        $ suffix b
+                                                        )
                                                     : drop 1 (suffix b)
                                            }
 

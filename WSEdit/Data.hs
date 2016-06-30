@@ -42,7 +42,7 @@ import Control.Exception        (SomeException, evaluate, try)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (RWST, ask, get, modify, put, runRWST)
 import Data.Default             (Default (def))
-import Data.Maybe               (fromJust, fromMaybe, isJust)
+import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Attr
                                 , Event (..)
@@ -53,6 +53,9 @@ import Graphics.Vty             ( Attr
                                 , displayBounds, green, magenta, red, white
                                 , withBackColor, withForeColor, withStyle
                                 , yellow
+                                )
+import Safe                     ( fromJustNote, headNote, initNote, lastNote
+                                , tailNote
                                 )
 
 import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
@@ -66,9 +69,16 @@ import qualified WSEdit.Buffer as B
 
 
 
+fqn :: String -> String
+fqn = ("WSEdit.Data." ++)
+
+
+
+
+
 -- | Version number constant.
 version :: String
-version = "0.3.1.14"
+version = "0.3.1.15"
 
 -- | Upstream URL.
 upstream :: String
@@ -77,6 +87,8 @@ upstream = "https://github.com/SirBoonami/wsedit"
 -- | License version number constant.
 licenseVersion :: String
 licenseVersion = "1.1"
+
+
 
 
 
@@ -221,38 +233,12 @@ clearMark = do
 
 -- | Retrieve the position of the first selected element.
 getFirstSelected :: WSEdit (Maybe (Int, Int))
-getFirstSelected =
-    getMark >>= \case
-        Nothing       -> return Nothing
-        Just (mR, mC) -> do
-            (cR, cC) <- getCursor
-
-            case compare mR cR of
-                 LT -> return $ Just (mR, mC)
-                 GT -> return $ Just (cR, cC)
-                 EQ ->
-                    case compare mC cC of
-                         LT -> return $ Just (mR, mC)
-                         GT -> return $ Just (cR, cC)
-                         EQ -> return Nothing
+getFirstSelected = (fmap fst) <$> getSelBounds
 
 
 -- | Retrieve the position of the last selected element.
 getLastSelected :: WSEdit (Maybe (Int, Int))
-getLastSelected =
-    getMark >>= \case
-        Nothing -> return Nothing
-        Just (mR, mC) -> do
-            (cR, cC) <- getCursor
-
-            case compare mR cR of
-                 LT -> return $ Just (cR, cC - 1)
-                 GT -> return $ Just (mR, mC - 1)
-                 EQ ->
-                    case compare mC cC of
-                         LT -> return $ Just (cR, cC - 1)
-                         GT -> return $ Just (mR, mC - 1)
-                         EQ -> return Nothing
+getLastSelected = (fmap snd) <$> getSelBounds
 
 
 -- | Faster combination of 'getFirstSelected' and 'getLastSelected'.
@@ -341,82 +327,77 @@ popHist = modify popHist'
 
 -- | Retrieve the contents of the current selection.
 getSelection :: WSEdit (Maybe String)
-getSelection = do
-    b <- isJust . markPos <$> get
-    if not b
-       then return Nothing
-       else do
-            (sR, sC) <- fromJust <$> getFirstSelected
-            (eR, eC) <- fromJust <$> getLastSelected
-            l <- edLines <$> get
+getSelection = getSelBounds >>= \case
+    Nothing                   -> return Nothing
+    Just ((sR, sC), (eR, eC)) -> do
+        l <- edLines <$> get
 
-            if sR == eR
-               then return $ Just
-                           $ drop (sC - 1)
-                           $ take eC
-                           $ B.curr l
+        if sR == eR
+           then return $ Just
+                       $ drop (sC - 1)
+                       $ take eC
+                       $ B.curr l
 
-               else
-                    let
-                        lns = B.sub (sR - 1) (eR - 1) l
-                    in
-                        return $ Just
-                               $ drop (sC - 1) (head lns) ++ "\n"
-                              ++ unlines (tail $ init lns)
-                              ++ take eC (last lns)
+           else
+                let
+                    lns = B.sub (sR - 1) (eR - 1) l
+                in
+                    return $ Just
+                           $ drop (sC - 1) (headNote (fqn "getSelection") lns)
+                          ++ "\n"
+                          ++ unlines ( tailNote (fqn "getSelection")
+                                     $ initNote (fqn "getSelection")
+                                       lns
+                                     )
+                          ++ take eC (lastNote (fqn "getSelection") lns)
 
 
 
 -- | Delete the contents of the current selection from the text buffer.
 delSelection :: WSEdit Bool
-delSelection = do
-    b <- isJust . markPos <$> get
-    if not b
-       then return False
-       else do
-            (_ , sC) <- fromJust <$> getFirstSelected
-            (_ , eC) <- fromJust <$> getLastSelected
+delSelection = getSelBounds >>= \case
+    Nothing                 -> return False
+    Just ((_, sC), (_, eC)) -> do
+        (mR, mC) <- fromJustNote (fqn "getSelection") <$> getMark
+        (cR, cC) <- getCursor
 
-            (mR, mC) <- fromJust <$> getMark
-            (cR, cC) <- getCursor
+        s <- get
 
-            s <- get
+        case compare mR cR of
+             EQ -> do
+                put $ s { edLines   = B.withCurr (\l -> take (sC - 1) l
+                                                     ++ drop  eC      l
+                                                 )
+                                    $ edLines s
+                        , cursorPos = sC
+                        }
+                return True
 
-            case compare mR cR of
-                 EQ -> do
-                    put $ s { edLines   = B.withCurr (\l -> take (sC - 1) l
-                                                         ++ drop  eC      l
-                                                     )
-                                        $ edLines s
-                            , cursorPos = sC
-                            }
-                    return True
+             LT -> do
+                put $ s { edLines   = B.withCurr (\l -> take (mC - 1) l
+                                                     ++ drop (cC - 1)
+                                                          ( B.curr
+                                                          $ edLines s
+                                                          )
+                                                 )
+                                    $ B.dropLeft (cR - mR)
+                                    $ edLines s
+                        , cursorPos = sC
+                        }
+                return True
 
-                 LT -> do
-                    put $ s { edLines   = B.withCurr (\l -> take (mC - 1) l
-                                                         ++ drop (cC - 1)
-                                                              ( B.curr
-                                                              $ edLines s
-                                                              )
-                                                     )
-                                        $ B.dropLeft (cR - mR)
-                                        $ edLines s
-                            , cursorPos = sC
-                            }
-                    return True
-
-                 GT -> do
-                    put $ s { edLines   = B.withCurr (\l -> take (cC - 1)
-                                                              ( B.curr
-                                                              $ edLines s
-                                                              )
-                                                         ++ drop (mC - 1) l
-                                                     )
-                                        $ B.dropRight (mR - cR)
-                                        $ edLines s
-                            , cursorPos = sC
-                            }
-                    return True
+             GT -> do
+                put $ s { edLines   = B.withCurr (\l -> take (cC - 1)
+                                                          ( B.curr
+                                                          $ edLines s
+                                                          )
+                                                     ++ drop (mC - 1) l
+                                                 )
+                                    $ B.dropRight (mR - cR)
+                                    $ edLines s
+                        , cursorPos = sC
+                        }
+                return True
 
 
 

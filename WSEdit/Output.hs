@@ -36,7 +36,7 @@ import Graphics.Vty             ( Attr
                                 , translateX, update, vertCat, withStyle
                                 , (<|>), (<->)
                                 )
-import Safe                     (lookupJustDef)
+import Safe                     (lookupJustDef, minimumNote)
 
 import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , lineComment, strDelim, tabWidth
@@ -69,6 +69,11 @@ import qualified WSEdit.Buffer as B
 
 
 
+fqn :: String -> String
+fqn = ("WSEdit.Output." ++)
+
+
+
 
 
 -- | Returns the display width of a given char in a given column.
@@ -78,7 +83,7 @@ charWidth _ _    = return 1
 
 -- | Returns the display width of a given string starting at a given column.
 stringWidth :: Int -> String -> WSEdit Int
-stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n'+1) c) $ n - 1
+stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n' + 1) c) $ n - 1
 
 
 
@@ -175,7 +180,7 @@ lineRep lNo str = do
         comAt :: Maybe Int
         comAt = if null comL'
                    then Nothing
-                   else Just $ minimum comL
+                   else Just $ minimumNote (fqn "lineRep") comL
 
 
 

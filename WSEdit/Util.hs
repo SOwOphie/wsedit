@@ -28,13 +28,20 @@ module WSEdit.Util
 import Control.Exception (SomeException, try)
 import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intersect, tails)
-import Safe              (headMay, lastDef)
+import Safe              (foldl1Note, headMay, lastDef)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
 import System.IO.Unsafe  (unsafePerformIO)
 import System.Process    (readProcessWithExitCode)
 import Text.Show.Pretty  (ppShow)
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Util." ++)
+
+
 
 
 
@@ -247,7 +254,7 @@ getKeywordAtCursor c s = headMay $ filter isIdentifier $ tails $ take (c - 1) s
 longestCommonPrefix :: (Eq a) => [[a]] -> [a]
 longestCommonPrefix [] = []
 longestCommonPrefix s  = lastDef []
-                       $ foldl1 intersect
+                       $ foldl1Note (fqn "longestCommonPrefix") intersect
                        $ map inits s
 
 

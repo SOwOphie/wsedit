@@ -19,7 +19,9 @@ import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
                                 , nextEvent
                                 , shutdown
                                 )
-import Safe                     (atDef, headDef, headMay, readDef)
+import Safe                     ( atDef, headDef, headMay, maximumNote, readDef
+                                , readNote
+                                )
 import System.Directory         ( doesDirectoryExist, getHomeDirectory
                                 , listDirectory
                                 )
@@ -53,6 +55,12 @@ import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
                                 , withSnd
                                 )
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit." ++)
+
 
 
 
@@ -224,26 +232,26 @@ argLoop h (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h          xs  (c { lin
 argLoop h (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h          xs  (c { lineComment  = filter (/= x) $ lineComment c   }, s)
 argLoop h (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
 argLoop h (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
-argLoop h (('-':'i'            :n ):xs) (c, s) = argLoop h          xs  (c { tabWidth     = read n                          }, s)
+argLoop h (('-':'i'            :n ):xs) (c, s) = argLoop h          xs  (c { tabWidth     = readNote (fqn "argLoop") n      }, s)
 argLoop h (('-':'p'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { purgeOnClose = True                            }, s)
 argLoop h (('-':'P'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { purgeOnClose = False                           }, s)
 argLoop h (('-':'x'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edDesign     = brightTheme                     }, s)
 argLoop h (('-':'X'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edDesign     = def                             }, s)
 argLoop h (('-':'y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = True                            }, s)
 argLoop h (('-':'Y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = False                           }, s)
-argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf" })
-argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"             })
-argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ read [d]               })
-argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                       })
-argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s             })
-argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s })
-argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                          })
-argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                         })
+argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf"       })
+argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"                   })
+argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ readNote (fqn "argLoop") [d] })
+argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                             })
+argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s                   })
+argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s       })
+argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                                })
+argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                               })
 argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = True
-                                                                              , detectTabs  = False                         })
+                                                                              , detectTabs  = False                               })
 argLoop h (('-':'t':'t'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = False
-                                                                              , detectTabs  = False                         })
-argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { detectTabs  = True                          })
+                                                                              , detectTabs  = False                               })
+argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { detectTabs  = True                                })
 
 argLoop h (['-']                   :xs) (c, s) = argLoop h          xs  (c, s)
 argLoop _ []                            (c, s) = if fname s == ""
@@ -317,7 +325,7 @@ keymapInfo conf =
              $ prettyKeymap
              $ keymap conf
 
-        maxW = maximum $ map (length . fst) tbl
+        maxW = maximumNote (fqn "keymapInfo") $ map (length . fst) tbl
     in
         Left (ExitSuccess
              , "Dumping keymap (Meta = Alt on most systems):\n"

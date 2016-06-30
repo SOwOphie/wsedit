@@ -19,8 +19,9 @@ import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
-import Data.Maybe                  (fromJust, fromMaybe)
+import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
+import Safe                        (fromJustNote)
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
@@ -55,6 +56,10 @@ import WSEdit.WordTree             (empty)
 import qualified WSEdit.Buffer as B
 
 
+fqn :: String -> String
+fqn = ("WSEdit.Control.Global." ++)
+
+
 
 
 
@@ -79,13 +84,14 @@ bail s = do
         putStrLn s
         putStrLn "Writing state dump to ./CRASH-DUMP ..."
         writeFile "CRASH-DUMP"
-            $ "WSEDIT " ++ version ++ " CRASH LOG"
+            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+           ++ "Error message: " ++ s
            ++ "\n\nEditor configuration:\n"
            ++ indent (ppShow $ prettyEdConfig c)
            ++ "\nEditor state:\n"
            ++ indent ( ppShow
                      $ mapPast (\h -> h { dict = empty })
-                     $ fromJust
+                     $ fromJustNote (fqn "bail")
                      $ chopHist 10
                      $ Just st
                      )

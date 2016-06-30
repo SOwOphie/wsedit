@@ -17,7 +17,7 @@ module WSEdit.Control.Text
 import Control.Monad               (when)
 import Control.Monad.RWS.Strict    (ask, get, modify)
 import Data.Char                   (isSpace)
-import Data.Maybe                  (fromJust)
+import Safe                        (fromJustNote)
 
 import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
                                    , refuseOnReadOnly
@@ -31,6 +31,13 @@ import WSEdit.Output               (stringWidth)
 import WSEdit.Util                 (delN)
 
 import qualified WSEdit.Buffer as B
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Control.Text." ++)
+
+
 
 
 
@@ -86,7 +93,7 @@ delLeft = alterBuffer
         (_, 1) -> do
             l <- edLines <$> get
             modify merge
-            moveCursor 0 (length $ fromJust $ B.left l)
+            moveCursor 0 (length $ fromJustNote (fqn "delLeft:1") $ B.left l)
 
         (_, _) -> do
             moveCursor   0  (-   1)
@@ -101,7 +108,7 @@ delLeft = alterBuffer
         merge :: EdState -> EdState
         merge s = s
             { edLines = B.withCurr (++ (B.curr $ edLines s))
-                      $ fromJust
+                      $ fromJustNote (fqn "delLeft:2")
                       $ B.deleteLeft
                       $ edLines s
             }
@@ -134,7 +141,7 @@ delRight = alterBuffer $ do
         merge :: EdState -> EdState
         merge s = s
             { edLines = B.withCurr ((B.curr $ edLines s) ++)
-                      $ fromJust
+                      $ fromJustNote (fqn "delRight")
                       $ B.deleteRight
                       $ edLines s
             }

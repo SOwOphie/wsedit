@@ -9,7 +9,7 @@ module WSEdit.WordTree
 
 
 import Data.List  (sort)
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (catMaybes)
 
 
 
@@ -31,9 +31,7 @@ addWord []     (Node l) = if Nothing `elem` l
                              then Node             l
                              else Node $ Nothing : l
 addWord (x:xs) (Node l) =
-    case lookup x
-       $ map fromJust
-       $ filter isJust l of
+    case lookup x $ catMaybes l of
         Nothing -> Node $ sort $ Just (x, addWord xs empty) : l
         Just n  -> Node $ sort $ Just (x, addWord xs n    )
                                : filter (/= Just (x, n)) l
@@ -59,8 +57,6 @@ toList (Node l) = concatMap majik l
 complete :: String -> WordTree -> [String]
 complete []     t        = toList t
 complete (x:xs) (Node l) =
-    case lookup x
-        $ map fromJust
-        $ filter isJust l of
+    case lookup x $ catMaybes l of
             Nothing -> []
             Just t  -> map (x:) $ complete xs t
