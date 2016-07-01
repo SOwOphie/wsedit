@@ -98,9 +98,9 @@ moveCursor r c = alterState $ do
             s <- get
 
             let lns      = edLines s
-                currLn   = B.curr lns
+                currLn   = snd $ B.curr lns
                 tLnNo    = min (B.length lns) $ max 1 $ currR + n
-                targetLn = B.atDef "" lns $ tLnNo - 1
+                targetLn = snd $ B.atDef (undefined, "") lns $ tLnNo - 1
 
             -- Current visual cursor offset (amount of columns)
             vPos <- txtToVisPos currLn currC
@@ -125,7 +125,7 @@ moveCursor r c = alterState $ do
             (currR, currC) <- getCursor
             lns <- edLines <$> get
 
-            let currLn = B.curr lns
+            let currLn = snd $ B.curr lns
 
             setCursor (currR
                       , min (length currLn + 1)

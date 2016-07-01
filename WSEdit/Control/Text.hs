@@ -28,7 +28,7 @@ import WSEdit.Data                 ( WSEdit
                                    , getCursor
                                    )
 import WSEdit.Output               (stringWidth)
-import WSEdit.Util                 (delN)
+import WSEdit.Util                 (delN, withPair, withSnd)
 
 import qualified WSEdit.Buffer as B
 
@@ -55,9 +55,10 @@ insertRaw s = refuseOnReadOnly $ modify (ins s)
     where
         ins :: String -> EdState -> EdState
         ins s' st = st
-            { edLines   = B.withCurr (\l -> take (cursorPos st - 1) l
-                                         ++ s'
-                                         ++ drop (cursorPos st - 1) l
+            { edLines   = B.withCurr (withSnd (\l -> take (cursorPos st - 1) l
+                                                  ++ s'
+                                                  ++ drop (cursorPos st - 1) l
+                                              )
                                      )
                         $ edLines st
             , cursorPos = cursorPos st + length s'
@@ -73,7 +74,7 @@ insertTab = alterBuffer $ do
 
     -- Column the tab will sit in
     n <- (edLines <$> get)
-     >>= (stringWidth 1 . take (c - 1) . B.curr)
+     >>= (stringWidth 1 . take (c - 1) . snd . B.curr)
 
     w <- tabWidth <$> ask
 
@@ -101,16 +102,18 @@ delLeft = alterBuffer
     where
         del' :: EdState -> EdState
         del' s = s
-            { edLines = B.withCurr (delN (cursorPos s - 1))
+            { edLines = B.withCurr (withSnd $ delN (cursorPos s - 1))
                       $ edLines s
             }
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines = B.withCurr (++ (B.curr $ edLines s))
-                      $ fromJustNote (fqn "delLeft:2")
-                      $ B.deleteLeft
-                      $ edLines s
+            { edLines   = B.withCurr (withPair (|| (fst $ B.curr $ edLines s))
+                                               (++ (snd $ B.curr $ edLines s))
+                                     )
+                        $ fromJustNote (fqn "delLeft:2")
+                        $ B.deleteLeft
+                        $ edLines s
             }
 
 
@@ -123,8 +126,8 @@ delRight = alterBuffer $ do
 
     lns <- edLines <$> get
 
-    let nLines  = B.length               lns
-        lnWidth =   length $ B.atDef ""  lns $ cR - 1
+    let nLines  = B.length                                  lns
+        lnWidth =   length $ snd $ B.atDef (undefined, "")  lns $ cR - 1
 
     getCursor >>= \case
         (r, c) | r == nLines && c == lnWidth + 1 -> return ()
@@ -134,16 +137,18 @@ delRight = alterBuffer $ do
     where
         del' :: EdState -> EdState
         del' s = s
-            { edLines = B.withCurr (delN (cursorPos s - 1))
+            { edLines = B.withCurr (withSnd $ delN (cursorPos s - 1))
                       $ edLines s
             }
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines = B.withCurr ((B.curr $ edLines s) ++)
-                      $ fromJustNote (fqn "delRight")
-                      $ B.deleteRight
-                      $ edLines s
+            { edLines   = B.withCurr (withPair ((fst $ B.curr $ edLines s) ||)
+                                               ((snd $ B.curr $ edLines s) ++)
+                                     )
+                        $ fromJustNote (fqn "delRight")
+                        $ B.deleteRight
+                        $ edLines s
             }
 
 
@@ -159,6 +164,7 @@ smartHome = alterState $ do
     pos <-  (+1)
          .  length
          .  takeWhile isSpace
+         .  snd
          .  B.curr
          .  edLines
         <$> get
@@ -183,10 +189,10 @@ smartNewLine = alterBuffer $ do
             let
                 ln = B.curr $ edLines s
             in
-                s { edLines = B.insertLeft ( takeWhile isSpace ln
-                                          ++ drop (cursorPos s - 1) ln
+                s { edLines = B.insertLeft (False, takeWhile isSpace      (snd ln)
+                                                ++ drop (cursorPos s - 1) (snd ln)
                                            )
-                            $ B.withCurr (take (cursorPos s - 1))
+                            $ B.withCurr (withSnd $ take (cursorPos s - 1))
                             $ edLines s
                   }
 
@@ -204,8 +210,10 @@ dumbNewLine = alterBuffer $ do
             let
                 ln = B.curr $ edLines s
             in
-                s { edLines = B.insertLeft (drop (cursorPos s - 1) ln)
-                            $ B.withCurr (take (cursorPos s - 1))
+                s { edLines = B.insertLeft (False, drop (cursorPos s - 1)
+                                                 $ snd ln
+                                                 )
+                            $ B.withCurr (withSnd $ take (cursorPos s - 1))
                             $ edLines s
                   }
 
@@ -214,7 +222,7 @@ dumbNewLine = alterBuffer $ do
 -- | Removes all trailing whitespace in the text buffer.
 cleanse :: WSEdit ()
 cleanse = alterBuffer $ do
-    modify (\s -> s { edLines = B.map trim $ edLines s })
+    modify (\s -> s { edLines = B.map (withSnd $ trim) $ edLines s })
     moveCursor 0 0
 
     where

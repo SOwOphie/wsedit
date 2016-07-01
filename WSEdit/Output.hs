@@ -47,7 +47,8 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , dColNoInterval, dCurrLnMod
                                            , dFrameFormat, dHLStyles
                                            , dLineNoFormat, dLineNoInterv
-                                           , dStatusFormat, dTabExt, dTabStr
+                                           , dJumpMarkFmt, dStatusFormat
+                                           , dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
                                           , readOnly, replaceTabs, scrollOffset
@@ -255,7 +256,8 @@ lineNoWidth =  length
 --   buffer.
 toCursorDispPos :: (Int, Int) -> WSEdit (Int, Int)
 toCursorDispPos (r, c) = do
-    currLine <-  B.curr
+    currLine <-  snd
+              .  B.curr
               .  edLines
              <$> get
 
@@ -283,7 +285,7 @@ cursorOffScreen = do
     s <- get
 
     let
-        currLn       = B.curr $ edLines s
+        currLn       = snd $ B.curr $ edLines s
         (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
@@ -448,7 +450,7 @@ makeTextFrame = do
     (   txtRows, txtCols   ) <- getViewportDimensions
     (cR        , _         ) <- getCursor
 
-    txt <- mapM (uncurry lineRep)
+    txt <- mapM (\(n, (b, l)) -> lineRep n l >>= \l' -> return (b, l'))
          $ zip [1 + scrollRows ..]
          $ B.sub scrollRows (scrollRows + txtRows - 1)
          $ edLines s
@@ -456,20 +458,23 @@ makeTextFrame = do
     return $ pad (lNoWidth + 3) 2 0 0
            $ cropRight (txtCols + 1)  -- +1 to compensate for the leading blank
            $ vertCat
-           $ map (\(l, ln) -> (char (dLineNoFormat d) ' ' <|>)
-                            $ translateX (-scrollCols)
-                            $ pad 0 0 (scrollCols + 1) 0
-                            $ (if drawBg c
-                                  then id
-                                  else (<|> char ( (if l == cR
-                                                       then dCurrLnMod d
-                                                       else id
-                                                   )
-                                                 $ lookupJustDef def Whitesp
-                                                 $ dCharStyles d
-                                                 ) (dBGChar d)
-                                       )
-                              ) ln
+           $ map (\(l, (b, ln)) -> (if b
+                                       then (char (dJumpMarkFmt  d) '•' <|>)
+                                       else (char (dLineNoFormat d) ' ' <|>)
+                                   )
+                                 $ translateX (-scrollCols)
+                                 $ pad 0 0 (scrollCols + 1) 0
+                                 $ (if drawBg c
+                                       then id
+                                       else (<|> char ( (if l == cR
+                                                            then dCurrLnMod d
+                                                            else id
+                                                        )
+                                                      $ lookupJustDef def Whitesp
+                                                      $ dCharStyles d
+                                                      ) (dBGChar d)
+                                            )
+                                 ) ln
                  )
            $ zip [1 + scrollRows ..] txt
 

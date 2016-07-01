@@ -19,7 +19,7 @@ import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
                                     , dCurrLnMod, dFrameFormat, dHLStyles
-                                    , dLineNoFormat, dLineNoInterv
+                                    , dJumpMarkFmt, dLineNoFormat, dLineNoInterv
                                     , dStatusFormat, dTabExt, dTabStr
                                     )
                          , HighlightMode
@@ -95,6 +95,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDColChar       :: Maybe Char
     , pDBGFormat      :: Attr
     , pDCurrLnMod     :: ()
+    , pDJumpMarkFmt   :: Attr
     , pDTabStr        :: String
     , pDTabExt        :: Char
     , pDCharStyles    :: [(CharClass    , Attr)]
@@ -115,6 +116,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDColChar       = dColChar       d
     , pDBGFormat      = dBGFormat      d
     , pDCurrLnMod     = ()
+    , pDJumpMarkFmt   = dJumpMarkFmt   d
     , pDTabStr        = dTabStr        d
     , pDTabExt        = dTabExt        d
     , pDCharStyles    = dCharStyles    d
@@ -134,6 +136,7 @@ unPrettyEdDesign f p = EdDesign
     , dColChar       = pDColChar       p
     , dBGFormat      = pDBGFormat      p
     , dCurrLnMod     = f
+    , dJumpMarkFmt   = pDJumpMarkFmt   p
     , dTabStr        = pDTabStr        p
     , dTabExt        = pDTabExt        p
     , dCharStyles    = pDCharStyles    p

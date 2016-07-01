@@ -10,14 +10,22 @@ import Graphics.Vty   ( Event (EvKey)
                       , Modifier (MCtrl, MMeta, MShift)
                       )
 
-import WSEdit.Control ( cleanse, completeOr, copy, deleteSelection, delLeft
-                      , delRight, fetchCursor, forceQuit, ifMarked
-                      , indentSelection, initMark, insertTab, moveCursor
-                      , moveViewport, paste, quit, save, searchFor
-                      , simulateCrash, smartHome, smartNewLine, toggleReadOnly
-                      , toggleTabRepl, unindentSelection, undo
-                      )
-import WSEdit.Data    (Keymap, clearMark)
+import WSEdit.Control.Autocomplete (completeOr)
+import WSEdit.Control.Base         (fetchCursor, moveCursor, moveViewport)
+import WSEdit.Control.Global       ( forceQuit, quit, save, simulateCrash
+                                   , toggleReadOnly, toggleTabRepl, undo
+                                   )
+import WSEdit.Control.Marks        ( backwardsToMark, forwardToMark
+                                   , toggleJumpMark
+                                   )
+import WSEdit.Control.Selection    ( copy, deleteSelection, ifMarked
+                                   , indentSelection, initMark, paste, searchFor
+                                   , unindentSelection
+                                   )
+import WSEdit.Control.Text         ( cleanse, delLeft, delRight, insertTab
+                                   , smartHome, smartNewLine
+                                   )
+import WSEdit.Data                 (Keymap, clearMark)
 
 
 
@@ -129,6 +137,19 @@ defaultKM =
       )
     , (EvKey  KEnd        [       MShift       ], (                              initMark >> moveCursor      0    65535
                                                   , "Move Cursor to the end of the line, selecting text."
+                                                  )
+      )
+
+    , (EvKey (KChar 'y')  [               MCtrl], (                                          toggleJumpMark
+                                                  , "Toggle a jump mark in the current line."
+                                                  )
+      )
+    , (EvKey (KChar 'n')  [               MCtrl], (                                          forwardToMark
+                                                  , "Advance to the next jump mark."
+                                                  )
+      )
+    , (EvKey (KChar 'b')  [               MCtrl], (                                          backwardsToMark
+                                                  , "Go back to the previous jump mark."
                                                   )
       )
 

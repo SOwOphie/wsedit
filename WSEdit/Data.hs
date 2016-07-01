@@ -78,7 +78,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.15"
+version = "0.3.1.16"
 
 -- | Upstream URL.
 upstream :: String
@@ -94,9 +94,9 @@ licenseVersion = "1.1"
 
 -- | Editor state container (dynamic part).
 data EdState = EdState
-    { edLines      :: B.Buffer String
-        -- ^ Buffer of lines. The current line is always left of the current
-        --   position.
+    { edLines      :: B.Buffer (Bool, String)
+        -- ^ Buffer of lines. Contains the line string and whether the line is
+        --   tagged by a jump mark.
 
     , fname        :: FilePath
         -- ^ Path of the current file.
@@ -171,7 +171,7 @@ data EdState = EdState
 
 instance Default EdState where
     def = EdState
-        { edLines      = B.singleton ""
+        { edLines      = B.singleton (False, "")
         , fname        = ""
         , readOnly     = False
 
@@ -336,11 +336,12 @@ getSelection = getSelBounds >>= \case
            then return $ Just
                        $ drop (sC - 1)
                        $ take eC
+                       $ snd
                        $ B.curr l
 
            else
                 let
-                    lns = B.sub (sR - 1) (eR - 1) l
+                    lns = map snd $ B.sub (sR - 1) (eR - 1) l
                 in
                     return $ Just
                            $ drop (sC - 1) (headNote (fqn "getSelection") lns)
@@ -365,8 +366,9 @@ delSelection = getSelBounds >>= \case
 
         case compare mR cR of
              EQ -> do
-                put $ s { edLines   = B.withCurr (\l -> take (sC - 1) l
-                                                     ++ drop  eC      l
+                put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (sC - 1) l
+                                                              ++ drop  eC      l
+                                                             )
                                                  )
                                     $ edLines s
                         , cursorPos = sC
@@ -374,11 +376,13 @@ delSelection = getSelBounds >>= \case
                 return True
 
              LT -> do
-                put $ s { edLines   = B.withCurr (\l -> take (mC - 1) l
-                                                     ++ drop (cC - 1)
-                                                          ( B.curr
-                                                          $ edLines s
-                                                          )
+                put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (mC - 1) l
+                                                              ++ drop (cC - 1)
+                                                                 ( snd
+                                                                 $ B.curr
+                                                                 $ edLines s
+                                                                 )
+                                                             )
                                                  )
                                     $ B.dropLeft (cR - mR)
                                     $ edLines s
@@ -387,11 +391,13 @@ delSelection = getSelBounds >>= \case
                 return True
 
              GT -> do
-                put $ s { edLines   = B.withCurr (\l -> take (cC - 1)
-                                                          ( B.curr
-                                                          $ edLines s
-                                                          )
-                                                     ++ drop (mC - 1) l
+                put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (cC - 1)
+                                                               ( snd
+                                                               $ B.curr
+                                                               $ edLines s
+                                                               )
+                                                              ++ drop (mC - 1) l
+                                                             )
                                                  )
                                     $ B.dropRight (mR - cR)
                                     $ edLines s
@@ -512,6 +518,9 @@ data EdDesign = EdDesign
     , dCurrLnMod     :: Attr -> Attr
         -- ^ Attribute modifications to apply to the current line
 
+    , dJumpMarkFmt   :: Attr
+        -- ^ vty attribute for jump marks
+
 
     , dTabStr        :: String
         -- ^ String to display tab characters as.  Will get truncated from the
@@ -555,6 +564,8 @@ instance Default EdDesign where
                             `withForeColor` black
 
         , dCurrLnMod     = flip withBackColor black
+        , dJumpMarkFmt   = defAttr
+                            `withForeColor` red
 
         , dTabStr        = "|"
         , dTabExt        = ' '
@@ -638,6 +649,8 @@ brightTheme = EdDesign
                             `withForeColor` white
 
         , dCurrLnMod     = flip withBackColor white
+        , dJumpMarkFmt   = defAttr
+                            `withForeColor` red
 
         , dTabStr        = "|"
         , dTabExt        = ' '

@@ -131,6 +131,7 @@ listAutocomplete = do
 
     when (isJust (buildDict s) && not (readOnly s))
         $ case getKeywordAtCursor (cursorPos s)
+                $ snd
                 $ B.curr
                 $ edLines s of
 
@@ -159,6 +160,7 @@ applyAutocomplete = do
 
     when (isJust (buildDict s) && canComplete s)
         $ case getKeywordAtCursor (cursorPos s)
+                $ snd
                 $ B.curr
                 $ edLines s of
 

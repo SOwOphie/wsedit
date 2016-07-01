@@ -31,7 +31,7 @@ import WSEdit.Data              ( EdConfig (tabWidth)
                                 , clearMark, delSelection, getMark, getCursor
                                 , getSelection, setMark, setStatus
                                 )
-import WSEdit.Util              (checkClipboardSupport, mayReadFile)
+import WSEdit.Util              (checkClipboardSupport, mayReadFile, withSnd)
 
 import qualified WSEdit.Buffer as B
 
@@ -129,21 +129,25 @@ paste = alterBuffer $ do
             put $ s     -- Arcane buffer magic incoming...
                 { edLines =
                     if length c == 1
-                       then B.withCurr (\l -> take (cursorPos s - 1) l
-                                           ++ headNote (fqn "paste") c
-                                           ++ drop (cursorPos s - 1) l
+                       then B.withCurr (withSnd (\l -> take (cursorPos s - 1) l
+                                                    ++ headNote (fqn "paste") c
+                                                    ++ drop (cursorPos s - 1) l
+                                                )
                                        )
                           $ edLines s
 
-                       else B.insertLeft ( lastNote (fqn "paste") c
-                                        ++ drop (cursorPos s - 1)
-                                                (B.curr $ edLines s)
+                       else B.insertLeft (False, lastNote (fqn "paste") c
+                                              ++ drop (cursorPos s - 1)
+                                                      (snd $ B.curr $ edLines s)
                                          )
                           $ flip (foldl (flip B.insertLeft))
-                                 (drop 1 $ initNote (fqn "paste") c
+                                 ( zip (repeat False)
+                                 $ drop 1
+                                 $ initNote (fqn "paste") c
                                  )
-                          $ B.withCurr (\l -> take (cursorPos s - 1) l
-                                           ++ headNote (fqn "paste") c
+                          $ B.withCurr (withSnd (\l -> take (cursorPos s - 1) l
+                                                    ++ headNote (fqn "paste") c
+                                                )
                                        )
                           $ edLines s
                 }
@@ -180,15 +184,15 @@ indentSelection = alterBuffer $ do
 
             put $ s { edLines =
                         case compare sR cR of
-                             LT -> B.withCurr            (ind ++)
-                                 $ B.withNLeft (cR - sR) (ind ++)
+                             LT -> B.withCurr            (withSnd (ind ++))
+                                 $ B.withNLeft (cR - sR) (withSnd (ind ++))
                                  $ edLines s
 
-                             EQ -> B.withCurr (ind ++)
+                             EQ -> B.withCurr (withSnd (ind ++))
                                  $ edLines s
 
-                             GT -> B.withCurr             (ind ++)
-                                 $ B.withNRight (sR - cR) (ind ++)
+                             GT -> B.withCurr             (withSnd (ind ++))
+                                 $ B.withNRight (sR - cR) (withSnd (ind ++))
                                  $ edLines s
                      }
 
@@ -212,15 +216,15 @@ unindentSelection = alterBuffer $ do
 
             put $ s { edLines =
                         case compare sR cR of
-                             LT -> B.withCurr            (unindent ind)
-                                 $ B.withNLeft (cR - sR) (unindent ind)
+                             LT -> B.withCurr            (withSnd (unindent ind))
+                                 $ B.withNLeft (cR - sR) (withSnd (unindent ind))
                                  $ edLines s
 
-                             EQ -> B.withCurr (unindent ind)
+                             EQ -> B.withCurr (withSnd (unindent ind))
                                  $ edLines s
 
-                             GT -> B.withCurr             (unindent ind)
-                                 $ B.withNRight (sR - cR) (unindent ind)
+                             GT -> B.withCurr             (withSnd (unindent ind))
+                                 $ B.withNRight (sR - cR) (withSnd (unindent ind))
                                  $ edLines s
                      }
     where

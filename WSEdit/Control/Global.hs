@@ -178,6 +178,7 @@ save = refuseOnReadOnly $ do
 
             liftIO $ writeFile (fname s)
                    $ unlines
+                   $ map snd
                    $ B.toList
                    $ edLines s
 
@@ -207,8 +208,9 @@ load = alterState $ do
               then liftIO $ System.IO.Strict.readFile p'
               else return ""
 
-    let l = fromMaybe (B.singleton "")
+    let l = fromMaybe (B.singleton (False, ""))
           $ B.fromList
+          $ zip (repeat False)
           $ lines txt
 
     put $ s
