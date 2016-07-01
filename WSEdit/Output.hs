@@ -531,38 +531,56 @@ makeScrollbar = do
 
     let
         -- Number of lines the document has
-        nLns    = B.length $ edLines s
+        nLns     = B.length $ edLines s
+
+        -- List of jump marks
+        markList = map fst
+                 $ filter (\(_, (b, _)) -> b)
+                 $ zip [(1 :: Int)..]
+                 $ B.toList
+                 $ edLines s
+
+        marksAt  = map ( floor
+                       . (*  fromIntegral (nRows - 1)       )
+                       . (/ (fromIntegral  nLns :: Rational))
+                       . fromIntegral
+                       ) markList
 
         -- Relative position of the viewport's upper edge
-        stProg  = floor $ (fromIntegral (nRows - 1     ))
-                        * (fromIntegral  sRows          )
-                        / (fromIntegral nLns :: Rational)
+        stProg   = floor $  fromIntegral (nRows - 1     )
+                         *  fromIntegral  sRows
+                         / (fromIntegral  nLns :: Rational)
 
         -- Position of the viewport's lower edge
-        endProg = floor $ 1
-                        + (fromIntegral (nRows - 1     ))
-                        * (fromIntegral (sRows + nRows ))
-                        / (fromIntegral nLns :: Rational)
+        endProg  = floor $ 1
+                         +  fromIntegral (nRows - 1     )
+                         *  fromIntegral (sRows + nRows )
+                         / (fromIntegral  nLns :: Rational)
 
         -- Position of the cursor
-        cProg   = floor $ (fromIntegral (nRows - 1     ))
-                        * (fromIntegral  curR           )
-                        / (fromIntegral nLns :: Rational)
+        cProg    = floor $  fromIntegral (nRows - 1     )
+                         *  fromIntegral  curR
+                         / (fromIntegral  nLns :: Rational)
 
     return $ pad (lNoWidth + 4 + nCols) 2 0 0
            $ cropBottom nRows
            $ vertCat
-           $ map (\(n, c) -> char   (dFrameFormat d) '|'
-                         <|> if n /= cProg || readOnly s
-                                then char (               dFrameFormat  d) c
-                                else char (dCurrLnMod d $ dLineNoFormat d) '<'
-                 )
+           $ map (repl (d, s, cProg, marksAt))
            $ zip [(0 :: Int)..]
            $ replicate  stProg                 ' '
           ++                                  ['-']
           ++ replicate (endProg - stProg - 2 ) '|'
           ++                                  ['-']
           ++ replicate (nRows - endProg      ) ' '
+
+    where
+        repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
+        repl (d, s, cProg, marksAt) (n, c) =
+            char (dFrameFormat d) '|' <|> case () of
+                _ | readOnly s       -> char (               dFrameFormat  d)  c
+                _ | n == cProg       -> char (dCurrLnMod d $ dLineNoFormat d) '<'
+                _ | n `elem` marksAt -> char (               dJumpMarkFmt  d) '•'
+                _ | otherwise        -> char (               dFrameFormat  d)  c
 
 
 
