@@ -74,6 +74,7 @@ wsedit for your distribution.
 ### OSX: Homebrew
 
 Thanks to Alex Arslan for providing a homebrew formula for wsedit:
+
     brew tap ararslan/pints
     brew install wsedit
 
