@@ -10,6 +10,7 @@ module WSEdit.Control.Global
     , save
     , load
     , toggleTabRepl
+    , toggleInsOvr
     , toggleReadOnly
     , undo
     ) where
@@ -41,8 +42,8 @@ import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
 import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines, fname
-                                              , loadPos, markPos, readOnly
-                                              , replaceTabs
+                                              , loadPos, markPos, overwrite
+                                              , readOnly, replaceTabs
                                               )
                                    , WSEdit
                                    , chopHist, mapPast, popHist, setStatus
@@ -258,6 +259,12 @@ toggleTabRepl :: WSEdit ()
 toggleTabRepl = do
     s <- get
     put $ s { replaceTabs = not $ replaceTabs s }
+
+
+
+-- | Toggle insert / overwrite mode
+toggleInsOvr :: WSEdit ()
+toggleInsOvr = modify (\s -> s { overwrite = not $ overwrite s })
 
 
 

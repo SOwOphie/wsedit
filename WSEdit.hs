@@ -10,7 +10,7 @@ import Data.Default             (def)
 import Data.List                ( delete, isInfixOf, isPrefixOf, isSuffixOf
                                 , partition, stripPrefix
                                 )
-import Data.Maybe               (fromMaybe)
+import Data.Maybe               (catMaybes, fromMaybe)
 import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
                                 , Event (EvKey, EvMouseDown, EvResize)
                                 , Key (KBS, KChar, KFun)
@@ -144,18 +144,18 @@ start = do
 
                                     let (cLines, sLines) = withSnd (drop 2)
                                                          $ span (/= "")
-                                                         $ drop 3
+                                                         $ drop 4
                                                          $ lines r
 
                                         conf' = unPrettyEdConfig
                                                 (vtyObj conf)
                                                 (keymap conf)
                                                 (dCurrLnMod $ edDesign conf)
-                                             $ read
-                                             $ unlines cLines
+                                              $ readNote (fqn "start:1")
+                                              $ unlines cLines
 
-                                        st   = read
-                                             $ unlines sLines
+                                        st    = readNote (fqn "start:2")
+                                              $ unlines sLines
 
                                     return (conf', st)
 
@@ -293,6 +293,7 @@ mainLoop = do
               )
         $ fmap fst
         $ lookup ev
+        $ catMaybes
         $ keymap c
         )  $ \e -> do
             b <- changed <$> get
@@ -321,14 +322,17 @@ mainLoop = do
 keymapInfo :: EdConfig -> Either (ExitCode, String) (EdConfig, EdState)
 keymapInfo conf =
     let
-        tbl  = map (withFst showEv)
+        tbl  = map (\case
+                        Nothing -> ("", "")
+                        Just  x -> withFst showEv x
+                   )
              $ prettyKeymap
              $ keymap conf
 
         maxW = maximumNote (fqn "keymapInfo") $ map (length . fst) tbl
     in
         Left (ExitSuccess
-             , "Dumping keymap (Meta = Alt on most systems):\n"
+             , "Dumping keymap (Meta = Alt on most systems):\n\n"
                 ++ ( unlines
                    $ map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s))
                      tbl

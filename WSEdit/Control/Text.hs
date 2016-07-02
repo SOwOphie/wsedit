@@ -24,7 +24,9 @@ import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
                                    )
 import WSEdit.Data                 ( WSEdit
                                    , EdConfig (tabWidth)
-                                   , EdState (cursorPos, edLines, replaceTabs)
+                                   , EdState ( cursorPos, edLines, overwrite
+                                             , replaceTabs
+                                             )
                                    , getCursor
                                    )
 import WSEdit.Output               (stringWidth)
@@ -57,7 +59,11 @@ insertRaw s = refuseOnReadOnly $ modify (ins s)
         ins s' st = st
             { edLines   = B.withCurr (withSnd (\l -> take (cursorPos st - 1) l
                                                   ++ s'
-                                                  ++ drop (cursorPos st - 1) l
+                                                  ++ drop ( cursorPos st
+                                                          - if overwrite st
+                                                               then 0
+                                                               else 1
+                                                          ) l
                                               )
                                      )
                         $ edLines st
@@ -113,6 +119,12 @@ delLeft = alterBuffer
                                      )
                         $ fromJustNote (fqn "delLeft:2")
                         $ B.deleteLeft
+                        $ edLines s
+
+            , cursorPos = length
+                        $ snd
+                        $ fromJustNote (fqn "delLeft")
+                        $ B.left
                         $ edLines s
             }
 

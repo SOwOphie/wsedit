@@ -146,8 +146,8 @@ unPrettyEdDesign f p = EdDesign
 
 
 -- | 'Show'able representation of 'Keymap'.
-type PrettyKeymap = [(Event, String)]
+type PrettyKeymap = [Maybe (Event, String)]
 
 -- | Create a 'PrettyKeymap' from a 'Keymap'.
 prettyKeymap :: Keymap -> PrettyKeymap
-prettyKeymap = map (withSnd snd)
+prettyKeymap = map (fmap $ withSnd snd)

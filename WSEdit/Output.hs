@@ -51,8 +51,8 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
-                                          , readOnly, replaceTabs, scrollOffset
-                                          , searchTerms, status
+                                          , overwrite, readOnly, replaceTabs
+                                          , scrollOffset, searchTerms, status
                                           )
                                 , HighlightMode ( HComment, HKeyword, HNone
                                                 , HSearch, HSelected, HString
@@ -388,7 +388,7 @@ makeFooter = do
 
     return $ string (dFrameFormat d)
                 ( replicate (lNoWidth + 2) ' '
-               ++ "+-------+"
+               ++ "+-----------+"
                ++ replicate (txtCols - 7) '-'
                ++ "+-"
                 )
@@ -398,6 +398,10 @@ makeFooter = do
                 ( (if replaceTabs s
                       then "SPC "
                       else "TAB "
+                  )
+               ++ (if overwrite s
+                      then "OVR "
+                      else "INS "
                   )
                ++ (if readOnly s
                       then "R "

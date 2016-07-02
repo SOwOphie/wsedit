@@ -78,7 +78,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.17"
+version = "0.3.1.18"
 
 -- | Upstream URL.
 upstream :: String
@@ -163,6 +163,9 @@ data EdState = EdState
         -- ^ Whether to autodetect the 'replaceTabs' setting on each load based
         --   on the file's existing indentation.
 
+    , overwrite    :: Bool
+        -- ^ Whether overwrite mode is on.
+
 
     , searchTerms  :: [String]
         -- ^ List of search terms to highlight
@@ -193,6 +196,7 @@ instance Default EdState where
         , canComplete  = False
         , replaceTabs  = False
         , detectTabs   = True
+        , overwrite    = False
         , searchTerms  = []
         }
 
@@ -728,8 +732,9 @@ catchEditor a e = do
 
 
 
--- | Map of events to actions (and their descriptions).
-type Keymap = [(Event, (WSEdit (), String))]
+-- | Map of events to actions (and their descriptions). 'Nothing's are used to
+--   mark sections.
+type Keymap = [Maybe (Event, (WSEdit (), String))]
 
 
 
