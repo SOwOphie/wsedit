@@ -58,7 +58,26 @@ conceivable language and to require only a minimal amount of configuration.
   all the command line parameters you'd like to be default.  Prefix lines with
   e.g. `hs:` to make them apply to .hs-files only.
 
-## Building
+## Platforms / Installation
+
+### Windows: not supported
+
+The whole idea of running a terminal editor on Windows seems a bit strange to
+me.  However, you are free to try building it from source (see below).
+
+### Linux: no packages available (yet), build from source
+
+Until the v1.0 release, there won't be any packages available.  After that, I'll
+probably create an AUR package.  Contact me if you're interested in packaging
+wsedit for your distribution.
+
+### OSX: Homebrew
+
+Thanks to Alex Arslan for providing a homebrew formula for wsedit:
+    brew tap ararslan/pints
+    brew install wsedit
+
+### Building from source
 
 1. Install the
    [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
