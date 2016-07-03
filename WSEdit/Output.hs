@@ -198,7 +198,7 @@ lineRep lNo str = do
                           _ | otherwise                           -> HNone
                     ) (lNo, tPos) vPos c
 
-            return (i:im, tPos + 1, vPos + length i)
+            return (i:im, tPos + 1, vPos + length (snd i))
 
     (r,_ ,_) <- foldM f ([], 1, 1) str
 
