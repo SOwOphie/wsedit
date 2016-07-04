@@ -97,10 +97,7 @@ delLeft :: WSEdit ()
 delLeft = alterBuffer
     $ getCursor >>= \case
         (1, 1) -> return ()
-        (_, 1) -> do
-            l <- edLines <$> get
-            modify merge
-            moveCursor 0 (length $ fromJustNote (fqn "delLeft:1") $ B.left l)
+        (_, 1) -> modify merge
 
         (_, _) -> do
             moveCursor   0  (-   1)
@@ -121,7 +118,8 @@ delLeft = alterBuffer
                         $ B.deleteLeft
                         $ edLines s
 
-            , cursorPos = length
+            , cursorPos = (+1)
+                        $ length
                         $ snd
                         $ fromJustNote (fqn "delLeft")
                         $ B.left

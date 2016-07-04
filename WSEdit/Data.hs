@@ -78,7 +78,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "0.4.0.0"
+version = "0.4.0.1"
 
 -- | Upstream URL.
 upstream :: String

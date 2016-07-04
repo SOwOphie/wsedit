@@ -1,7 +1,5 @@
 .stack-work/
 CRASH-*
 dmp
-.wsedit
-.local.wsconf
 .hpc/
 *.tix
