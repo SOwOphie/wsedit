@@ -66,8 +66,8 @@ fqn = ("WSEdit." ++)
 
 
 -- | Splits up commandline arguments, global, and local config contents into
---   @(Maybe target file, target line no, target col no, list of switches,
---   whether -s is present)@.
+--   @(Maybe target file, file extension, target line no, target col no, list of
+--   switches, whether -s is present)@.
 splitArgs :: [String] -> [String] -> [String]
           -> (Maybe FilePath, Int, Int, [String], Bool)
 splitArgs args glob loc =
@@ -239,19 +239,23 @@ argLoop h (('-':'x'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edD
 argLoop h (('-':'X'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { edDesign     = def                             }, s)
 argLoop h (('-':'y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = True                            }, s)
 argLoop h (('-':'Y'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { dumpEvents   = False                           }, s)
-argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf"       })
-argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"                   })
-argLoop h (('-':'d': d         :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Just $ readNote (fqn "argLoop") [d] })
-argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = Nothing                             })
-argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s                   })
-argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s       })
-argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                                })
-argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                               })
+argLoop h (('-':'c':'g'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf"                                })
+argLoop h (('-':'c':'l'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { fname       = "./.local.wsconf"                                            })
+argLoop h (('-':'d':'+':'*'    :x ):xs) (c, s) = argLoop h          xs  (c, s { buildDict   = (Just x , Nothing                     ) : buildDict s        })
+argLoop h (('-':'d':'+': d     :x ):xs) (c, s) = argLoop h          xs  (c, s { buildDict   = (Just x , Just $ readNote (fqn "argLoop") [d]) : buildDict s })
+argLoop h (('-':'d':'~':'*'    :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = (Nothing, Nothing                     ) : buildDict s        })
+argLoop h (('-':'d':'~': d     :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = (Nothing, Just $ readNote (fqn "argLoop") [d]) : buildDict s })
+argLoop _ (('-':'d'            :_ ):_ ) _      = Left (ExitFailure 1, "Error: -d is deprecated, use -d+ instead.")
+argLoop h (('-':'D'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { buildDict   = []                                                           })
+argLoop h (('-':'f':'h':'+'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = x : searchTerms s                                            })
+argLoop h (('-':'f':'h':'-'    :x ):xs) (c, s) = argLoop h          xs  (c, s { searchTerms = filter (/= x) $ searchTerms s                                })
+argLoop h (('-':'r'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = True                                                         })
+argLoop h (('-':'R'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { readOnly    = False                                                        })
 argLoop h (('-':'t':'s'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = True
-                                                                              , detectTabs  = False                               })
+                                                                                , detectTabs  = False                                                      })
 argLoop h (('-':'t':'t'        :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { replaceTabs = False
-                                                                              , detectTabs  = False                               })
-argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { detectTabs  = True                                })
+                                                                              , detectTabs  = False                                                        })
+argLoop h (('-':'T'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s { detectTabs  = True                                                         })
 
 argLoop h (['-']                   :xs) (c, s) = argLoop h          xs  (c, s)
 argLoop _ []                            (c, s) = if fname s == ""

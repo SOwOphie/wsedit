@@ -8,27 +8,26 @@ module WSEdit.Control.Autocomplete
 
 
 import Control.Exception        (evaluate)
-import Control.Monad            (forM_, when)
+import Control.Monad            (forM_, unless, when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
-import Data.Maybe               (isJust)
+import Data.Maybe               (fromMaybe)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
-import Safe                     (headDef)
 import System.Directory         ( doesDirectoryExist, doesFileExist
-                                , getCurrentDirectory, getDirectoryContents
+                                , getCurrentDirectory, listDirectory
                                 )
 
 import WSEdit.Control.Base      (alterBuffer)
 import WSEdit.Control.Text      (insertRaw)
 import WSEdit.Data              ( WSEdit
-                                , EdConfig (tabWidth)
+                                , EdConfig (lineComment, tabWidth)
                                 , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
                                           )
                                 , setStatus
                                 )
-import WSEdit.Util              (getExt, getKeywordAtCursor, isIdentifierChar
+import WSEdit.Util              ( findInStr, getKeywordAtCursor
                                 , longestCommonPrefix, wordsPlus
                                 )
 import WSEdit.WordTree          (addWord, complete)
@@ -40,13 +39,36 @@ import qualified WSEdit.Buffer as B
 
 -- | Adds a file to the dictionary, parsing all lines at the given indentation
 --   depth.
-dictAdd :: Int -> FilePath -> WSEdit ()
-dictAdd l f = do
+dictAdd :: FilePath -> WSEdit ()
+dictAdd f = do
     s <- get
+    c <- ask
 
-    when (isJust $ buildDict s) $ do
-        t <- tabWidth <$> ask
+    let
+        depths = map snd
+               $ filter (\(x, _) -> fromMaybe (f == fname s) $ fmap (`isSuffixOf` f) x)
+               $ buildDict s
+
+    when (not $ null depths) $ do
         txt <- liftIO $ readFile f
+
+        d <- liftIO
+           $ evaluate
+           $ foldl (flip addWord) (dict s)
+           $ wordsPlus
+           $ unlines
+           $ map ( (\l -> take ( minimum
+                               $ maxBound
+                               : concat [ findInStr x l | x <- lineComment c]
+                               ) l
+                   )
+                 . dropWhile isSpace
+                 )
+           $ (case sequence depths of
+                  Nothing -> id
+                  Just r  -> filter (\l -> or [ atLevel (tabWidth c) x l | x <- r])
+             )
+           $ lines txt
 
         {- This is the magic behind the whole function. Ready?
             1. Split the read file into lines
@@ -59,16 +81,6 @@ dictAdd l f = do
             8. Evaluate (to force strictness and surface any residual errors)
             9. Lift to IO.
         -}
-
-        d <- liftIO
-           $ evaluate
-           $ foldl (flip addWord) (dict s)
-           $ wordsPlus
-           $ unlines
-           $ filter (isIdentifierChar . headDef '.')
-           $ map (dropWhile isSpace)
-           $ filter (atLevel t l)
-           $ lines txt
 
         put $! s { dict = d }
 
@@ -92,35 +104,27 @@ dictAddRec = do
     s <- get
 
     -- Skip everything if dictionary building is disabled
-    case buildDict s of
-         Nothing -> return ()
-         Just l  -> do
-            p <- liftIO getCurrentDirectory
-            dictAddRec' l p
+    unless (null $ buildDict s) $ liftIO getCurrentDirectory >>= dictAddRec'
 
     where
         -- | Processes the files inside the given directory. First parameter is
         --   the indentation depth to search at.
-        dictAddRec' :: Int -> FilePath -> WSEdit ()
-        dictAddRec' n p = do
-            -- Get the extension of the current file.
-            ext <- getExt . fname <$> get
+        dictAddRec' :: FilePath -> WSEdit ()
+        dictAddRec' p = do
 
-            -- Retrieve the directory contents, filtering out hidden files.
-            l <- liftIO
-               $ filter (\s -> headDef '.' s /= '.')
-              <$> getDirectoryContents p
+            -- Retrieve the directory contents.
+            l <- liftIO $ listDirectory p
 
             forM_ l $ \p' -> do
                 -- Full file name
                 let f = p ++ "/" ++ p'
 
                 isFile <- liftIO $ doesFileExist f
-                if isFile && ext `isSuffixOf` f
-                   then dictAdd n f
+                if isFile
+                   then dictAdd f
                    else do
                         isDir <- liftIO $ doesDirectoryExist f
-                        when isDir $ dictAddRec' n f
+                        when isDir $ dictAddRec' f
 
 
 
@@ -129,7 +133,7 @@ listAutocomplete :: WSEdit ()
 listAutocomplete = do
     s <- get
 
-    when (isJust (buildDict s) && not (readOnly s))
+    unless ((null $ buildDict s) || (readOnly s))
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
                 $ B.curr
@@ -158,7 +162,7 @@ applyAutocomplete :: WSEdit ()
 applyAutocomplete = do
     s <- get
 
-    when (isJust (buildDict s) && canComplete s)
+    when (not (null $ buildDict s) && canComplete s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
                 $ B.curr

@@ -78,7 +78,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "0.3.1.19"
+version = "0.4.0.0"
 
 -- | Upstream URL.
 upstream :: String
@@ -143,9 +143,9 @@ data EdState = EdState
         --   facilities.  Horrible memory efficiency, but it seems to work.
 
 
-    , buildDict    :: Maybe Int
-        -- ^ Whether the editor is to build a dictionary, and if yes, at which
-        --   indentation depth.
+    , buildDict    :: [(Maybe String, Maybe Int)]
+        -- ^ File suffix and indentation depth pairs for dictionary building.
+        --   'Nothing' stands for the current file or all depths.
 
     , dict         :: WordTree
         -- ^ Autocompletion dictionary.
@@ -191,7 +191,7 @@ instance Default EdState where
         , changed      = False
         , history      = Nothing
 
-        , buildDict    = Nothing
+        , buildDict    = []
         , dict         = empty
         , canComplete  = False
         , replaceTabs  = False

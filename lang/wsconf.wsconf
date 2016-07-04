@@ -19,7 +19,8 @@ wsconf: -fk+-b
 wsconf: -fk+-B
 wsconf: -fk+-cg
 wsconf: -fk+-cl
-wsconf: -fk+-d
+wsconf: -fk+-d+
+wsconf: -fk+-d~
 wsconf: -fk+-D
 wsconf: -fk+-fe
 wsconf: -fk+-fh
