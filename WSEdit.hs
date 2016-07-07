@@ -19,8 +19,8 @@ import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
                                 , nextEvent
                                 , shutdown
                                 )
-import Safe                     ( atDef, headDef, headMay, maximumNote, readDef
-                                , readNote
+import Safe                     ( atDef, headDef, headMay, lastNote, maximumNote
+                                , readDef, readNote
                                 )
 import System.Directory         ( doesDirectoryExist, getHomeDirectory
                                 , listDirectory
@@ -77,9 +77,12 @@ splitArgs args glob loc =
         tLnNo    = readDef 1 $ atDef "1" ar 1
         tColNo   = readDef 1 $ atDef "1" ar 2
 
-        fext     = if any (isInfixOf "-c") sw
-                      then Just "wsconf"
-                      else getExt <$> filename
+        fext     = case filter (isPrefixOf "-ff") sw of
+                    [] | any (isInfixOf "-c") sw -> Just "wsconf"
+                    [] | otherwise               -> getExt <$> filename
+                    l                            -> Just
+                                                  $ drop 3
+                                                  $ lastNote (fqn "splitArgs") l
 
         swChain  = filterFileArgs fext glob
                 ++ filterFileArgs fext loc
@@ -221,7 +224,8 @@ argLoop _ (('-':'h':'k'        :_ ):_ ) (c, _) = keymapInfo c
 argLoop _ (('-':'h':'c'        :_ ):_ ) (_, _) = Left (ExitSuccess, confHelp   )
 argLoop _ (('-':'h'            :_ ):_ ) _      = Left (ExitSuccess, usageHelp  )
 argLoop _ (('-':'V'            :_ ):_ ) _      = Left (ExitSuccess, versionHelp)
-argLoop h (('-':'s'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s) -- gets handled elsewhere, ignore it here.
+argLoop h (('-':'s'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c, s)  -- gets handled elsewhere, ignore it here.
+argLoop h (('-':'f':'f'        :_ ):xs) (c, s) = argLoop h          xs  (c, s)  -- same
 argLoop h (('-':'b'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = False                           }, s)
 argLoop h (('-':'B'            :x ):xs) (c, s) = argLoop h (('-':x):xs) (c { drawBg       = True                            }, s)
 argLoop h (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h          xs  (c { escape       = Just e                          }, s)
