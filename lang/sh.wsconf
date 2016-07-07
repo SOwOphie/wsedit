@@ -71,11 +71,16 @@ sh: -fk+dircolors
 sh: -fk+dirname
 sh: -fk+dirs
 sh: -fk+dmesg
+sh: -fk+do
+sh: -fk+done
 sh: -fk+du
 
 sh: -fk+echo
 sh: -fk+egrep
 sh: -fk+eject
+sh: -fk+elif
+sh: -fk+else
+sh: -fk+elseif
 sh: -fk+enable
 sh: -fk+env
 sh: -fk+ethtool
@@ -93,6 +98,7 @@ sh: -fk+fdformat
 sh: -fk+fdisk
 sh: -fk+fg
 sh: -fk+fgrep
+sh: -fk+fi
 sh: -fk+file
 sh: -fk+find
 sh: -fk+fmt
@@ -246,6 +252,7 @@ sh: -fk+tail
 sh: -fk+tar
 sh: -fk+tee
 sh: -fk+test
+sh: -fk+then
 sh: -fk+time
 sh: -fk+timeout
 sh: -fk+times
