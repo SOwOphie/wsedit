@@ -1,5 +1,5 @@
 name:                wsedit
-version:             1.0.0.1
+version:             1.0.0.2
 synopsis:            A simple terminal source code editor.
 description:
 homepage:
@@ -41,7 +41,9 @@ library
                        directory >= 1.2.6 && < 2,
                        pretty-show >= 1.6.9 && < 2,
                        strict >= 0.3.2 && < 1,
-                       process >= 1.2.3 && < 2
+                       process >= 1.2.3 && < 2,
+                       charsetdetect-ae >= 1.0 && < 2,
+                       bytestring >= 0.10 && < 1
 
   default-language:    Haskell2010
 
@@ -64,7 +66,9 @@ executable wsedit
                        directory >= 1.2.6 && < 2,
                        pretty-show >= 1.6.9 && < 2,
                        strict >= 0.3.2 && < 1,
-                       process >= 1.2.3 && < 2
+                       process >= 1.2.3 && < 2,
+                       charsetdetect-ae >= 1.0 && < 2,
+                       bytestring >= 0.10 && < 1
 
   default-language:    Haskell2010
 

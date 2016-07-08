@@ -16,6 +16,7 @@ module WSEdit.Control.Global
     ) where
 
 
+import Codec.Text.Detect           (detectEncoding)
 import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
@@ -29,17 +30,21 @@ import System.Directory            ( doesFileExist, getHomeDirectory
                                    , writable
                                    )
 import System.Exit                 (exitFailure)
-import System.IO                   (IOMode (AppendMode)
-                                   , withFile
+import System.IO                   ( IOMode (AppendMode, ReadMode, WriteMode)
+                                   , NewlineMode
+                                   , hPutStr, hSetEncoding, hSetNewlineMode
+                                   , mkTextEncoding, withFile
                                    )
-import System.IO.Strict            (readFile)
+import System.IO.Strict            (hGetContents)
 import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    , refuseOnReadOnly
                                    )
-import WSEdit.Data                 ( EdConfig (purgeOnClose, vtyObj)
+import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
+                                              , purgeOnClose, vtyObj
+                                              )
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines, fname
                                               , loadPos, markPos, overwrite
@@ -54,7 +59,8 @@ import WSEdit.Output               (drawExitFrame)
 import WSEdit.Util                 (withPair)
 import WSEdit.WordTree             (empty)
 
-import qualified WSEdit.Buffer as B
+import qualified Data.ByteString.Lazy as S
+import qualified WSEdit.Buffer        as B
 
 
 fqn :: String -> String
@@ -175,9 +181,8 @@ save = refuseOnReadOnly $ do
        then setStatus "No changes to save."
 
        else do
-            -- TODO: this blatantly disregards line endings and encoding.
-
-            liftIO $ writeFile (fname s)
+            c <- ask
+            liftIO $ writeF (fname s) (encoding c) (newlineMode c)
                    $ unlines
                    $ map snd
                    $ B.toList
@@ -190,6 +195,18 @@ save = refuseOnReadOnly $ do
                      ++ " lines of text."
 
     dictAddRec
+
+    where
+        writeF :: FilePath -> Maybe String -> NewlineMode -> String -> IO ()
+        writeF path mayEnc nl cont = withFile path WriteMode $ \h -> do
+            case mayEnc of
+                 Nothing  -> return ()
+                 Just enc -> do
+                    e <- mkTextEncoding enc
+                    hSetEncoding h e
+
+            hSetNewlineMode h nl
+            hPutStr h cont
 
 
 
@@ -205,52 +222,63 @@ load = alterState $ do
 
     s <- get
 
-    txt <- if b
-              then liftIO $ System.IO.Strict.readFile p'
-              else return ""
+    (if b
+        then liftIO $ readF p'
+        else return $ Just "") >>= \case
+        Nothing  -> quitComplain "File read error: unknown file encoding."
+        Just txt -> do
+            let l = fromMaybe (B.singleton (False, ""))
+                  $ B.fromList
+                  $ zip (repeat False)
+                  $ map (filter (/= '\r'))
+                  $ lines txt
 
-    let l = fromMaybe (B.singleton (False, ""))
-          $ B.fromList
-          $ zip (repeat False)
-          $ lines txt
+            put $ s
+                { edLines     = B.toFirst l
+                , fname       = p'
+                , cursorPos   = 1
+                , readOnly    = if w
+                                   then readOnly s
+                                   else True
 
-    put $ s
-        { edLines     = B.toFirst l
-        , fname       = p'
-        , cursorPos   = 1
-        , readOnly    = if w
-                           then readOnly s
-                           else True
+                , replaceTabs = if detectTabs s
+                                   then '\t' `notElem` txt
+                                   else replaceTabs s
+                }
 
-        , replaceTabs = if detectTabs s
-                           then '\t' `notElem` txt
-                           else replaceTabs s
-        }
+            setStatus $ case (b    , w    ) of
+                             (True , True ) -> "Loaded "
+                                            ++ show (length $ lines txt)
+                                            ++ " lines of text."
 
-    setStatus $ case (b    , w    ) of
-                     (True , True ) -> "Loaded "
-                                    ++ show (length $ lines txt)
-                                    ++ " lines of text."
+                             (True , False) -> "Warning: file not writable, "
+                                            ++ "opening in read-only mode ..."
 
-                     (True , False) -> "Warning: file not writable, opening in "
-                                    ++ "read-only mode ..."
+                             (False, True ) -> "Warning: file "
+                                            ++ p'
+                                            ++ " not found, creating on "
+                                            ++ "save ..."
 
-                     (False, True ) -> "Warning: file "
-                                    ++ p'
-                                    ++ " not found, creating on save ..."
-
-                     (False, False) -> "Warning: cannot create file "
-                                    ++ p'
-                                    ++ " , check permissions and disk state."
+                             (False, False) -> "Warning: cannot create file "
+                                            ++ p'
+                                            ++ " , check permissions and disk "
+                                            ++ "state."
 
     -- Move the cursor to where it should be placed.
-    uncurry moveCursor $ withPair h h $ loadPos s
+    uncurry moveCursor $ withPair dec dec $ loadPos s
 
     dictAddRec
 
     where
-        h :: Int -> Int
-        h n = n - 1
+        dec :: Int -> Int
+        dec n = n - 1
+
+        readF :: FilePath -> IO (Maybe String)
+        readF f = S.readFile f >>= detectEncoding >>= \case
+            Nothing -> return Nothing
+            Just  e -> withFile f ReadMode $ \h -> do
+                hSetEncoding h e
+                Just <$> hGetContents h
 
 
 

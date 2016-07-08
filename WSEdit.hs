@@ -1,6 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
+
 module WSEdit where
 
 
+import Control.Exception        (SomeException, try)
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
@@ -23,14 +26,20 @@ import System.Environment       (getArgs)
 import System.Exit              ( ExitCode (ExitFailure, ExitSuccess)
                                 , exitFailure, exitWith
                                 )
+import System.IO                ( Newline (LF, CRLF)
+                                , NewlineMode (NewlineMode)
+                                , mkTextEncoding
+                                , universalNewlineMode
+                                )
 
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
 import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , escape, keymap, keywords
-                                           , lineComment, purgeOnClose
-                                           , strDelim, vtyObj, tabWidth
+                                           , encoding, escape, keymap, keywords
+                                           , lineComment, newlineMode
+                                           , purgeOnClose, strDelim, vtyObj
+                                           , tabWidth
                                            )
                                 , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
@@ -161,7 +170,21 @@ start = do
                                  )
 
     _ <- case argLoop h False sw (conf', st) of
-              Right (c, s)    -> runRWST (exec $ not dashS) c s
+              Right (c, s)    -> do
+
+                -- Test whether the file encoding is actually usable
+                case encoding c of
+                     Nothing -> return ()
+                     Just  e -> try (mkTextEncoding e) >>= \case
+                            Right _ -> return ()
+                            Left ex -> do
+                                const (return ()) (ex :: SomeException)
+                                shutdown v
+                                putStrLn $ "-e: Encoding not available: " ++ e
+                                exitFailure
+
+                runRWST (exec $ not dashS) c s
+
               Left  (ex, msg) -> do
                                     shutdown v
                                     putStrLn msg
@@ -222,6 +245,8 @@ argLoop h f (('-':'s'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c, 
 argLoop h f (('-':'f':'f'        :_ ):xs) (c, s) = argLoop h f          xs  (c, s)  -- same
 argLoop h f (('-':'b'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = False                           }, s)
 argLoop h f (('-':'B'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = True                            }, s)
+argLoop h f (('-':'e'            :x ):xs) (c, s) = argLoop h f          xs  (c { encoding     = Just x                          }, s)
+argLoop h f (('-':'E'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { encoding     = Nothing                         }, s)
 argLoop h f (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Just e                          }, s)
 argLoop h f (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Nothing                         }, s)
 argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = x : keywords c                  }, s)
@@ -231,6 +256,9 @@ argLoop h f (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c {
 argLoop h f (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
 argLoop h f (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
 argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n      }, s)
+argLoop h f (('-':'l':'u'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF LF             }, s)
+argLoop h f (('-':'l':'w'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF CRLF           }, s)
+argLoop h f (('-':'L'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = universalNewlineMode            }, s)
 argLoop h f (('-':'p'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = True                            }, s)
 argLoop h f (('-':'P'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = False                           }, s)
 argLoop h f (('-':'x'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { edDesign     = brightTheme                     }, s)

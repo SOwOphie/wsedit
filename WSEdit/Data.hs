@@ -57,6 +57,7 @@ import Graphics.Vty             ( Attr
 import Safe                     ( fromJustNote, headNote, initNote, lastNote
                                 , tailNote
                                 )
+import System.IO                (NewlineMode, universalNewlineMode)
 
 import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
                                            , Special, Unprintable, Upper
@@ -78,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.1 RC"
+version = "1.0.0.2 RC"
 
 -- | Upstream URL.
 upstream :: String
@@ -451,6 +452,13 @@ data EdConfig = EdConfig
         -- ^ Whether the clipboard file is to be deleted on close.
 
 
+    , newlineMode  :: NewlineMode
+        -- ^ Newline conversion to use.
+
+    , encoding     :: Maybe String
+        -- ^ Name of the file encoding to use.
+
+
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
 
@@ -475,6 +483,8 @@ mkDefConfig v k = EdConfig
                 , drawBg       = True
                 , dumpEvents   = False
                 , purgeOnClose = False
+                , newlineMode  = universalNewlineMode
+                , encoding     = Nothing
                 , lineComment  = []
                 , strDelim     = []
                 , keywords     = []
