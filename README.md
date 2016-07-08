@@ -135,6 +135,10 @@ Yeah, input in urxvt is a mess. Try adding this to your .Xresources:
     urxvt*keysym.S-Down: \033[1;2B
     urxvt*keysym.S-Right: \033[1;2C
     urxvt*keysym.S-Left: \033[1;2D
+    urxvt*keysym.M-Up: \033[1;3A
+    urxvt*keysym.M-Down: \033[1;3B
+    urxvt*keysym.M-Right: \033[1;3C
+    urxvt*keysym.M-Left: \033[1;3D
 
     urxvt*iso14755: False
     urxvt*iso14755_52: False

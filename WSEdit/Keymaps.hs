@@ -53,6 +53,26 @@ defaultKM =
              , "Move Viewport right 10 columns."
              )
            )
+    , Just ( EvKey (KChar 'u') [MMeta]
+           , ( moveViewport (-100) 0
+             , "Move Viewport up 100 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'd') [MMeta]
+           , ( moveViewport 100 0
+             , "Move Viewport down 100 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'l') [MMeta]
+           , ( moveViewport 0 (-100)
+             , "Move Viewport left 100 columns."
+             )
+           )
+    , Just ( EvKey (KChar 'r') [MMeta]
+           , ( moveViewport 0 10
+             , "Move Viewport right 100 columns."
+             )
+           )
     , Nothing
     , Just ( EvKey KUp []
            , ( moveCursor (-1) 0 >> clearMark
@@ -92,6 +112,26 @@ defaultKM =
     , Just ( EvKey KRight [MCtrl]
            , ( moveCursor 0 10 >> clearMark
              , "Move Cursor right 10 columns."
+             )
+           )
+    , Just ( EvKey KUp [MMeta]
+           , ( moveCursor (-100) 0 >> clearMark
+             , "Move Cursor up 100 lines."
+             )
+           )
+    , Just ( EvKey KDown [MMeta]
+           , ( moveCursor 100 0 >> clearMark
+             , "Move Cursor down 100 lines."
+             )
+           )
+    , Just ( EvKey KLeft [MMeta]
+           , ( moveCursor 0 (-100) >> clearMark
+             , "Move Cursor left 100 columns."
+             )
+           )
+    , Just ( EvKey KRight [MMeta]
+           , ( moveCursor 0 100 >> clearMark
+             , "Move Cursor right 100 columns."
              )
            )
     , Nothing
