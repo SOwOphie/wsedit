@@ -1,22 +1,134 @@
+{-# LANGUAGE LambdaCase #-}
+
 module WSEdit.Help
     ( confHelp
+    , keymapHelp
     , usageHelp
     , versionHelp
     ) where
 
-import WSEdit.Data (licenseVersion, upstream, version)
+
+import Data.Char          (toUpper)
+import Data.List          (delete, sortOn)
+import Data.Maybe         (catMaybes)
+import Data.Ord           (Down (Down))
+import Graphics.Vty       ( Button (BLeft, BMiddle, BRight)
+                          , Event (EvKey, EvMouseDown)
+                          , Key (KBS, KChar, KFun)
+                          , Modifier (MCtrl, MMeta, MShift)
+                          )
+import Safe               (lastDef, maximumNote)
+
+import WSEdit.Data        (Keymap, licenseVersion, upstream, version)
+import WSEdit.Data.Pretty (prettyKeymap)
+import WSEdit.Util        ( chunkWords, padRight, rotateR, withFst, withN
+                          , withSnd
+                          )
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Help." ++)
 
 
 
 -- | Aligns the given lines for the given amount of columns.
 renderText :: Int -> [String] -> String
-renderText n t =
+renderText nCols = unlines . map (renderLine nCols)
+    where
+        spl :: String -> [(Int, String)]
+        spl []       = []
+        spl (' ':xs) = case spl xs of
+                            (r:rs) -> withFst (+1) r : rs
+                            []     -> []
+
+        spl ( x :xs) = case spl xs of
+                            (r:rs) | fst r == 0 -> withSnd (x:) r : rs
+                            l                   -> (0, [x]) : l
+
+
+        padBy :: [Int] -> Int -> [(Int, String)] -> [(Int, String)]
+        padBy (x:xs) n l | n > 0     = padBy xs (n-1) $ withN x (withFst (+1)) l
+                         | otherwise = l
+        padBy []     _ _             = error "padBy: list too short."
+
+
+        renderLine :: Int -> String -> String
+        renderLine n s | length s > n = "[!!!] " ++ s ++ " [!!!]"
+                       | otherwise    =
+                        let
+                            sp     = spl s
+                            maxPad = 2 * sum ( map fst
+                                             $ filter ((== 1) . fst) sp
+                                             )
+
+                            lenPrm = map fst
+                                   $ sortOn (Down . snd . snd)
+                                   $ filter ((== 1) . fst . snd)
+                                   $ zip [0..]
+                                   $ zipWith (\(_, s1) (m, s2) -> (m, length s1
+                                                                    + length s2
+                                                                  )
+                                             ) (rotateR sp) sp
+
+                        in
+                            if n - length s > maxPad || lastDef '.' s == '.'
+                               then s
+                               else concatMap (\(m, w) -> replicate m ' ' ++ w)
+                                  $ padBy (cycle lenPrm) (n - length s) sp
+
+
+
+
+
+keymapHelp :: Keymap -> String
+keymapHelp km =
     let
-        ovr = filter ((> n) . length) t
+        wdt = 4 + maximumNote (fqn "keymapInfo")
+                              ( map (length . showEv. fst)
+                              $ catMaybes $ prettyKeymap km
+                              )
     in
-        if length ovr == 0
-           then unlines t
-           else error $ "Overfull lines: " ++ unlines ovr
+        "Dumping keymap (Meta = Alt on most systems):\n\n"
+            ++ ( renderText 80
+               $ map (uncurry (++))
+               $ concatMap (\case
+                    Nothing     -> [("",""), ("","")]
+                    Just (e, s) ->
+                        zip ( (padRight wdt ' ' (showEv e))
+                            : repeat (replicate wdt ' ')
+                            ) $ chunkWords (80 - wdt) s
+                           )
+               $ prettyKeymap km
+               )
+
+    where
+        showEv :: Event -> String
+        showEv (EvKey           k ml) = showMods ml ++ showKey k
+        showEv (EvMouseDown c r b ml) = showMods ml ++ showBtn b ++ " @ "
+                                                                 ++ show (r, c)
+        showEv _                      = "<unknown event>"
+
+        showMods :: [Modifier] -> String
+        showMods ml | MCtrl  `elem` ml = "Ctrl-"  ++ showMods (delete MCtrl  ml)
+                    | MMeta  `elem` ml = "Meta-"  ++ showMods (delete MMeta  ml)
+                    | MShift `elem` ml = "Shift-" ++ showMods (delete MShift ml)
+                    | otherwise        = ""
+
+        showKey :: Key -> String
+        showKey (KChar '@' ) = "Space"
+        showKey (KChar '\t') = "Tab"
+        showKey (KChar  c  ) = [toUpper c]
+        showKey  KBS         = "Backspace"
+        showKey (KFun   n  ) = 'F' : show n
+        showKey  k           = drop 1 $ show k
+
+        showBtn :: Button -> String
+        showBtn BLeft   = "LMB"
+        showBtn BMiddle = "MMB"
+        showBtn BRight  = "RMB"
+
+
 
 
 
@@ -28,18 +140,18 @@ confHelp = renderText 80 $
     , "There are four distinct locations from which you can influence the behaviour of"
     , "wsedit:"
     , ""
-    , " * The files  ~/.config/wsedit/*.wsconf , intended primarily for language"
-    , "   definitions (see wsedit -h / Formatting)"
+    , "  *  The files \"~/.config/wsedit/*.wsconf\", intended primarily for language"
+    , "     definitions (see \"wsedit -h\" --> Formatting)"
     , ""
-    , " * The file  ~/.config/wsedit.wsconf  (shortcut: wsedit -cg), intended for"
-    , "   global settings"
+    , "  *  The file \"~/.config/wsedit.wsconf\" (shortcut: \"wsedit -cg\"), intended for"
+    , "     global settings"
     , ""
-    , " * The file  ./.local.wsconf  (shortcut: wsedit -cl), intended for project-"
-    , "   specific settings"
+    , "  *  The file \"./.local.wsconf\" (shortcut: \"wsedit -cl\"), intended for project-"
+    , "     specific settings"
     , ""
-    , " * The command line parameters"
+    , "  *  The command line parameters"
     , ""
-    , "You can place (almost) every command listed by wsedit -h in each of those"
+    , "You can place (almost) every command listed by \"wsedit -h\" in each of those"
     , "locations. They will be evaluated in the order defined above, with later"
     , "switches overriding the earlier ones, should they collide."
     , ""
@@ -61,7 +173,7 @@ usageHelp = renderText 80 $
     [ "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]"
     , ""
     , ""
-    , "For information on how to set these options permanently, see  wsedit -hc ."
+    , "For information on how to set these options permanently, see \"wsedit -hc\"."
     , ""
     , ""
     , "Possible arguments (the uppercase options are on by default):"
@@ -89,27 +201,28 @@ usageHelp = renderText 80 $
     , "  -cg           Open global configuration file (~/.config/wsedit.wsconf)."
     , "  -cl           Open local configuration file (./.local.wsconf)."
     , ""
-    , "                See wsedit -hc."
+    , "                See \"wsedit -hc\"."
     , ""
     , ""
     , ""
-    , "  -i<n>         Set indentation width to n (default = -i4)."
+    , "  -i<n>         Set indentation width to <n> (default = -i4)."
     , ""
     , ""
     , ""
     , "  -r            Open file in read-only mode."
     , "  -R            Open file in read-write mode."
     , ""
-    , "                Pressing Ctrl-Meta-R in the editor will also toggle this."
+    , "                Pressing \"Ctrl-Meta-R\" in the editor will also toggle this."
     , ""
     , ""
     , ""
     , "  -ts           Insert the appropriate amount of spaces instead of tabs."
     , "  -tt           Insert a tab character when pressing tab."
+    , ""
     , "  -T            Automagically detect the opened file's indentation pattern,"
     , "                assume spaces for new files."
     , ""
-    , "                Pressing Ctrl-Meta-Tab in the editor will also toggle tab"
+    , "                Pressing \"Ctrl-Meta-Tab\" in the editor will also toggle tab"
     , "                replacement."
     , ""
     , ""
@@ -128,7 +241,7 @@ usageHelp = renderText 80 $
     , "  -fk+<s>       Mark <s> as a keyword."
     , "  -fk-<s>       Remove <s> from the keywords list.\n"
     , ""
-    , "                See also wsedit -hk --> Ctrl-f"
+    , "                See also \"wsedit -hk\" --> \"Ctrl-F\"."
     , ""
     , "  -flc+<s>      Mark everything from <s> to the end of the line as a comment."
     , "  -flc-<s>      Remove <s> from the line comment delimiters list."
@@ -144,7 +257,7 @@ usageHelp = renderText 80 $
     , ""
     , "                    " ++ upstream
     , ""
-    , "                and put them into ~/.config/wsedit/ . See wsedit -hc for more"
+    , "                and put them into \"~/.config/wsedit/\". See \"wsedit -hc\" for more"
     , "                information on persistent configuration."
     , ""
     , ""
@@ -160,7 +273,7 @@ usageHelp = renderText 80 $
     , "  -D            Disable dictionary building."
     , ""
     , "                With dictionary building enabled, wsedit will scan all files"
-    , "                and directories under the current working directory. Every "
+    , "                and directories under the current working directory. Every"
     , "                matching file will be read, and a dictionary will be built from"
     , "                all words from lines at depth n (either n tabs or n*tabWidth"
     , "                spaces). This dictionary will then be used to feed the"
@@ -176,6 +289,7 @@ usageHelp = renderText 80 $
     , "  -b            Draw a single dot terminating each line instead of the dotted"
     , "                background. May speed up the editor on older systems, as it"
     , "                seems to be quite the resource hog."
+    , ""
     , "  -B            Draw the usual background dots."
     , ""
     , ""

@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module WSEdit where
 
 
@@ -7,20 +5,16 @@ import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
-import Data.List                ( delete, isInfixOf, isPrefixOf, isSuffixOf
-                                , partition, stripPrefix
+import Data.List                ( isInfixOf, isPrefixOf, isSuffixOf, partition
+                                , stripPrefix
                                 )
 import Data.Maybe               (catMaybes, fromMaybe)
-import Graphics.Vty             ( Button (BLeft, BMiddle, BRight)
-                                , Event (EvKey, EvMouseDown, EvResize)
-                                , Key (KBS, KChar, KFun)
-                                , Modifier (MCtrl, MMeta, MShift)
-                                , mkVty
-                                , nextEvent
-                                , shutdown
+import Graphics.Vty             ( Event (EvKey, EvResize)
+                                , Key (KChar)
+                                , mkVty, nextEvent, shutdown
                                 )
-import Safe                     ( atDef, headDef, headMay, lastNote, maximumNote
-                                , readDef, readNote
+import Safe                     ( atDef, headDef, headMay, lastNote, readDef
+                                , readNote
                                 )
 import System.Directory         ( doesDirectoryExist, getHomeDirectory
                                 , listDirectory
@@ -48,13 +42,11 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
                                 , brightTheme, catchEditor, mkDefConfig
                                 , setStatus
                                 )
-import WSEdit.Data.Pretty       (prettyKeymap, unPrettyEdConfig)
-import WSEdit.Help              (confHelp, usageHelp, versionHelp)
+import WSEdit.Data.Pretty       (unPrettyEdConfig)
+import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw, drawExitFrame)
-import WSEdit.Util              ( getExt, mayReadFile, padRight, withFst
-                                , withSnd
-                                )
+import WSEdit.Util              (getExt, mayReadFile, withSnd)
 
 
 
@@ -221,10 +213,10 @@ filterFileArgs (Just ext) s =
 -- | Parse all switches passed to it.  The first parameter takes the user's home
 --   directory, the second enables failsafe mode.
 argLoop :: String -> Bool -> [String] -> (EdConfig, EdState) -> Either (ExitCode, String) (EdConfig, EdState)
-argLoop _ _ (('-':'h':'k'        :_ ):_ ) (c, _) = keymapInfo c
-argLoop _ _ (('-':'h':'c'        :_ ):_ ) (_, _) = Left (ExitSuccess, confHelp   )
-argLoop _ _ (('-':'h'            :_ ):_ ) _      = Left (ExitSuccess, usageHelp  )
-argLoop _ _ (('-':'V'            :_ ):_ ) _      = Left (ExitSuccess, versionHelp)
+argLoop _ _ (('-':'h':'c'        :_ ):_ ) (_, _) = Left (ExitSuccess, confHelp             )
+argLoop _ _ (('-':'h':'k'        :_ ):_ ) (c, _) = Left (ExitSuccess, keymapHelp $ keymap c)
+argLoop _ _ (('-':'h'            :_ ):_ ) _      = Left (ExitSuccess, usageHelp            )
+argLoop _ _ (('-':'V'            :_ ):_ ) _      = Left (ExitSuccess, versionHelp          )
 argLoop h _ (('-':'!'            :_ ):xs) (c, s) = argLoop h True xs (c, s)
 argLoop h f (('-':'s'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c, s)  -- gets handled elsewhere, ignore it here.
 argLoop h f (('-':'f':'f'        :_ ):xs) (c, s) = argLoop h f          xs  (c, s)  -- same
@@ -324,52 +316,3 @@ mainLoop = do
 
     b <- continue <$> get
     when b mainLoop
-
-
-
--- | Dumps the keymap, then exits with code 0.
-keymapInfo :: EdConfig -> Either (ExitCode, String) (EdConfig, EdState)
-keymapInfo conf =
-    let
-        tbl  = map (\case
-                        Nothing -> ("", "")
-                        Just  x -> withFst showEv x
-                   )
-             $ prettyKeymap
-             $ keymap conf
-
-        maxW = maximumNote (fqn "keymapInfo") $ map (length . fst) tbl
-    in
-        Left (ExitSuccess
-             , "Dumping keymap (Meta = Alt on most systems):\n\n"
-                ++ ( unlines
-                   $ map (\(e, s) -> (padRight maxW ' ' e ++ "\t" ++ s))
-                     tbl
-                   )
-             )
-
-    where
-        showEv :: Event -> String
-        showEv (EvKey           k ml) = showMods ml ++ showKey k
-        showEv (EvMouseDown c r b ml) = showMods ml ++ showBtn b ++ " @ "
-                                                                 ++ show (r, c)
-        showEv _                      = "<unknown event>"
-
-        showMods :: [Modifier] -> String
-        showMods ml | MCtrl  `elem` ml = "Ctrl-"  ++ showMods (delete MCtrl  ml)
-                    | MMeta  `elem` ml = "Meta-"  ++ showMods (delete MMeta  ml)
-                    | MShift `elem` ml = "Shift-" ++ showMods (delete MShift ml)
-                    | otherwise        = ""
-
-        showKey :: Key -> String
-        showKey (KChar '@' ) = "Space"
-        showKey (KChar '\t') = "Tab"
-        showKey (KChar  c  ) = [c]
-        showKey  KBS         = "Backspace"
-        showKey (KFun   n  ) = 'F' : show n
-        showKey  k           = drop 1 $ show k
-
-        showBtn :: Button -> String
-        showBtn BLeft   = "LMB"
-        showBtn BMiddle = "MMB"
-        showBtn BRight  = "RMB"

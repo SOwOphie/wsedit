@@ -9,6 +9,10 @@ module WSEdit.Util
     , withN
     , insertBefore
     , delN
+    , rotateL
+    , rotateR
+    , chunk
+    , chunkWords
     , dump
     , mayReadFile
     , CharClass (..)
@@ -28,7 +32,7 @@ module WSEdit.Util
 import Control.Exception (SomeException, try)
 import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intersect, tails)
-import Safe              (foldl1Note, headMay, lastDef)
+import Safe              (foldl1Note, headMay, lastDef, lastNote)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
@@ -95,6 +99,45 @@ delN n arr            = error $ "delN: index out of bounds (n = "
                              ++ ", length arr = "
                              ++ show (length arr)
                              ++ ")"
+
+
+-- | Rotate the given list one position to the left. Note that
+--  `rotateL _|_ == tail _|_`.
+rotateL :: [a] -> [a]
+rotateL []     = []
+rotateL (x:xs) = xs ++ [x]
+
+
+-- | Rotate the given list one position to the right. Note that
+--   `head (rotateR _|_) == _|_`.
+rotateR :: [a] -> [a]
+rotateR [] = []
+rotateR l  = lastNote (fqn "rotateR") l : init l
+
+
+-- | Breaks a list into chunks of the given size, with the last one possibly
+--   being smaller.
+chunk :: Int -> [a] -> [[a]]
+chunk n l | length l < n = [l]
+          | otherwise    = take n l : chunk n (drop n l)
+
+
+-- | Similar to `chunk`, but only breaks a string on word borders.
+chunkWords :: Int -> String -> [String]
+chunkWords _ [] = []
+chunkWords n s  =
+    let
+        w  = words s
+        x  = unwords
+           $ snd
+           $ foldl (\(len, ls) el -> if len + length el + 1 <= n
+                                        then (len + length el + 1, ls ++ [el])
+                                        else (len, ls)
+                   ) (0, []) w
+
+        xs = chunkWords n $ drop (length x + 1) s
+    in
+        x:xs
 
 
 -- | Appends the given string as well as a pretty-printed 'show' of the second
