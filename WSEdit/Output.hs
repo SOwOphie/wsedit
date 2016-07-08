@@ -150,7 +150,7 @@ lineRep lNo str = do
         -- Initial list of comment starting points
         comL :: [Int]
         comL = map (+1)
-             $ concatMap (flip findInStr str)
+             $ concatMap (`findInStr` str)
              $ lineComment conf
 
         -- List of string bounds
@@ -175,7 +175,7 @@ lineRep lNo str = do
 
         -- List of comment starting points, minus those that are inside a string
         comL' :: [Int]
-        comL' = filter (\c -> not $ any (\r -> inRange r c) strL) comL
+        comL' = filter (\c -> not $ any (`inRange` c) strL) comL
 
         -- First comment starting point in the line
         comAt :: Maybe Int
@@ -191,11 +191,11 @@ lineRep lNo str = do
                     (case maySel of
                           Just (sS, sE) | sS <= (lNo, tPos)
                                              && (lNo, tPos) <= sE -> HSelected
-                          _ | any (flip inRange tPos) sL          -> HSearch
-                          _ | fromMaybe maxBound comAt <= tPos    -> HComment
-                          _ | any (flip inRange tPos) strL        -> HString
-                          _ | any (flip inRange tPos) kwL         -> HKeyword
-                          _ | otherwise                           -> HNone
+                          _ | any (`inRange` tPos) sL             -> HSearch
+                            | fromMaybe maxBound comAt <= tPos    -> HComment
+                            | any (`inRange` tPos) strL           -> HString
+                            | any (`inRange` tPos) kwL            -> HKeyword
+                            | otherwise                           -> HNone
                     ) (lNo, tPos) vPos c
 
             return (i:im, tPos + 1, vPos + length (snd i))
@@ -233,11 +233,7 @@ visToTxtPos = pos 1
 
 -- | Returns the visual position of the cursor in a line, given its textual one.
 txtToVisPos :: String -> Int -> WSEdit Int
-txtToVisPos txt n =  (+1)
-                 <$> ( stringWidth 1
-                     $ take (n - 1)
-                       txt
-                     )
+txtToVisPos txt n = (+1) <$> stringWidth 1 (take (n - 1) txt)
 
 
 
@@ -315,27 +311,26 @@ makeHeader = do
     (_, txtCols   ) <- getViewportDimensions
 
     return
-        $ ( string (dColNoFormat d)
-             $ (replicate (lNoWidth + 3) ' ')
-            ++ ( take (txtCols + 1)
-               $ drop scrollCols
-               $ (' ':)
-               $ concat
-               $ map ( padRight (dColNoInterval d) ' '
-                     . show
-                     )
-                 [1, dColNoInterval d + 1 ..]
-               )
-          )
+        $ string (dColNoFormat d)
+            ( replicate (lNoWidth + 3) ' '
+           ++ take (txtCols + 1)
+                   ( drop scrollCols
+                   $ (' ':)
+                   $ concatMap ( padRight (dColNoInterval d) ' '
+                               . show
+                               )
+                     [1, dColNoInterval d + 1 ..]
+                   )
+            )
        <-> string (dFrameFormat d)
             ( replicate (lNoWidth + 2) ' '
            ++ "+"
-           ++ ( take (txtCols + 1)
-              $ drop scrollCols
-              $ ('-':)
-              $ cycle
-              $ 'v' : replicate (dColNoInterval d - 1) '-'
-              )
+           ++ take (txtCols + 1)
+                  ( drop scrollCols
+                  $ ('-':)
+                  $ cycle
+                  $ 'v' : replicate (dColNoInterval d - 1) '-'
+                  )
            ++ "+-"
             )
 
@@ -353,24 +348,25 @@ makeLineNos = do
     (txtRows   , _)<- getViewportDimensions
 
     return $ vertCat
-           $ map (\n -> char (dLineNoFormat d) ' '
-                    <|> ( string (if r == n && not (readOnly s)
-                                     then dCurrLnMod d $ dLineNoFormat d
-                                     else if n `mod` dLineNoInterv d == 0
-                                             then dLineNoFormat d
-                                             else dFrameFormat  d
-                                 )
-                        $ padLeft lNoWidth ' '
-                        $ if n <= B.length (edLines s)
-                             then if n `mod` dLineNoInterv d == 0
-                                    || r == n
-                                     then show n
-                                     else "·"
-                             else ""
-                        )
-                    <|> string (dFrameFormat d) " |"
-                 )
+           $ map (mkLn s d lNoWidth r)
              [scrollRows + 1, scrollRows + 2 .. scrollRows + txtRows]
+
+    where
+        mkLn :: EdState -> EdDesign -> Int -> Int -> Int -> Image
+        mkLn s d lNoWidth r n =
+             char (dLineNoFormat d) ' '
+         <|> string (case () of
+                    _ | r == n && not (readOnly s)   -> dCurrLnMod d $ dLineNoFormat d
+                      | n `mod` dLineNoInterv d == 0 ->                dLineNoFormat d
+                      | otherwise                    ->                dFrameFormat  d
+                    )
+             ( padLeft lNoWidth ' '
+             $ case () of
+                _ | n > B.length (edLines s)               -> ""
+                  | n `mod` dLineNoInterv d == 0 || r == n -> show n
+                  | otherwise                              -> "·"
+             )
+         <|> string (dFrameFormat d) " |"
 
 
 
@@ -582,9 +578,9 @@ makeScrollbar = do
         repl (d, s, cProg, marksAt) (n, c) =
             char (dFrameFormat d) '|' <|> case () of
                 _ | readOnly s       -> char (               dFrameFormat  d)  c
-                _ | n == cProg       -> char (dCurrLnMod d $ dLineNoFormat d) '<'
-                _ | n `elem` marksAt -> char (               dJumpMarkFmt  d) '•'
-                _ | otherwise        -> char (               dFrameFormat  d)  c
+                  | n == cProg       -> char (dCurrLnMod d $ dLineNoFormat d) '<'
+                  | n `elem` marksAt -> char (               dJumpMarkFmt  d) '•'
+                  | otherwise        -> char (               dFrameFormat  d)  c
 
 
 
@@ -605,7 +601,7 @@ draw = do
 
     liftIO $ update (vtyObj c)
              Picture
-                { picCursor     = if (readOnly s || ru + rd + cl + cr > 0)
+                { picCursor     = if readOnly s || ru + rd + cl + cr > 0
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
                 , picLayers     = [ frame

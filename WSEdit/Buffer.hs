@@ -104,19 +104,19 @@ length b = prefLen b + sufLen b + 1
 
 -- | Retrieve a sublist from the buffer. Indices are absolute and zero-based.
 sub :: Int -> Int -> Buffer a -> [a]
-sub from to b = ( L.reverse
-                $ L.drop (prefLen b - to - 1)
-                $ L.take (prefLen b - from)
-                $ prefix b
-                )
-             ++ (if from <= currPos b && currPos b <= to
-                    then [curr b]
-                    else []
-                )
-             ++ ( L.drop (from - prefLen b - 1)
-                $ L.take (to - prefLen b)
-                $ suffix b
-                )
+sub from to b = L.reverse
+              ( L.drop (prefLen b - to - 1)
+              $ L.take (prefLen b - from)
+              $ prefix b
+              )
+           ++ (if from <= currPos b && currPos b <= to
+                  then [curr b]
+                  else []
+              )
+           ++ L.drop (from - prefLen b - 1)
+              ( L.take (to - prefLen b)
+              $ suffix b
+              )
 
 
 -- | Retrieve the element left of the current position.
@@ -327,8 +327,8 @@ withLeftDef d f b | L.null $ prefix b = b { prefix  = [f d]
 withNLeft :: Int -> (a -> a) -> Buffer a -> Buffer a
 withNLeft n f b =
     let
-        l = (P.map f $ take n $ prefix b)
-         ++ (          drop n $ prefix b)
+        l =  P.map f (take n $ prefix b)
+         ++           drop n ( prefix b)
     in
         b { prefix  = l
           , prefLen = P.length l
@@ -370,8 +370,8 @@ withRightDef d f b | L.null $ suffix b = b { suffix = [f d]
 withNRight :: Int -> (a -> a) -> Buffer a -> Buffer a
 withNRight n f b =
     let
-        l = (P.map f $ take n $ suffix b)
-         ++ (          drop n $ suffix b)
+        l = P.map f (take n $ suffix b)
+         ++          drop n ( suffix b)
     in
         b { suffix = l
           , sufLen = P.length l

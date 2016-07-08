@@ -90,12 +90,12 @@ keymapHelp km =
                               )
     in
         "Dumping keymap (Meta = Alt on most systems):\n\n"
-            ++ ( renderText 80
-               $ map (uncurry (++))
+            ++ renderText 80
+               ( map (uncurry (++))
                $ concatMap (\case
                     Nothing     -> [("",""), ("","")]
                     Just (e, s) ->
-                        zip ( (padRight wdt ' ' (showEv e))
+                        zip ( padRight wdt ' ' (showEv e)
                             : repeat (replicate wdt ' ')
                             ) $ chunkWords (80 - wdt) s
                            )
@@ -134,7 +134,7 @@ keymapHelp km =
 
 --                                                                        margin (87) |
 confHelp :: String
-confHelp = renderText 80 $
+confHelp = renderText 80
     [ "Persistent Configuration"
     , ""
     , "There are four distinct locations from which you can influence the behaviour of"
@@ -169,7 +169,7 @@ confHelp = renderText 80 $
 
 --                                                                        margin (87) |
 usageHelp :: String
-usageHelp = renderText 80 $
+usageHelp = renderText 80
     [ "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]"
     , ""
     , ""
@@ -358,7 +358,7 @@ usageHelp = renderText 80 $
 
 --                                                                        margin (87) |
 versionHelp :: String
-versionHelp = renderText 80 $
+versionHelp = renderText 80
     [ "Wyvernscale Source Code Editor (wsedit) Version " ++ version
     , ""
     , "Licensed under the Wyvernscale Source Code License Version " ++ licenseVersion

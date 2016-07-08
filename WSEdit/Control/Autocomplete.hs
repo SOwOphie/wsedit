@@ -12,7 +12,6 @@ import Control.Monad            (forM_, unless, when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
-import Data.Maybe               (fromMaybe)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
 import System.Directory         ( doesDirectoryExist, doesFileExist
                                 , getCurrentDirectory, listDirectory
@@ -46,10 +45,10 @@ dictAdd f = do
 
     let
         depths = map snd
-               $ filter (\(x, _) -> fromMaybe (f == fname s) $ fmap (`isSuffixOf` f) x)
+               $ filter (\(x, _) -> maybe (f == fname s) (`isSuffixOf` f) x)
                $ buildDict s
 
-    when (not $ null depths) $ do
+    unless (null depths) $ do
         txt <- liftIO $ readFile f
 
         d <- liftIO
@@ -133,7 +132,7 @@ listAutocomplete :: WSEdit ()
 listAutocomplete = do
     s <- get
 
-    unless ((null $ buildDict s) || (readOnly s))
+    unless (null (buildDict s) || readOnly s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
                 $ B.curr

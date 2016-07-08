@@ -147,11 +147,11 @@ dump :: (Show a) => String -> a -> a
 dump s x = x
      `seq` unsafePerformIO (appendFile "dmp" $ s
                                             ++ ":\n"
-                                            ++ ( unlines
-                                               $ map ("\t"++)
-                                               $ lines
-                                               $ ppShow x
-                                               )
+                                            ++ unlines
+                                                ( map ("\t"++)
+                                                $ lines
+                                                $ ppShow x
+                                                )
                                             ++ "\n\n"
                            )
      `seq` x
@@ -325,8 +325,8 @@ findInStr :: (Eq a) => [a] -> [a] -> [Int]
 findInStr []      _      = error "findInStr: empty pattern"
 findInStr _       []     = []
 findInStr pat str@(_:xs)
-    | match pat str = 0 : (map (+1) $ findInStr pat xs)
-    | otherwise     =     (map (+1) $ findInStr pat xs)
+    | match pat str = 0 : map (+1) (findInStr pat xs)
+    | otherwise     =     map (+1) (findInStr pat xs)
 
     where
         match :: (Eq a) => [a] -> [a] -> Bool
@@ -349,9 +349,9 @@ findIsolated pa str
         findIs []  _      = error "findIsolated: empty pattern"
         findIs _   []     = []
         findIs pat (x:xs)
-            | isIdentifierChar x =      map (+1) $ findIs pat xs
-            | match pat xs       = 1 : (map (+1) $ findIs pat xs)
-            | otherwise          =      map (+1) $ findIs pat xs
+            | isIdentifierChar x =     map (+1) $ findIs pat xs
+            | match pat xs       = 1 : map (+1) ( findIs pat xs)
+            | otherwise          =     map (+1) $ findIs pat xs
 
         match :: String -> String -> Bool
         match (p:ps) (y:ys) | p == y = match ps ys
@@ -373,14 +373,13 @@ findDelimBy mC       delim (x:  xs)          =
          Nothing -> map (withPair (+1) (+1)) $ findDelimBy mC delim xs
          Just  c ->
             case find mC c xs of
-                 Nothing -> (0, 0) : ( map (withPair (+1) (+1))
-                                     $ findDelimBy mC delim xs
-                                     )
+                 Nothing -> (0, 0) : map (withPair (+1) (+1))
+                                         (findDelimBy mC delim xs)
 
-                 Just  p -> (0, p+1) : ( map (withPair (+(p+2)) (+(p+2)))
-                                       $ findDelimBy mC delim
-                                       $ drop (p + 1) xs
-                                       )
+                 Just  p -> (0, p+1) : map (withPair (+(p+2)) (+(p+2)))
+                                        ( findDelimBy mC delim
+                                        $ drop (p + 1) xs
+                                        )
     where
         find :: Maybe Char -> Char -> String -> Maybe Int
         find _        _ []                   = Nothing

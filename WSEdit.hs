@@ -80,7 +80,7 @@ splitArgs args glob loc =
 
         fext     = case filter (isPrefixOf "-ff") sw of
                     [] | any (isInfixOf "-c") sw -> Just "wsconf"
-                    [] | otherwise               -> getExt <$> filename
+                       | otherwise               -> getExt <$> filename
                     l                            -> Just
                                                   $ drop 3
                                                   $ lastNote (fqn "splitArgs") l
@@ -107,18 +107,19 @@ start = do
 
     -- Read the global and local config files. Use an empty string in case of
     -- nonexistence.
-    h <- liftIO $ getHomeDirectory
+    h <- liftIO getHomeDirectory
 
     b <- doesDirectoryExist $ h ++ "/.config/wsedit"
 
     mods <- if b
-               then listDirectory (h ++ "/.config/wsedit")
-                >>= mapM ( fmap (lines . fromMaybe "")
-                         . mayReadFile
-                         . ((h ++ "/.config/wsedit/") ++ )
-                         )
-                  . filter (isSuffixOf ".wsconf")
-                >>= return . concat
+               then fmap concat
+                    ( mapM ( fmap (lines . fromMaybe "")
+                           . mayReadFile
+                           . ((h ++ "/.config/wsedit/") ++ )
+                           )
+                    . filter (isSuffixOf ".wsconf")
+                  =<< listDirectory (h ++ "/.config/wsedit")
+                    )
                else return [""]
 
 
@@ -224,10 +225,7 @@ filterFileArgs (Just ext) s =
     in
         concatMap words
       $ gl
-     ++ ( filter (/= "")
-        $ map (fromMaybe "" . stripPrefix (ext ++ ":"))
-          loc
-        )
+     ++ filter (/= "") (map (fromMaybe "" . stripPrefix (ext ++ ":")) loc)
 
 
 
@@ -311,20 +309,32 @@ mainLoop = do
     -- if not found: insert the pressed key
     -- if it's not alphanumeric: show an "event not bound" warning
     catchEditor
-        ( fromMaybe (case ev of
-                    EvKey (KChar k) [] -> deleteSelection
-                                       >> insert k
-                                       >> listAutocomplete
+        ( maybe (case ev of
+                      EvKey (KChar k) [] -> deleteSelection
+                                         >> insert k
+                                         >> listAutocomplete
 
-                    EvResize _ _       -> return ()
-                    _                  -> setStatus $ "Event not bound: "
-                                                   ++ show ev
-              )
-        $ fmap fst
+                      EvResize _ _       -> return ()
+                      _                  -> setStatus $ "Event not bound: "
+                                                     ++ show ev
+                )
+                fst
         $ lookup ev
         $ catMaybes
         $ keymap c
-        )  $ \e -> do
+        ) errHdl
+
+
+    when (dumpEvents c) $ do
+        s <- get
+        setStatus $ show ev ++ status s
+
+    b <- continue <$> get
+    when b mainLoop
+
+    where
+        errHdl :: SomeException -> WSEdit ()
+        errHdl e = do
             b <- changed <$> get
             if b
                then do
@@ -336,11 +346,3 @@ mainLoop = do
                         ++ " ./CRASH-RESCUE ."
 
                else bail $ "An error occured: " ++ show e
-
-
-    when (dumpEvents c) $ do
-        s <- get
-        setStatus $ show ev ++ status s
-
-    b <- continue <$> get
-    when b mainLoop

@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances
            , LambdaCase
-           , StandaloneDeriving
            , TypeSynonymInstances
            #-}
 
@@ -79,7 +78,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.3 RC"
+version = "1.0.0.4 RC"
 
 -- | Upstream URL.
 upstream :: String
@@ -238,12 +237,12 @@ clearMark = do
 
 -- | Retrieve the position of the first selected element.
 getFirstSelected :: WSEdit (Maybe (Int, Int))
-getFirstSelected = (fmap fst) <$> getSelBounds
+getFirstSelected = fmap fst <$> getSelBounds
 
 
 -- | Retrieve the position of the last selected element.
 getLastSelected :: WSEdit (Maybe (Int, Int))
-getLastSelected = (fmap snd) <$> getSelBounds
+getLastSelected = fmap snd <$> getSelBounds
 
 
 -- | Faster combination of 'getFirstSelected' and 'getLastSelected'.
@@ -415,9 +414,7 @@ delSelection = getSelBounds >>= \case
 -- | Retrieve the number of rows, colums displayed by vty, including all borders
 --   , frames and similar woo.
 getDisplayBounds :: WSEdit (Int, Int)
-getDisplayBounds = ask
-               >>= displayBounds . outputIface . vtyObj
-               >>= return . swap
+getDisplayBounds = fmap swap (displayBounds . outputIface . vtyObj =<< ask)
 
 
 

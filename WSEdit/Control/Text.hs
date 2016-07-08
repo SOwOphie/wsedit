@@ -232,7 +232,7 @@ dumbNewLine = alterBuffer $ do
 -- | Removes all trailing whitespace in the text buffer.
 cleanse :: WSEdit ()
 cleanse = alterBuffer $ do
-    modify (\s -> s { edLines = B.map (withSnd $ trim) $ edLines s })
+    modify (\s -> s { edLines = B.map (withSnd trim) $ edLines s })
     moveCursor 0 0
 
     where

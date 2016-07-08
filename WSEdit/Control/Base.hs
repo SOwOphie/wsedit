@@ -61,7 +61,7 @@ alterState a = modify (\s -> s { canComplete = False })
 
 -- | Moves the viewport by the given amount of rows, columns.
 moveViewport :: Int -> Int -> WSEdit ()
-moveViewport r c = do
+moveViewport r c =
     getOffset
         >>= setOffset
             . withPair
@@ -107,13 +107,11 @@ moveCursor r c = alterState $ do
 
             -- Targeted visual cursor offset
             tPos <- case wantsPos s of
+                 Just p  -> return p
                  Nothing -> do
                     unless (n == 0)
                         $ modify (\s' -> s' { wantsPos = Just vPos })
                     return vPos
-
-                 Just p  -> do
-                    return p
 
             -- Resulting textual cursor offset (amount of characters)
             newC <- visToTxtPos targetLn tPos

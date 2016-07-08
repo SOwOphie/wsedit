@@ -237,10 +237,7 @@ load = alterState $ do
                 { edLines     = B.toFirst l
                 , fname       = p'
                 , cursorPos   = 1
-                , readOnly    = if w
-                                   then readOnly s
-                                   else True
-
+                , readOnly    = not w || readOnly s
                 , replaceTabs = if detectTabs s
                                    then '\t' `notElem` txt
                                    else replaceTabs s

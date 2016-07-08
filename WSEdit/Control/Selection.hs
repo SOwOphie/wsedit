@@ -169,8 +169,8 @@ paste = alterBuffer $ do
 -- | Indent the currently selected area using the current tab width and
 --   replacement settings.
 indentSelection :: WSEdit ()
-indentSelection = alterBuffer $ do
-    getMark >>= \case
+indentSelection = alterBuffer
+    $ getMark >>= \case
        Nothing      -> return ()
        Just (sR, _) -> do
             s <- get
@@ -201,8 +201,8 @@ indentSelection = alterBuffer $ do
 -- | Unindent the currently selected area using the current tab width and
 --   replacement settings.
 unindentSelection :: WSEdit ()
-unindentSelection = alterBuffer $ do
-    getMark >>= \case
+unindentSelection = alterBuffer
+    $ getMark >>= \case
        Nothing      -> return ()
        Just (sR, _) -> do
             s <- get
