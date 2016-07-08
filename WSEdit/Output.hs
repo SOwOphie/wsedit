@@ -19,7 +19,7 @@ module WSEdit.Output
 import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
-import Data.Char                (toLower)
+import Data.Char                (ord, toLower)
 import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
@@ -36,6 +36,7 @@ import Graphics.Vty             ( Attr
                                 , translateX, update, vertCat, withStyle
                                 , (<|>), (<->)
                                 )
+import Numeric                  (showHex)
 import Safe                     (lookupJustDef, minimumNote)
 
 import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
@@ -79,8 +80,9 @@ fqn = ("WSEdit.Output." ++)
 
 -- | Returns the display width of a given char in a given column.
 charWidth :: Int -> Char -> WSEdit Int
-charWidth n '\t' = (\w -> w - (n-1) `mod` w) . tabWidth <$> ask
-charWidth _ _    = return 1
+charWidth n '\t'                           = (\w -> w - (n-1) `mod` w) . tabWidth <$> ask
+charWidth _ c | charClass c == Unprintable = return $ length (showHex (ord c) "") + 3
+              | otherwise                  = return 1
 
 -- | Returns the display width of a given string starting at a given column.
 stringWidth :: Int -> String -> WSEdit Int
@@ -133,7 +135,7 @@ charRep hl pos _ c = do
                     hl
                     (dHLStyles d)
            , if charClass c == Unprintable
-                then "?"
+                then "?#" ++ showHex (ord c) ";"
                 else [c]
            )
 
