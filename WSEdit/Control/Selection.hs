@@ -67,7 +67,7 @@ ifMarked x y = do
 
 -- | Delete the selected text.
 deleteSelection :: WSEdit ()
-deleteSelection = alterBuffer $ do
+deleteSelection = flip ifMarked (return ()) $ alterBuffer $ do
     _ <- delSelection
     clearMark
 
