@@ -199,9 +199,8 @@ start = do
         exec :: Bool -> WSEdit ()
         exec b = do
             when b $ catchEditor load $ \e ->
-                quitComplain $ "An I/O error occured:\n\n"
+                quitComplain $ "An uncommon I/O error occured while loading:\n\n"
                             ++ show e
-                            ++ "\n\nAre you trying to open a binary file?"
 
             mainLoop
             drawExitFrame

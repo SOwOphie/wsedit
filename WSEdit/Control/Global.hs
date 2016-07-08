@@ -21,6 +21,7 @@ import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
+import Data.Char                   (chr)
 import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
 import Safe                        (fromJustNote)
@@ -32,8 +33,8 @@ import System.Directory            ( doesFileExist, getHomeDirectory
 import System.Exit                 (exitFailure)
 import System.IO                   ( IOMode (AppendMode, ReadMode, WriteMode)
                                    , NewlineMode
-                                   , hPutStr, hSetEncoding, hSetNewlineMode
-                                   , mkTextEncoding, withFile
+                                   , char8, hPutStr, hSetEncoding
+                                   , hSetNewlineMode, mkTextEncoding, withFile
                                    )
 import System.IO.Strict            (hGetContents)
 import Text.Show.Pretty            (ppShow)
@@ -222,44 +223,50 @@ load = alterState $ do
 
     s <- get
 
-    (if b
-        then liftIO $ readF p'
-        else return $ Just "") >>= \case
-        Nothing  -> quitComplain "File read error: unknown file encoding."
-        Just txt -> do
-            let l = fromMaybe (B.singleton (False, ""))
-                  $ B.fromList
-                  $ zip (repeat False)
-                  $ map (filter (/= '\r'))
-                  $ lines txt
+    (encSucc, txt) <- if b
+                         then liftIO $ readF p'
+                         else return $ (True, "")
 
-            put $ s
-                { edLines     = B.toFirst l
-                , fname       = p'
-                , cursorPos   = 1
-                , readOnly    = not w || readOnly s
-                , replaceTabs = if detectTabs s
-                                   then '\t' `notElem` txt
-                                   else replaceTabs s
-                }
+    let txt' = if encSucc
+                  then dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) txt
+                  else txt
 
-            setStatus $ case (b    , w    ) of
-                             (True , True ) -> "Loaded "
-                                            ++ show (length $ lines txt)
-                                            ++ " lines of text."
+        l    = fromMaybe (B.singleton (False, ""))
+             $ B.fromList
+             $ zip (repeat False)
+             $ map (filter (/= '\r'))
+             $ lines txt'
 
-                             (True , False) -> "Warning: file not writable, "
-                                            ++ "opening in read-only mode ..."
+    put $ s
+        { edLines     = B.toFirst l
+        , fname       = p'
+        , cursorPos   = 1
+        , readOnly    = not (encSucc && w && not (readOnly s))
+        , replaceTabs = if detectTabs s
+                           then '\t' `notElem` txt
+                           else replaceTabs s
+        }
 
-                             (False, True ) -> "Warning: file "
-                                            ++ p'
-                                            ++ " not found, creating on "
-                                            ++ "save ..."
+    setStatus $ case (b    , w    , encSucc) of
+                     (True , True , True   ) -> "Loaded "
+                                             ++ show (length $ lines txt)
+                                             ++ " lines of text."
 
-                             (False, False) -> "Warning: cannot create file "
-                                            ++ p'
-                                            ++ " , check permissions and disk "
-                                            ++ "state."
+                     (True , False, True   ) -> "Warning: file not writable, "
+                                             ++ "opening in read-only mode ..."
+
+                     (True , _    , False  ) -> "Warning: unknown character "
+                                             ++ "encoding, opening raw..."
+
+                     (False, True , _      ) -> "Warning: file "
+                                             ++ p'
+                                             ++ " not found, creating on "
+                                             ++ "save ..."
+
+                     (False, False, _      ) -> "Warning: cannot create file "
+                                             ++ p'
+                                             ++ " , check permissions and disk "
+                                             ++ "state."
 
     -- Move the cursor to where it should be placed.
     uncurry moveCursor $ withPair dec dec $ loadPos s
@@ -270,12 +277,19 @@ load = alterState $ do
         dec :: Int -> Int
         dec n = n - 1
 
-        readF :: FilePath -> IO (Maybe String)
+        -- | Returns the string, plus whether the file encoding could safely be
+        --   determined.
+        readF :: FilePath -> IO (Bool, String)
         readF f = S.readFile f >>= detectEncoding >>= \case
-            Nothing -> return Nothing
+            Nothing -> withFile f ReadMode $ \h -> do
+                hSetEncoding h char8
+                s <- hGetContents h
+                return (False, s)
+
             Just  e -> withFile f ReadMode $ \h -> do
                 hSetEncoding h e
-                Just <$> hGetContents h
+                s <- hGetContents h
+                return (True, s)
 
 
 
