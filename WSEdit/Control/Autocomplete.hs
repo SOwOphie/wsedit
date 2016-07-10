@@ -14,7 +14,7 @@ import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
 import System.Directory         ( doesDirectoryExist, doesFileExist
-                                , getCurrentDirectory, listDirectory
+                                , listDirectory
                                 )
 
 import WSEdit.Control.Base      (alterBuffer)
@@ -72,13 +72,12 @@ dictAdd f = do
         {- This is the magic behind the whole function. Ready?
             1. Split the read file into lines
             2. Filter out all the lines not at the specified indentation level.
-            3. Cut all leading whitespace.
-            4. Filter out all the lines not beginning with an alphanumeric char.
-            5. Glue the list back to a string.
-            6. Use a fancy word extraction function from the Util module.
-            7. Add everything to the dictionary.
-            8. Evaluate (to force strictness and surface any residual errors)
-            9. Lift to IO.
+            3. Filter the lines by their depth.
+            4. Glue the list back to a string.
+            5. Use a fancy word extraction function from the Util module.
+            6. Add everything to the dictionary.
+            7. Evaluate (to force strictness and surface any residual errors)
+            8. Lift to IO.
         -}
 
         put $! s { dict = d }
@@ -103,7 +102,7 @@ dictAddRec = do
     s <- get
 
     -- Skip everything if dictionary building is disabled
-    unless (null $ buildDict s) $ liftIO getCurrentDirectory >>= dictAddRec'
+    unless (null $ buildDict s) $ dictAddRec' "."
 
     where
         -- | Processes the files inside the given directory. First parameter is
