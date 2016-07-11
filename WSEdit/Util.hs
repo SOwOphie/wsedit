@@ -20,6 +20,8 @@ module WSEdit.Util
     , isIdentifierChar
     , isIdentifier
     , wordsPlus
+    , linesPlus
+    , unlinesPlus
     , getExt
     , getKeywordAtCursor
     , longestCommonPrefix
@@ -31,7 +33,7 @@ module WSEdit.Util
 
 import Control.Exception (SomeException, try)
 import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
-import Data.List         (inits, intersect, tails)
+import Data.List         (inits, intercalate, intersect, tails)
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
@@ -274,6 +276,23 @@ wordsPlus s =
            else if isIdentifier k
                    then k : wordsPlus s''
                    else     wordsPlus s''
+
+
+
+-- | Like `lines`, but with @\n@ as a separator, not terminator.
+linesPlus :: String -> [String]
+linesPlus = lp ""
+    where
+        lp :: String -> String -> [String]
+        lp accum []        = [accum]
+        lp accum ('\n':xs) = accum : lp []             xs
+        lp accum ( x  :xs) =         lp (accum ++ [x]) xs
+
+
+
+-- | Like `unlines`, but with @\n@ as a separator, not terminator.
+unlinesPlus :: [String] -> String
+unlinesPlus = intercalate "\n"
 
 
 

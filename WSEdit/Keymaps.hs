@@ -296,7 +296,8 @@ defaultKM =
     , Nothing
     , Just ( EvKey (KChar 's') [MCtrl]
            , ( cleanse >> save
-             , "Remove trailing whitespace, then save."
+             , "Remove trailing whitespace, ensure that the last line is empty,"
+                ++ " then save."
              )
            )
     , Nothing

@@ -62,6 +62,7 @@ import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
                                            , Special, Unprintable, Upper
                                            , Whitesp
                                            )
+                                , unlinesPlus
                                 )
 import WSEdit.WordTree          (WordTree, empty)
 
@@ -78,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.7 RC2"
+version = "1.0.0.8 RC3"
 
 -- | Upstream URL.
 upstream :: String
@@ -350,10 +351,10 @@ getSelection = getSelBounds >>= \case
                     return $ Just
                            $ drop (sC - 1) (headNote (fqn "getSelection") lns)
                           ++ "\n"
-                          ++ unlines ( tailNote (fqn "getSelection")
-                                     $ initNote (fqn "getSelection")
-                                       lns
-                                     )
+                          ++ unlinesPlus ( tailNote (fqn "getSelection")
+                                         $ initNote (fqn "getSelection")
+                                           lns
+                                         )
                           ++ take eC (lastNote (fqn "getSelection") lns)
 
 

@@ -55,7 +55,9 @@ import WSEdit.Data.Pretty       (unPrettyEdConfig)
 import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
 import WSEdit.Output            (draw, drawExitFrame)
-import WSEdit.Util              (getExt, mayReadFile, withSnd)
+import WSEdit.Util              ( getExt, linesPlus, mayReadFile, unlinesPlus
+                                , withSnd
+                                )
 
 
 
@@ -113,7 +115,7 @@ start = do
 
     mods <- if b
                then fmap concat
-                    ( mapM ( fmap (lines . fromMaybe "")
+                    ( mapM ( fmap (linesPlus . fromMaybe "")
                            . mayReadFile
                            . ((h ++ "/.config/wsedit/") ++ )
                            )
@@ -128,7 +130,7 @@ start = do
 
     -- split the parameters into a more comfortable format
     let (filename, tLnNo, tColNo, sw, dashS)
-            = splitArgs args (mods ++ lines glob) $ lines loc
+            = splitArgs args (mods ++ linesPlus glob) $ lines loc
 
     -- initialize vty
     v <- mkVty def
@@ -151,17 +153,17 @@ start = do
                                     let (cLines, sLines) = withSnd (drop 2)
                                                          $ span (/= "")
                                                          $ drop 4
-                                                         $ lines r
+                                                         $ linesPlus r
 
                                         conf' = unPrettyEdConfig
                                                 (vtyObj conf)
                                                 (keymap conf)
                                                 (dCurrLnMod $ edDesign conf)
                                               $ readNote (fqn "start:1")
-                                              $ unlines cLines
+                                              $ unlinesPlus cLines
 
                                         st    = readNote (fqn "start:2")
-                                              $ unlines sLines
+                                              $ unlinesPlus sLines
 
                                     return (conf', st)
 

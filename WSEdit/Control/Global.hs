@@ -24,7 +24,7 @@ import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Data.Char                   (chr)
 import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
-import Safe                        (fromJustNote)
+import Safe                        (fromJustNote, lastDef)
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
@@ -57,7 +57,7 @@ import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
-import WSEdit.Util                 (withPair)
+import WSEdit.Util                 (linesPlus, unlinesPlus, withPair)
 import WSEdit.WordTree             (empty)
 
 import qualified Data.ByteString.Lazy as S
@@ -108,7 +108,7 @@ bail s = do
 
     where
         indent :: String -> String
-        indent = unlines . map ("    " ++) . lines
+        indent = unlinesPlus . map ("    " ++) . linesPlus
 
 
 -- | Similar to 'bail', but does not generate a state dump.
@@ -184,7 +184,8 @@ save = refuseOnReadOnly $ do
        else do
             c <- ask
             liftIO $ writeF (fname s) (encoding c) (newlineMode c)
-                   $ unlines
+                   $ unlinesPlus
+                   $ (\l -> if lastDef "" l == "" then l else l ++ [""])
                    $ map snd
                    $ B.toList
                    $ edLines s
@@ -235,7 +236,7 @@ load = alterState $ do
              $ B.fromList
              $ zip (repeat False)
              $ map (filter (/= '\r'))
-             $ lines txt'
+             $ linesPlus txt'
 
     put $ s
         { edLines     = B.toFirst l
@@ -249,7 +250,7 @@ load = alterState $ do
 
     setStatus $ case (b    , w    , encSucc) of
                      (True , True , True   ) -> "Loaded "
-                                             ++ show (length $ lines txt)
+                                             ++ show (length $ linesPlus txt)
                                              ++ " lines of text."
 
                      (True , False, True   ) -> "Warning: file not writable, "

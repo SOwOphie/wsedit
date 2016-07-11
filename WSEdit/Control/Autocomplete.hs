@@ -27,7 +27,8 @@ import WSEdit.Data              ( WSEdit
                                 , setStatus
                                 )
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
-                                , longestCommonPrefix, wordsPlus
+                                , linesPlus, longestCommonPrefix, unlinesPlus
+                                , wordsPlus
                                 )
 import WSEdit.WordTree          (addWord, complete)
 
@@ -55,7 +56,7 @@ dictAdd f = do
            $ evaluate
            $ foldl (flip addWord) (dict s)
            $ wordsPlus
-           $ unlines
+           $ unlinesPlus
            $ map ( (\l -> take ( minimum
                                $ maxBound
                                : concat [ findInStr x l | x <- lineComment c]
@@ -67,7 +68,7 @@ dictAdd f = do
                   Nothing -> id
                   Just r  -> filter (\l -> or [ atLevel (tabWidth c) x l | x <- r])
              )
-           $ lines txt
+           $ linesPlus txt
 
         {- This is the magic behind the whole function. Ready?
             1. Split the read file into lines

@@ -21,8 +21,8 @@ import Safe               (lastDef, maximumNote)
 
 import WSEdit.Data        (Keymap, licenseVersion, upstream, version)
 import WSEdit.Data.Pretty (prettyKeymap)
-import WSEdit.Util        ( chunkWords, padRight, rotateR, withFst, withN
-                          , withSnd
+import WSEdit.Util        ( chunkWords, padRight, rotateR, unlinesPlus, withFst
+                          , withN, withSnd
                           )
 
 
@@ -34,7 +34,7 @@ fqn = ("WSEdit.Help." ++)
 
 -- | Aligns the given lines for the given amount of columns.
 renderText :: Int -> [String] -> String
-renderText nCols = unlines . map (renderLine nCols)
+renderText nCols = unlinesPlus . map (renderLine nCols)
     where
         spl :: String -> [(Int, String)]
         spl []       = []

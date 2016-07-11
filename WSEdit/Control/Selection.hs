@@ -31,7 +31,9 @@ import WSEdit.Data              ( EdConfig (tabWidth)
                                 , clearMark, delSelection, getMark, getCursor
                                 , getSelection, setMark, setStatus
                                 )
-import WSEdit.Util              (checkClipboardSupport, mayReadFile, withSnd)
+import WSEdit.Util              ( checkClipboardSupport, linesPlus, mayReadFile
+                                , withSnd
+                                )
 
 import qualified WSEdit.Buffer as B
 
@@ -86,7 +88,7 @@ copy = refuseOnReadOnly
                         liftIO $ setClipboard s
 
                         setStatus $ "Copied "
-                                 ++ show (length $ lines s)
+                                 ++ show (length $ linesPlus s)
                                  ++ " lines ("
                                  ++ show (length s)
                                  ++ " chars) to system clipboard."
@@ -97,7 +99,7 @@ copy = refuseOnReadOnly
                             writeFile (h ++ "/.wsedit-clipboard") s
 
                         setStatus $ "Copied "
-                                 ++ show (length $ lines s)
+                                 ++ show (length $ linesPlus s)
                                  ++ " lines ("
                                  ++ show (length s)
                                  ++ " chars) to editor clipboard."
@@ -123,7 +125,7 @@ paste = alterBuffer $ do
                            else "Warning: Editor clipboard is empty."
 
        else do
-            let c = lines c1
+            let c = linesPlus c1
             s <- get
 
             put $ s     -- Arcane buffer magic incoming...
@@ -153,7 +155,7 @@ paste = alterBuffer $ do
                 }
 
             if length c > 1
-               then moveCursor 0 $ length (last c) - length (head c)
+               then moveCursor 0 $ length (last c) - cursorPos s + 1
                else moveCursor 0 $ length c1
 
             setStatus $ "Pasted "
