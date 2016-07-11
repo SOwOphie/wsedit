@@ -79,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.10 RC5"
+version = "1.0.0.11 RC6"
 
 -- | Upstream URL.
 upstream :: String
@@ -346,17 +346,19 @@ getSelection = getSelBounds >>= \case
 
            else
                 let
-                    lns = map snd $ B.sub (sR - 1) (eR - 1) l
+                    lns   = map snd $ B.sub (sR - 1) (eR - 1) l
+                    front = drop (sC - 1) $ headNote (fqn "getSelection") lns
+                    back  = take  eC      $ lastNote (fqn "getSelection") lns
                 in
                     return $ Just
-                           $ drop (sC - 1) (headNote (fqn "getSelection") lns)
-                          ++ "\n"
+                           $ front
+                          ++ (if not $ null front then "\n" else "")
                           ++ unlinesPlus ( tailNote (fqn "getSelection")
                                          $ initNote (fqn "getSelection")
                                            lns
                                          )
-                          ++ "\n"
-                          ++ take eC (lastNote (fqn "getSelection") lns)
+                          ++ (if not $ null back then "\n" else "")
+                          ++ back
 
 
 
