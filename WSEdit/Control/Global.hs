@@ -24,7 +24,7 @@ import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Data.Char                   (chr)
 import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
-import Safe                        (fromJustNote, lastDef)
+import Safe                        (fromJustNote)
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
@@ -185,7 +185,6 @@ save = refuseOnReadOnly $ do
             c <- ask
             liftIO $ writeF (fname s) (encoding c) (newlineMode c)
                    $ unlinesPlus
-                   $ (\l -> if lastDef "" l == "" then l else l ++ [""])
                    $ map snd
                    $ B.toList
                    $ edLines s
