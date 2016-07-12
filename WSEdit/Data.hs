@@ -79,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.11 RC6"
+version = "1.0.0.12 RC7"
 
 -- | Upstream URL.
 upstream :: String
@@ -352,12 +352,12 @@ getSelection = getSelBounds >>= \case
                 in
                     return $ Just
                            $ front
-                          ++ (if not $ null front then "\n" else "")
+                          ++ "\n"
                           ++ unlinesPlus ( tailNote (fqn "getSelection")
                                          $ initNote (fqn "getSelection")
                                            lns
                                          )
-                          ++ (if not $ null back then "\n" else "")
+                          ++ (if length lns > 2 then "\n" else "")
                           ++ back
 
 
