@@ -14,7 +14,7 @@ import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
 import Data.List                (intercalate, isSuffixOf, stripPrefix)
 import System.Directory         ( doesDirectoryExist, doesFileExist
-                                , listDirectory
+                                , listDirectory, makeAbsolute
                                 )
 
 import WSEdit.Control.Base      (alterBuffer)
@@ -44,9 +44,12 @@ dictAdd f = do
     s <- get
     c <- ask
 
+    fAbs <- liftIO $ makeAbsolute f
+    tAbs <- liftIO $ makeAbsolute $ fname s
+
     let
         depths = map snd
-               $ filter (\(x, _) -> maybe (f == fname s) (`isSuffixOf` f) x)
+               $ filter (\(x, _) -> maybe (fAbs == tAbs) (`isSuffixOf` f) x)
                $ buildDict s
 
     unless (null depths) $ do
