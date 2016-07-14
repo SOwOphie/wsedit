@@ -97,7 +97,7 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
    paste them there.  Quite a few languages and formats have pre-defined
    highlighting rules in the `lang` subdirectory of this repository, feel free
    to write your own and create a pull request!
-9. Run `wsedit <some file>` to test everything, or `wsed -h` for a list of all
+9. Run `wsedit <some file>` to test everything, or `wsedit -h` for a list of all
    the available options.
 
 ## Known issues / Troubleshooting
