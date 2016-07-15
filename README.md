@@ -1,62 +1,49 @@
 # Wyvernscale Source Code Editor (wsedit)
 
-# IMPORTANT NOTICE regarding the `0.3.*` update
-
-* The parameter syntax for highlighting has changed slightly, therefore your old
-  config files may be invalid.  To avoid breakage, we now use new file locations:
-
-  * `~/.config/wsedit.wsconf` instead of `~/.config/wsedit.conf`
-  * `./.local.wsconf` instead of `./.wsedit`
-
-  Check out the new syntax for `-f*` parameters with `wsedit -h`.
-
-* Entire language definitions are now available in the `lang/` subdirectory.
-  Install them as follows:
-
-  * `cd` into the main git directory, `git pull origin master` to ensure you
-    have the latest version.
-  * Run `lang/install.sh` to list all available languages.
-  * Use `lang/install.sh <language name>` to append a definition to your
-    global config.
-  * Pull requests for your favourite language are always welcome!
-
 ## Introduction
 
 `wsedit` is a neat **little** (as in *don't expect too much from a student's
 first piece of code on github*) terminal-based editor written in haskell,
 sitting comfortably in the niche between `nano` and `vim`.  It is designed to be
-intuitive (as in "Press Ctrl-C to copy stuff"), work out-of-the-box with every
-conceivable language and to require only a minimal amount of configuration.
+intuitive (as in "Press Ctrl-C to copy stuff"), simple, elegant and pragmatic.
 
 ## Features
 
-* __Read-only mode__: Want to glance over a file without accidentally editing
-  it?  Start the editor in read-only mode (by passing `-r`), and toggle it in
-  the editor with `Ctrl-Meta-R`.
-
-* __Dynamic dictionary-based autocompletion__: When activated, everytime you
-  load or save, `wsedit` will read all files with the same ending as the one
-  you're currently editing, filter all lines by indentation depth and build a
-  dictionary out of those at a specified level.
+* __Dynamic dictionary-based autocompletion__: Specify which files to index, and
+  how (e.g. ignore comments, only global definitions, ...).
 
 * __Pragmatic syntax highlighting__: Highlights keywords, strings and comments
-  according to your configuration file.  Default patterns are availabe in
-  `lang/*.wsconf`.
+  declared in your config files.  Default patterns for some languages are
+  availabe for import in `lang/*.wsconf`, writing your own should take no longer
+  than 30 minutes, including the submission of a pull requrest on GitHub =).
 
-* __Character class highlighting__: Not as powerful as full-on syntax
-  highlighting, it will instead color your text by character class (e.g.
-  operators -> yellow, brackets -> brown, numbers -> red, ...).  This, in
-  combination with the syntax highlighting, offers a comfortable editing
-  experience while being easy to tweak yourself.
+* __Character class highlighting__: This will color your text by character class
+  (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...),
+  supplementing the already mentioned syntax highlighting quite nicely.
+
+* __Simple configuration interface via config files__: Not really much to say
+  here.
+
+* __Read-only mode__: Want to glance over a file without accidentally editing
+  it? Start the editor in read-only mode, or toggle it via keybind.
 
 * __The usual selection editing, interacting directly with the system
   clipboard__: Make sure to have `xclip` or `xsel` installed; an internal
   fallback is provided.
 
-* __Easiest possible method of configuration__: Type `wsedit -cg` (global) or
-  `wsedit -cl` (directory-local) to open the configuration file, then put down
-  all the command line parameters you'd like to be default.  Prefix lines with
-  e.g. `hs:` to make them apply to .hs-files only.
+## Upcoming features / Developer's wishlist
+
+__There is no guarantee that any of these features will ever see the light of
+day!__
+
+In no particular order:
+
+* __Support for block comments.__ Unfortunately, our current, line-based
+  renderer cannot do it.
+
+* __Elastic tabstops.__ Another thing our current renderer cannot do.
+
+* __Bracket matching.__ Are you starting to notice a pattern here?
 
 ## Platforms / Installation
 
@@ -82,9 +69,9 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
 
 1. Install the
    [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
-2. *Optional*: Install either `xclip` or `xsel` with your package manager.  If
-   this step is skipped, `wsedit` will use an internal buffer instead of the
-   system facilities for copy/paste functionality.
+2. *Optional*, Linux only: Install either `xclip` or `xsel` with your package
+   manager. If this step is skipped, `wsedit` will use an internal buffer
+   instead of the system facilities for copy/paste functionality.
 3. Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
 4. `cd` into the newly created directory (`cd wsedit`).
 5. Run `stack setup` to pull in the correct version of `ghc`.
@@ -102,29 +89,31 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
 
 ## Known issues / Troubleshooting
 
-### wsedit is slow on older machines
+### `wsedit` is slow on older machines
 
   * Use `-b` to disable background rendering, which remedies this for the most
     part.
-  * Consider switching to a faster terminal emulator, e.g. rxvt-unicode.
+  * Performance is highly dependant on your terminal emulator. I can personllay
+    recommend `rxvt-unicode` and `xterm`.
 
 ### The build fails with some obscure error message
 
   * Try `stack clean`.
   * If that doesn't work, delete the `.stack-work` folder and try again.
 
-### wsedit destroys Unicode on XTerm
+### `wsedit` destroys Unicode on `xterm`
 
 __Symptoms:__ After running `wsedit`, any unicode output by other programs (e.g.
 `tree`) will be garbled.
 
-This seems to be a problem wit vty, the terminal library wsedit uses, since
-yi, another terminal editor based on vty, suffers from the same issue. For now I
-can only recommend using another terminal emulator.
+This seems to be a problem wit `vty`, the terminal library `wsedit` uses, since
+`yi`, another terminal editor based on `vty`, suffers from the same issue. For
+now I can only recommend using another terminal emulator if you need the unicode
+support.
 
-### Some inputs (e.g. Ctrl-Down) don't work in urxvt
+### Some inputs (e.g. `Ctrl-Down`) don't work in `rxvt-unicode`
 
-Yeah, input in urxvt is a mess. Try adding this to your .Xresources:
+Yeah, input in `urxvt` is a mess. Try adding this to your `.Xresources`:
 
     ! From http://thedarnedestthing.com/urxvt
     urxvt*keysym.C-Up: \033[1;5A

@@ -9,7 +9,7 @@ definitions for yourself.
 
 # "Language x is missing!"
 
-Great!  You've found an easy way to help us out!  I promise it won't take longer
+Great! You've found an easy way to help us out! I promise it won't take longer
 than 30 minutes.
 
 1. Take a look around the existing definitions and look at how they are
@@ -24,18 +24,16 @@ than 30 minutes.
    * Try to draw some kind of ASCII-Art to represent the file type.
      * If the standard has a logo, take that.
      * If not, think of something (e.g. "C#" for C#).
-     * The only allowed character is '#', everything else would be too easy.
+     * The convention is to use only the '#' character for drawing.
      * The resulting image should be 5 characters high and max. 20 characters
        wide.
-     * If you think your drawing sucks, take a look at `cabal.wsconf`.  Hardly
-       anybody is an ASCII artist here.
-   * Place your masterpiece it at both sides of the header, two columns away from
+   * Place your masterpiece at both sides of the header, two columns away from
      the border.
    * Put a name in line 5, starting at column 30.
 
-5. **ONLY SET INDENTATION / TAB REPLACEMENT SETTINGS IF THE OFFICIAL LANGUAGE
-   DEFINITIONS EXPLICITLY STATE IT** or if you want to spark a crusade (don't do
-   that).
+5. **Only set indentation / tab replacement settings if the official language
+   definitions explicitly state/encourage it** or if you want to spark a crusade
+   (don't do that).
 
 6. Declare all syntax symbols:
    * Use one line per definition.
@@ -43,9 +41,9 @@ than 30 minutes.
      a string, and `b` the one marking the end.
    * __Escape characters__: `-fe+c`, where `c` is the character used to mask
      string delimiters inside a string.  Don't use this if the language uses
-     doubled delimiters instead of escape characters (e.g. in Basic, """" is a
+     doubled delimiters instead of escape characters (e.g. in Basic, `""""` is a
      string containing a single quote).
-   * __Line comments__: `-flc+x` where `x` is the string used to start a
+   * __Line comments__: `-flc+xxx` where `xxx` is the string used to start a
      comment.
    * __Block comments__: are not supported yet.
 
