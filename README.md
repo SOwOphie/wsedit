@@ -52,7 +52,10 @@ In no particular order:
 The whole idea of running a terminal editor on Windows seems a bit strange to
 me.  However, you are free to try building it from source (see below).
 
-### Linux: no packages available (yet), build from source
+### Linux: use the precompiled binary (`x86_64` only) **or** build from source
+
+Check out __Releases__ on the bottom of the GitHub page header (directly above
+the green bar).
 
 Contact me if you want to package `wsedit` for your distribution.
 
