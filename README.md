@@ -54,9 +54,7 @@ me.  However, you are free to try building it from source (see below).
 
 ### Linux: no packages available (yet), build from source
 
-Until the v1.0 release, there won't be any packages available.  After that, I'll
-probably create an AUR package.  Contact me if you're interested in packaging
-wsedit for your distribution.
+Contact me if you want to package `wsedit` for your distribution.
 
 ### OSX: Homebrew
 
