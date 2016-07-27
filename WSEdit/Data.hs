@@ -79,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.13"
+version = "1.1.0.0"
 
 -- | Upstream URL.
 upstream :: String
@@ -342,7 +342,7 @@ getSelection = getSelBounds >>= \case
                        $ drop (sC - 1)
                        $ take eC
                        $ snd
-                       $ B.curr l
+                       $ B.pos l
 
            else
                 let
@@ -387,7 +387,7 @@ delSelection = getSelBounds >>= \case
                 put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (mC - 1) l
                                                               ++ drop (cC - 1)
                                                                  ( snd
-                                                                 $ B.curr
+                                                                 $ B.pos
                                                                  $ edLines s
                                                                  )
                                                              )
@@ -401,7 +401,7 @@ delSelection = getSelBounds >>= \case
              GT -> do
                 put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (cC - 1)
                                                                ( snd
-                                                               $ B.curr
+                                                               $ B.pos
                                                                $ edLines s
                                                                )
                                                               ++ drop (mC - 1) l

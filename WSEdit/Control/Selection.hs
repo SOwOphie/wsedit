@@ -140,7 +140,7 @@ paste = alterBuffer $ do
 
                        else B.insertLeft (False, lastNote (fqn "paste") c
                                               ++ drop (cursorPos s - 1)
-                                                      (snd $ B.curr $ edLines s)
+                                                      (snd $ B.pos $ edLines s)
                                          )
                           $ flip (foldl (flip B.insertLeft))
                                  ( zip (repeat False)

@@ -98,7 +98,7 @@ moveCursor r c = alterState $ do
             s <- get
 
             let lns      = edLines s
-                currLn   = snd $ B.curr lns
+                currLn   = snd $ B.pos lns
                 tLnNo    = min (B.length lns) $ max 1 $ currR + n
                 targetLn = snd $ B.atDef (undefined, "") lns $ tLnNo - 1
 
@@ -123,7 +123,7 @@ moveCursor r c = alterState $ do
             (currR, currC) <- getCursor
             lns <- edLines <$> get
 
-            let currLn = snd $ B.curr lns
+            let currLn = snd $ B.pos lns
 
             setCursor (currR
                       , min (length currLn + 1)

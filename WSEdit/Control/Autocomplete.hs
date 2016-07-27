@@ -138,7 +138,7 @@ listAutocomplete = do
     unless (null (buildDict s) || readOnly s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
-                $ B.curr
+                $ B.pos
                 $ edLines s of
 
                Nothing -> setStatus "..."
@@ -167,7 +167,7 @@ applyAutocomplete = do
     when (not (null $ buildDict s) && canComplete s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
-                $ B.curr
+                $ B.pos
                 $ edLines s of
 
                Nothing -> return ()

@@ -80,7 +80,7 @@ insertTab = alterBuffer $ do
 
     -- Column the tab will sit in
     n <- (edLines <$> get)
-     >>= (stringWidth 1 . take (c - 1) . snd . B.curr)
+     >>= (stringWidth 1 . take (c - 1) . snd . B.pos)
 
     w <- tabWidth <$> ask
 
@@ -111,8 +111,8 @@ delLeft = alterBuffer
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines   = B.withCurr (withPair (|| (fst $ B.curr $ edLines s))
-                                               (++ (snd $ B.curr $ edLines s))
+            { edLines   = B.withCurr (withPair (|| (fst $ B.pos $ edLines s))
+                                               (++ (snd $ B.pos $ edLines s))
                                      )
                         $ fromJustNote (fqn "delLeft:2")
                         $ B.deleteLeft
@@ -153,8 +153,8 @@ delRight = alterBuffer $ do
 
         merge :: EdState -> EdState
         merge s = s
-            { edLines   = B.withCurr (withPair ((fst $ B.curr $ edLines s) ||)
-                                               ((snd $ B.curr $ edLines s) ++)
+            { edLines   = B.withCurr (withPair ((fst $ B.pos $ edLines s) ||)
+                                               ((snd $ B.pos $ edLines s) ++)
                                      )
                         $ fromJustNote (fqn "delRight")
                         $ B.deleteRight
@@ -175,7 +175,7 @@ smartHome = alterState $ do
          .  length
          .  takeWhile isSpace
          .  snd
-         .  B.curr
+         .  B.pos
          .  edLines
         <$> get
 
@@ -197,7 +197,7 @@ smartNewLine = alterBuffer $ do
         snl :: EdState -> EdState
         snl s =
             let
-                ln = B.curr $ edLines s
+                ln = B.pos $ edLines s
             in
                 s { edLines = B.insertLeft (False, takeWhile isSpace      (snd ln)
                                                 ++ drop (cursorPos s - 1) (snd ln)
@@ -218,7 +218,7 @@ dumbNewLine = alterBuffer $ do
         nl :: EdState -> EdState
         nl s =
             let
-                ln = B.curr $ edLines s
+                ln = B.pos $ edLines s
             in
                 s { edLines = B.insertLeft (False, drop (cursorPos s - 1)
                                                  $ snd ln

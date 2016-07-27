@@ -38,13 +38,13 @@ forwardToMark = refuseOnReadOnly $ do
         l = edLines s
         t = searchTerms s
 
-    case concatMap ( flip findInStr (map toLower $ snd $ B.curr l)
+    case concatMap ( flip findInStr (map toLower $ snd $ B.pos l)
                    . map toLower
                    ) t of
-        _  | fst (B.curr l)  -> return ()
-        [] | B.sufLen l == 0 -> return ()
-        []                   -> forwardToMark
-        (x:_)                -> moveCursor 0 x
+        _  | fst (B.pos l)      -> return ()
+        [] | B.sufLength l == 0 -> return ()
+        []                      -> forwardToMark
+        (x:_)                   -> moveCursor 0 x
 
 
 
@@ -58,10 +58,10 @@ backwardsToMark = refuseOnReadOnly $ do
         l = edLines s
         t = searchTerms s
 
-    case concatMap ( flip findInStr (map toLower $ snd $ B.curr l)
+    case concatMap ( flip findInStr (map toLower $ snd $ B.pos l)
                    . map toLower
                    ) t of
-        _  | fst (B.curr l)   -> return ()
-        [] | B.prefLen l == 0 -> return ()
-        []                    -> backwardsToMark
-        (x:_)                 -> moveCursor 0 x
+        _  | fst (B.pos l)       -> return ()
+        [] | B.prefLength l == 0 -> return ()
+        []                       -> backwardsToMark
+        (x:_)                    -> moveCursor 0 x
