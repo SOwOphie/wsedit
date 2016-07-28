@@ -54,6 +54,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
 import WSEdit.Data.Pretty       (unPrettyEdConfig)
 import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
+import WSEdit.Renderer          (rebuildL1, rebuildL2)
 import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              ( getExt, linesPlus, mayReadFile, unlinesPlus
                                 , withSnd
@@ -297,6 +298,8 @@ argLoop h True  (_                   :xs) (c, s) = argLoop h True xs (c, s)
 -- | Main editor loop. Runs once per input event processed.
 mainLoop :: WSEdit ()
 mainLoop = do
+    rebuildL1
+    rebuildL2
     draw
 
     setStatus ""

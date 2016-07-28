@@ -19,7 +19,7 @@ module WSEdit.Output
 import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
-import Data.Char                (ord, toLower)
+import Data.Char                (ord)
 import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
@@ -37,12 +37,9 @@ import Graphics.Vty             ( Attr
                                 , (<|>), (<->)
                                 )
 import Numeric                  (showHex)
-import Safe                     (lookupJustDef, minimumNote)
+import Safe                     (atDef, lookupJustDef)
 
-import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
-                                           , lineComment, strDelim, tabWidth
-                                           , vtyObj
-                                           )
+import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                 , EdDesign ( dBGChar, dBGFormat, dCharStyles
                                            , dColChar, dColNoFormat
                                            , dColNoInterval, dCurrLnMod
@@ -51,29 +48,21 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , dJumpMarkFmt, dStatusFormat
                                            , dTabExt, dTabStr
                                            )
-                                , EdState ( changed, edLines, fname, markPos
-                                          , overwrite, readOnly, replaceTabs
-                                          , scrollOffset, searchTerms, status
+                                , EdState ( changed, edLines, fname, l2Cache
+                                          , markPos, overwrite, readOnly
+                                          , replaceTabs, scrollOffset
+                                          , status
                                           )
-                                , HighlightMode ( HComment, HKeyword, HNone
-                                                , HSearch, HSelected, HString
-                                                )
+                                , HighlightMode (HNone, HSelected)
                                 , WSEdit
                                 , getCursor, getDisplayBounds, getOffset
                                 , getSelBounds
                                 )
-import WSEdit.Renderer          (rebuildL1)
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, findDelimBy, findInStr
-                                , findIsolated, padLeft, padRight, withPair
+                                , charClass, lookupBy, padLeft, padRight
                                 )
 
 import qualified WSEdit.Buffer as B
-
-
-
-fqn :: String -> String
-fqn = ("WSEdit.Output." ++)
 
 
 
@@ -145,60 +134,24 @@ charRep hl pos _ c = do
 -- | Returns the visual representation of a line with a given line number.
 lineRep :: Int -> String -> WSEdit Image
 lineRep lNo str = do
-    conf <- ask
     st <- get
     maySel <- getSelBounds
 
     let
-        -- Initial list of comment starting points
-        comL :: [Int]
-        comL = map (+1)
-             $ concatMap (`findInStr` str)
-             $ lineComment conf
-
-        -- List of string bounds
-        strL :: [(Int, Int)]
-        strL = map (withPair (+1) (+1))
-             $ findDelimBy (escape conf) (strDelim conf) str
-
-        -- List of keyword bounds
-        kwL :: [(Int, Int)]
-        kwL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                            $ findIsolated k str
-                        )
-            $ keywords conf
-
-        -- List of search terms
-        sL :: [(Int, Int)]
-        sL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                           $ findInStr ( map toLower k )
-                                       $ map toLower str
-                       )
-            $ searchTerms st
-
-        -- List of comment starting points, minus those that are inside a string
-        comL' :: [Int]
-        comL' = filter (\c -> not $ any (`inRange` c) strL) comL
-
-        -- First comment starting point in the line
-        comAt :: Maybe Int
-        comAt = if null comL'
-                   then Nothing
-                   else Just $ minimumNote (fqn "lineRep") comL
-
-
+        fmt = atDef [] (map fst $ l2Cache st) (length (l2Cache st) - lNo)
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
             i <- charRep
-                    (case maySel of
-                          Just (sS, sE) | sS <= (lNo, tPos)
-                                             && (lNo, tPos) <= sE -> HSelected
-                          _ | any (`inRange` tPos) sL             -> HSearch
-                            | fromMaybe maxBound comAt <= tPos    -> HComment
-                            | any (`inRange` tPos) strL           -> HString
-                            | any (`inRange` tPos) kwL            -> HKeyword
-                            | otherwise                           -> HNone
+                    (case (maySel, lookupBy (`inRange` tPos) fmt) of
+                          (Just (sS, sE), _     ) | sS <= (lNo, tPos)
+                                                    && (lNo, tPos) <= sE
+                                                    -> HSelected
+
+                          (_,             Just s)   -> s
+
+                          _                       | otherwise
+                                                    -> HNone
                     ) (lNo, tPos) vPos c
 
             return (i:im, tPos + 1, vPos + length (snd i))
@@ -590,8 +543,6 @@ makeScrollbar = do
 -- | Draws everything.
 draw :: WSEdit ()
 draw = do
-    rebuildL1
-
     s <- get
     c <- ask
 

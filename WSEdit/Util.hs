@@ -29,6 +29,7 @@ module WSEdit.Util
     , findInStr
     , findIsolated
     , findDelimBy
+    , lookupBy
     ) where
 
 import Control.Exception (SomeException, try)
@@ -405,3 +406,12 @@ findDelimBy mC       delim (x:  xs)          =
         find (Just e) c (y:_:ys) | e == y    = (+2) <$> find (Just e) c ys
         find mE       c (y  :ys) | c == y    = Just 0
                                  | otherwise = (+1) <$> find mE       c ys
+
+
+
+
+
+-- | Generic version of `lookup`.
+lookupBy :: (a -> Bool) -> [(a, b)] -> Maybe b
+lookupBy _ []          = Nothing
+lookupBy f ((k, v):xs) = if f k then Just v else lookupBy f xs

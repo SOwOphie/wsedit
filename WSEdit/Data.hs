@@ -7,6 +7,8 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
+    , L2ParserState (..)
+    , L2Cache
     , EdState (..)
     , getCursor
     , setCursor
@@ -79,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.1"
+version = "1.1.0.2"
 
 -- | Upstream URL.
 upstream :: String
@@ -88,6 +90,21 @@ upstream = "https://github.com/SirBoonami/wsedit"
 -- | License version number constant.
 licenseVersion :: String
 licenseVersion = "1.1"
+
+
+
+
+
+data L2ParserState = PNothing
+                   | PLnString Int String
+    deriving (Eq, Read, Show)
+
+
+
+-- | Level 2 cache type.  Stores ranges of highlighted areas, as well as the
+--   parser's stack at the end of each line. Only built from the start of the
+--   file to the end of the viewport, lines are stored in reverse order.
+type L2Cache = [([((Int, Int), HighlightMode)], L2ParserState)]
 
 
 
@@ -111,11 +128,9 @@ data EdState = EdState
         -- ^ Level 1 rendering cache. Stores relevant tokens alongside their
         --   starting position for each line.
 
-    , l2Cache      :: [([((Int, Int), HighlightMode)], [HighlightMode])]
-        -- ^ Level 2 rendering cache. Stores ranges of highlighted areas, as
-        --   well as the parser's stack at the end of each line. Only built from
-        --   the start of the file to the end of the viewport, lines are stored
-        --   in reverse order.
+    , l2Cache      :: L2Cache
+        -- ^ Level 2 rendering cache. See the description of 'L2Cache' for more
+        --   information.
 
 
     , cursorPos    :: Int
@@ -191,7 +206,7 @@ instance Default EdState where
         , readOnly     = False
 
         , l1Cache      = B.singleton []
-        , l2Cache      = [([], [])]
+        , l2Cache      = []
 
         , cursorPos    = 1
         , loadPos      = (1, 1)
