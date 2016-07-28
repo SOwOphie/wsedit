@@ -62,6 +62,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                 , getCursor, getDisplayBounds, getOffset
                                 , getSelBounds
                                 )
+import WSEdit.Renderer          (rebuildL1)
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
                                 , charClass, findDelimBy, findInStr
                                 , findIsolated, padLeft, padRight, withPair
@@ -589,6 +590,8 @@ makeScrollbar = do
 -- | Draws everything.
 draw :: WSEdit ()
 draw = do
+    rebuildL1
+
     s <- get
     c <- ask
 

@@ -41,6 +41,8 @@ module WSEdit.Buffer
     , append
     , prepend
     , map
+    , mapM
+    , mapM_
     ) where
 
 
@@ -48,7 +50,7 @@ import Data.Hashable (Hashable, hash, hashWithSalt)
 import Data.Maybe    (fromMaybe)
 import Safe          (fromJustNote, headMay, headNote, lastMay, tailNote)
 
-import Prelude hiding (last, length, map)
+import Prelude hiding (last, length, map, mapM, mapM_)
 
 import qualified Data.List as L
 import qualified Prelude   as P
@@ -472,3 +474,29 @@ map f b = b { prefix = newHashList $ L.map (f . snd) $ prefix b
             , curr   =                      f        $ curr   b
             , suffix = newHashList $ L.map (f . snd) $ suffix b
             }
+
+
+
+mapM :: (Monad m, Hashable b) => (a -> m b) -> Buffer a -> m (Buffer b)
+mapM f b = do
+    p <- fmap (newHashList . reverse)
+       $ P.mapM (f . snd)
+       $ reverse
+       $ prefix b
+
+    c <- f $ curr b
+
+    s <- fmap (newHashList)
+       $ P.mapM (f . snd)
+       $ suffix b
+
+    return b { prefix = p
+             , curr   = c
+             , suffix = s
+             }
+
+
+
+mapM_ :: (Monad m, Hashable b) => (a -> m b) -> Buffer a -> m ()
+mapM_ f b = mapM f b >> return ()
+

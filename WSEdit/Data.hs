@@ -79,7 +79,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.0"
+version = "1.1.0.1"
 
 -- | Upstream URL.
 upstream :: String
@@ -105,6 +105,17 @@ data EdState = EdState
     , readOnly     :: Bool
         -- ^ Whether the file is opened in read only mode. Has no relation to
         --   the write permissions on the actual file.
+
+
+    , l1Cache      :: B.Buffer [(Int, String)]
+        -- ^ Level 1 rendering cache. Stores relevant tokens alongside their
+        --   starting position for each line.
+
+    , l2Cache      :: [([((Int, Int), HighlightMode)], [HighlightMode])]
+        -- ^ Level 2 rendering cache. Stores ranges of highlighted areas, as
+        --   well as the parser's stack at the end of each line. Only built from
+        --   the start of the file to the end of the viewport, lines are stored
+        --   in reverse order.
 
 
     , cursorPos    :: Int
@@ -178,6 +189,9 @@ instance Default EdState where
         { edLines      = B.singleton (False, "")
         , fname        = ""
         , readOnly     = False
+
+        , l1Cache      = B.singleton []
+        , l2Cache      = [([], [])]
 
         , cursorPos    = 1
         , loadPos      = (1, 1)

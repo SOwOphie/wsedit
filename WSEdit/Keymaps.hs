@@ -311,7 +311,7 @@ defaultKM =
              , "Quit, even if unsaved changes are present."
              )
            )
-    , Just ( EvKey (KChar 'c') [MMeta, MCtrl]
+    , Just ( EvKey (KChar 'c') [MMeta]
            , ( simulateCrash
              , "Crash the editor and create a state dump."
              )
