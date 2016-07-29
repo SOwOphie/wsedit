@@ -10,8 +10,8 @@
 #                                                                              #
 # Syntax highlighting                                                          #
 sh: -flc+#
-sh: -fs+''
-sh: -fs+""
+sh: -fms+'_'
+sh: -fms+"_"
 sh: -fs+``
 sh: -fe+\
 #                                                                              #

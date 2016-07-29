@@ -26,6 +26,7 @@ wsconf: -fk+-fe
 wsconf: -fk+-fh
 wsconf: -fk+-fk
 wsconf: -fk+-flc
+wsconf: -fk+-fms
 wsconf: -fk+-fs
 wsconf: -fk+-h
 wsconf: -fk+-hk

@@ -14,8 +14,9 @@ import System.IO         (NewlineMode)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
                                     , encoding, escape, histSize, keymap
-                                    , keywords, lineComment, newlineMode
-                                    , purgeOnClose, strDelim, tabWidth, vtyObj
+                                    , keywords, lineComment, mStrDelim
+                                    , newlineMode, purgeOnClose, strDelim
+                                    , tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
@@ -43,7 +44,8 @@ data PrettyEdConfig = PrettyEdConfig
     , pNewlineMode  :: NewlineMode
     , pEncoding     :: Maybe String
     , pLineComment  :: [String]
-    , pStrDelim     :: [(Char, Char)]
+    , pStrDelim     :: [(String, String)]
+    , pMStrDelim    :: [(String, String)]
     , pKeywords     :: [String]
     , pEscape       :: Maybe Char
     }
@@ -64,6 +66,7 @@ prettyEdConfig c = PrettyEdConfig
     , pEncoding     =                  encoding     c
     , pLineComment  =                  lineComment  c
     , pStrDelim     =                  strDelim     c
+    , pMStrDelim    =                  mStrDelim    c
     , pKeywords     =                  keywords     c
     , pEscape       =                  escape       c
     }
@@ -83,6 +86,7 @@ unPrettyEdConfig v k f p = EdConfig
     , encoding     = pEncoding                      p
     , lineComment  = pLineComment                   p
     , strDelim     = pStrDelim                      p
+    , mStrDelim    = pMStrDelim                     p
     , keywords     = pKeywords                      p
     , escape       = pEscape                        p
     }

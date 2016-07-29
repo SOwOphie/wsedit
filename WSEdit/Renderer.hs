@@ -7,9 +7,12 @@ module WSEdit.Renderer
 import Control.Monad            (foldM)
 import Control.Monad.RWS.Strict (ask, get, put)
 import Data.List                (nub, sort)
+import Data.Maybe               (fromMaybe)
 import Safe                     (headDef)
 
-import WSEdit.Data              ( EdConfig (keywords, lineComment, strDelim)
+import WSEdit.Data              ( EdConfig ( escape, keywords, mStrDelim
+                                           , lineComment, strDelim
+                                           )
                                 , EdState ( edLines, history, l1Cache, l2Cache
                                           , scrollOffset, searchTerms
                                           )
@@ -17,7 +20,7 @@ import WSEdit.Data              ( EdConfig (keywords, lineComment, strDelim)
                                                 , HString
                                                 )
                                 , L2Cache
-                                , L2ParserState (PNothing, PLnString)
+                                , L2ParserState (PNothing, PLnString, PMLString)
                                 , WSEdit
                                 )
 import WSEdit.Output            (getViewportDimensions)
@@ -43,9 +46,9 @@ rebuildL1 = do
         tokenI str l = map (withFst (+1))
                      $ concatMap (\tk -> [(x, tk) | x <- tk `findIsolated` str]) l
 
-        unpack :: [(a, a)] -> [[a]]
+        unpack :: [(a, a)] -> [a]
         unpack []         = []
-        unpack ((a,b):xs) = [a]:[b]:unpack xs
+        unpack ((a,b):xs) = a:b:unpack xs
 
         ln :: (Bool, String) -> WSEdit [(Int, String)]
         ln (_, str) = do
@@ -53,8 +56,15 @@ rebuildL1 = do
             s <- get
 
             let
-                list = token  str (         lineComment c)
+                esc  = map (+1)
+                     $ fromMaybe []
+                     $ fmap ((`findInStr` str) . return)
+                     $ escape c
+
+                list = filter ((`notElem` esc) . (subtract 1) . fst)
+                     $ token  str (         lineComment c)
                     ++ token  str (unpack $ strDelim    c)
+                    ++ token  str (unpack $ mStrDelim   c)
                     ++ token  str (         searchTerms s)
                     ++ tokenI str (         keywords    c)
 
@@ -78,19 +88,25 @@ rebuildL2 = do
     where
         fsm :: (EdConfig, EdState) -> L2ParserState -> [(Int, String)] -> ([((Int, Int), HighlightMode)], L2ParserState)
 
-        fsm _      _                     []           = ([], PNothing)
+        fsm _         (PMLString n1 str) []           = ([((n1, maxBound), HString)], PMLString 1 str)
+        fsm _         _                  []           = ([], PNothing)
+        fsm (c, s) st@(PLnString n1 str) ((n2, x):xs)
+            | str == x  = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing xs
+            | otherwise =                                  fsm (c, s) st       xs
+
+        fsm (c, s) st@(PMLString n1 str) ((n2, x):xs)
+            | str == x  = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing xs
+            | otherwise =                                  fsm (c, s) st       xs
+
         fsm (c, s) st                    ((n , x):xs)
             | x `elem` searchTerms s = withFst (((n, n + length x - 1), HSearch):) $ fsm (c, s) st xs
 
-        fsm (c, s) st@(PLnString n1 str) ((n2, x):xs)
-            | str == x  = withFst (((n1, n2), HString):) $ fsm (c, s) PNothing xs
-            | otherwise =                                  fsm (c, s) st       xs
-
         fsm (c,s)      PNothing          ((n1, x):xs)
-            |                 x `elem`   lineComment c = ([((n1, maxBound), HComment)], PNothing)
-            | Just cl <- head x `lookup` strDelim    c = fsm (c, s) (PLnString n1 [cl]) xs
-            |                 x `elem`   keywords    c = withFst (((n1, n1 + length x - 1), HKeyword):)
-                                                       $ fsm (c, s) PNothing xs
+            |            x `elem`   lineComment c = ([((n1, maxBound), HComment)], PNothing)
+            | Just cl <- x `lookup` strDelim    c = fsm (c, s) (PLnString n1 cl) xs
+            | Just cl <- x `lookup` mStrDelim   c = fsm (c, s) (PMLString n1 cl) xs
+            |            x `elem`   keywords    c = withFst (((n1, n1 + length x - 1), HKeyword):)
+                                                  $ fsm (c, s) PNothing xs
 
         fsm (c,s)      PNothing          (_      :xs) = fsm (c,s) PNothing xs
 

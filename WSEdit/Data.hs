@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.3"
+version = "1.1.0.4"
 
 -- | Upstream URL.
 upstream :: String
@@ -97,6 +97,7 @@ licenseVersion = "1.1"
 
 data L2ParserState = PNothing
                    | PLnString Int String
+                   | PMLString Int String
     deriving (Eq, Read, Show)
 
 
@@ -492,8 +493,11 @@ data EdConfig = EdConfig
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
 
-    , strDelim     :: [(Char, Char)]
+    , strDelim     :: [(String, String)]
         -- ^ List of string delimiters.
+
+    , mStrDelim    :: [(String, String)]
+        -- ^ List of multi-line string delimiters.
 
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
@@ -517,6 +521,7 @@ mkDefConfig v k = EdConfig
                 , encoding     = Nothing
                 , lineComment  = []
                 , strDelim     = []
+                , mStrDelim    = []
                 , keywords     = []
                 , escape       = Nothing
               }

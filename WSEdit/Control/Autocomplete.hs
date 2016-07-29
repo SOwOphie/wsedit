@@ -62,7 +62,7 @@ dictAdd f = do
            $ unlinesPlus
            $ map ( (\l -> take ( minimum
                                $ maxBound
-                               : concat [ findInStr x l | x <- lineComment c]
+                               : concat [ findInStr x l | x <- lineComment c ]
                                ) l
                    )
                  . dropWhile isSpace
