@@ -12,7 +12,8 @@
 sh: -flc+#
 sh: -fms+'_'
 sh: -fms+"_"
-sh: -fs+``
+sh: -fs+`_`
+sh: -fs+$(_)
 sh: -fe+\
 #                                                                              #
 # Keywords                                                                     #
@@ -134,6 +135,7 @@ sh: -fk+ifconfig
 sh: -fk+ifdown
 sh: -fk+ifup
 sh: -fk+import
+sh: -fk+in
 sh: -fk+install
 sh: -fk+ip
 

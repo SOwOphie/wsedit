@@ -15,7 +15,7 @@ hs: -ts
 hs: -flc+--
 hs: -fbc+{-_-}
 hs: -fcs+'_'
-hs: -fs+"_"
+hs: -fms+"_"
 hs: -fs+`_`
 hs: -fe+\
 #                                                                              #
