@@ -9,8 +9,9 @@
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
-html: -fs+''
-html: -fs+""
+html: -fbc+<!--_-->
+html: -fs+'_'
+html: -fs+"_"
 html: -fe+\
 #                                                                              #
 # Keywords                                                                     #

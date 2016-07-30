@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.4"
+version = "1.1.0.5"
 
 -- | Upstream URL.
 upstream :: String
@@ -96,8 +96,10 @@ licenseVersion = "1.1"
 
 
 data L2ParserState = PNothing
+                   | PChString Int String Int
                    | PLnString Int String
                    | PMLString Int String
+                   | PBComment Int String
     deriving (Eq, Read, Show)
 
 
@@ -493,11 +495,17 @@ data EdConfig = EdConfig
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
 
+    , blockComment :: [(String, String)]
+        -- ^ List of block comment delimiters.
+
     , strDelim     :: [(String, String)]
         -- ^ List of string delimiters.
 
     , mStrDelim    :: [(String, String)]
         -- ^ List of multi-line string delimiters.
+
+    , chrDelim     :: [(String, String)]
+        -- ^ List of char delimiters
 
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
@@ -520,8 +528,10 @@ mkDefConfig v k = EdConfig
                 , newlineMode  = universalNewlineMode
                 , encoding     = Nothing
                 , lineComment  = []
+                , blockComment = []
                 , strDelim     = []
                 , mStrDelim    = []
+                , chrDelim     = []
                 , keywords     = []
                 , escape       = Nothing
               }
@@ -652,6 +662,10 @@ instance Default EdDesign where
                             `withForeColor` brightMagenta
                             `withStyle`     bold
               )
+            , (HError   , defAttr
+                            `withBackColor` brightRed
+                            `withStyle`     bold
+              )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
@@ -737,6 +751,10 @@ brightTheme = EdDesign
                             `withForeColor` brightMagenta
                             `withStyle`     bold
               )
+            , (HError   , defAttr
+                            `withBackColor` brightRed
+                            `withStyle`     bold
+              )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
@@ -786,6 +804,7 @@ type Keymap = [Maybe (Event, (WSEdit (), String))]
 -- | Mode for syntax highlighting.
 data HighlightMode = HNone
                    | HComment
+                   | HError
                    | HKeyword
                    | HSearch
                    | HSelected

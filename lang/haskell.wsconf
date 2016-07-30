@@ -13,9 +13,10 @@ hs: -ts
 #                                                                              #
 # Syntax highlighting                                                          #
 hs: -flc+--
-hs: -fs+""
-hs: -fs+''
-hs: -fs+``
+hs: -fbc+{-_-}
+hs: -fcs+'_'
+hs: -fs+"_"
+hs: -fs+`_`
 hs: -fe+\
 #                                                                              #
 # Keywords                                                                     #

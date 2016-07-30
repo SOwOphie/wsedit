@@ -12,11 +12,11 @@ module WSEdit.Data.Pretty
 import Graphics.Vty      (Attr, Event, Vty)
 import System.IO         (NewlineMode)
 
-import WSEdit.Data       ( EdConfig ( EdConfig, drawBg, dumpEvents, edDesign
-                                    , encoding, escape, histSize, keymap
-                                    , keywords, lineComment, mStrDelim
-                                    , newlineMode, purgeOnClose, strDelim
-                                    , tabWidth, vtyObj
+import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, chrDelim, drawBg
+                                    , dumpEvents, edDesign, encoding, escape
+                                    , histSize, keymap, keywords, lineComment
+                                    , mStrDelim, newlineMode, purgeOnClose
+                                    , strDelim, tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
                                     , dColChar, dColNoFormat, dColNoInterval
@@ -44,8 +44,10 @@ data PrettyEdConfig = PrettyEdConfig
     , pNewlineMode  :: NewlineMode
     , pEncoding     :: Maybe String
     , pLineComment  :: [String]
+    , pBlockComment :: [(String, String)]
     , pStrDelim     :: [(String, String)]
     , pMStrDelim    :: [(String, String)]
+    , pChrDelim     :: [(String, String)]
     , pKeywords     :: [String]
     , pEscape       :: Maybe Char
     }
@@ -65,8 +67,10 @@ prettyEdConfig c = PrettyEdConfig
     , pNewlineMode  =                  newlineMode  c
     , pEncoding     =                  encoding     c
     , pLineComment  =                  lineComment  c
+    , pBlockComment =                  blockComment c
     , pStrDelim     =                  strDelim     c
     , pMStrDelim    =                  mStrDelim    c
+    , pChrDelim     =                  chrDelim     c
     , pKeywords     =                  keywords     c
     , pEscape       =                  escape       c
     }
@@ -85,8 +89,10 @@ unPrettyEdConfig v k f p = EdConfig
     , newlineMode  = pNewlineMode                   p
     , encoding     = pEncoding                      p
     , lineComment  = pLineComment                   p
+    , blockComment = pBlockComment                  p
     , strDelim     = pStrDelim                      p
     , mStrDelim    = pMStrDelim                     p
+    , chrDelim     = pChrDelim                      p
     , keywords     = pKeywords                      p
     , escape       = pEscape                        p
     }
