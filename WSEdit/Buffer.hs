@@ -31,6 +31,8 @@ module WSEdit.Buffer
     , deleteRight
     , dropLeft
     , dropRight
+    , dropPrefix
+    , dropSuffix
     , withLeft
     , withLeftDef
     , withNLeft
@@ -154,10 +156,10 @@ diffZone a b =
         ss = zip (drop ovSA $ suffix a)
                  (drop ovSB $ suffix b)
     in
-        (ovPA + L.length (takeWhile equ ps), ovSA + L.length (takeWhile equ ss))
+        (ovPA + L.length (takeWhile df ps), ovSA + L.length (takeWhile df ss))
     where
-        equ :: ((Int, a), (Int, a)) -> Bool
-        equ ((x,_),(y,_)) = x == y
+        df :: ((Int, a), (Int, a)) -> Bool
+        df ((x,_),(y,_)) = x /= y
 
 
 
@@ -388,6 +390,19 @@ dropRight n b | n <= 0 = b
               | otherwise = dropRight (n-1)
                           $ fromMaybe b
                           $ deleteRight b
+
+-- | Drop n elements off the (reversed) prefix.
+dropPrefix :: Int -> Buffer a -> Buffer a
+dropPrefix n b = b { prefix  = drop n $ prefix  b
+                   , prefLen = max 0  $ prefLen b - n
+                   }
+
+-- | Drop n elements off the suffix.
+dropSuffix :: Int -> Buffer a -> Buffer a
+dropSuffix n b = b { suffix = drop n $ suffix b
+                   , sufLen = max 0  $ sufLen b - n
+                   }
+
 
 
 -- | Apply a function to the element left of the buffer position.

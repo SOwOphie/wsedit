@@ -55,7 +55,7 @@ import WSEdit.Data              ( EdConfig ( blockComment, chrDelim, drawBg
 import WSEdit.Data.Pretty       (unPrettyEdConfig)
 import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
-import WSEdit.Renderer          (rebuildL1, rebuildL2)
+import WSEdit.Renderer          (rebuildAll)
 import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              ( getExt, linesPlus, mayReadFile, unlinesPlus
                                 , withSnd
@@ -206,6 +206,8 @@ start = do
                 quitComplain $ "An uncommon I/O error occured while loading:\n\n"
                             ++ show e
 
+            rebuildAll Nothing
+
             mainLoop
             drawExitFrame
 
@@ -307,40 +309,38 @@ argLoop h True  (_                   :xs) (c, s) = argLoop h True xs (c, s)
 -- | Main editor loop. Runs once per input event processed.
 mainLoop :: WSEdit ()
 mainLoop = do
-    rebuildL1
-    rebuildL2
-    draw
+    flip catchEditor errHdl $ do
+        draw
+        setStatus ""
 
-    setStatus ""
-
-    c <- ask
-    ev <- liftIO $ nextEvent $ vtyObj c
-
-    modify (\s -> s { lastEvent = Just ev })
-
-    -- look up the event in the keymap
-    -- if not found: insert the pressed key
-    -- if it's not alphanumeric: show an "event not bound" warning
-    catchEditor
-        ( maybe (case ev of
-                      EvKey (KChar k) [] -> deleteSelection
-                                         >> insert k
-                                         >> listAutocomplete
-
-                      EvResize _ _       -> return ()
-                      _                  -> setStatus $ "Event not bound: "
-                                                     ++ show ev
-                )
-                fst
-        $ lookup ev
-        $ catMaybes
-        $ keymap c
-        ) errHdl
-
-
-    when (dumpEvents c) $ do
+        c <- ask
         s <- get
-        setStatus $ show ev ++ status s
+        ev <- liftIO $ nextEvent $ vtyObj c
+
+        modify (\st -> st { lastEvent = Just ev })
+
+        -- look up the event in the keymap
+        -- if not found: insert the pressed key
+        -- if it's not alphanumeric: show an "event not bound" warning
+        maybe (case ev of
+                    EvKey (KChar k) [] -> deleteSelection
+                                       >> insert k
+                                       >> listAutocomplete
+
+                    EvResize _ _       -> return ()
+                    _                  -> setStatus $ "Event not bound: "
+                                                   ++ show ev
+              )
+              fst
+              $ lookup ev
+              $ catMaybes
+              $ keymap c
+
+        rebuildAll $ Just s
+
+        when (dumpEvents c) $ do
+            st <- get
+            setStatus $ show ev ++ status st
 
     b <- continue <$> get
     when b mainLoop

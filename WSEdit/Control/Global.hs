@@ -24,7 +24,7 @@ import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Data.Char                   (chr)
 import Data.Maybe                  (fromMaybe)
 import Graphics.Vty                (Vty (shutdown))
-import Safe                        (fromJustNote)
+import Safe                        (fromJustNote, headDef)
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
@@ -93,10 +93,10 @@ bail s = do
         putStrLn "Writing state dump to ./CRASH-DUMP ..."
         writeFile "CRASH-DUMP"
             $ "WSEDIT " ++ version ++ " CRASH LOG\n"
-           ++ "Error message: " ++ s
+           ++ "Error message: " ++ (headDef "" $ lines s)
            ++ "\n\nEditor configuration:\n"
            ++ indent (ppShow $ prettyEdConfig c)
-           ++ "\nEditor state:\n"
+           ++ "\n\nEditor state:\n"
            ++ indent ( ppShow
                      $ mapPast (\h -> h { dict = empty })
                      $ fromJustNote (fqn "bail")

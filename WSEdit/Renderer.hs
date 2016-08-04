@@ -1,21 +1,20 @@
 module WSEdit.Renderer
-    ( rebuildL1
-    , rebuildL2
+    ( rebuildAll
     ) where
 
 
 import Control.Monad            (foldM)
-import Control.Monad.RWS.Strict (ask, get, put)
+import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.List                (nubBy, sort, sortOn)
 import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
-import Safe                     (headDef)
+import Safe                     (fromJustNote, headDef)
 
 import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
                                            , keywords, mStrDelim, lineComment
                                            , strDelim
                                            )
-                                , EdState ( edLines, history, l1Cache, l2Cache
+                                , EdState ( edLines, l1Cache, l2Cache
                                           , scrollOffset, searchTerms
                                           )
                                 , HighlightMode ( HComment, HError, HKeyword
@@ -34,63 +33,92 @@ import qualified WSEdit.Buffer as B
 
 
 
-rebuildL1 :: WSEdit ()
-rebuildL1 = do
+fqn :: String -> String
+fqn = ("WSEdit.Renderer." ++)
+
+
+
+
+
+rebuildL1 :: Maybe EdState -> WSEdit ()
+rebuildL1 Nothing  = do
     s <- get
-    case history s of
-         Nothing -> fullRebuild
-         Just _  -> fullRebuild
+    c <- B.mapM l1Ln $ edLines s
+    put $ s { l1Cache = c }
+
+rebuildL1 (Just h) = do
+    s <- get
+
+    let
+        (n1, n2) = B.diffZone (edLines h) (edLines s)
+
+        cHull    = B.dropLeft (n1 + 1)
+                 $ B.dropSuffix n2
+                 $ B.moveTo (B.currPos $ edLines h)
+                 $ l1Cache h
+
+        rebdFrom = B.moveTo (B.currPos cHull + 1)
+                 $ edLines s
+
+    c <- rebdL1 cHull rebdFrom
+    modify $ \st -> st { l1Cache = c }
+
+    where
+        rebdL1 :: B.Buffer [(Int, String)] -> B.Buffer (Bool, String) -> WSEdit (B.Buffer [(Int, String)])
+        rebdL1 cHull rebdFrom
+            | B.length cHull == B.length rebdFrom
+                = return cHull
+            | otherwise
+                = do
+                    ln <- l1Ln $ B.pos rebdFrom
+                    rebdL1 ( B.insertLeft ln cHull )
+                           ( fromJustNote (fqn "rebuildL1")
+                           $ B.forward rebdFrom
+                           )
+
+
+l1Ln :: (Bool, String) -> WSEdit [(Int, String)]
+l1Ln (_, str) = do
+    c <- ask
+    s <- get
+
+    let
+        esc  = map (+1)
+             $ fromMaybe []
+             $ fmap ((`findInStr` str) . return)
+             $ escape c
+
+    return $ sort
+           $ nubBy (\a b -> fst a == fst b)
+           $ sortOn Down
+           $ filter ((`notElem` esc) . (subtract 1) . fst)
+           $ token  str (         lineComment  c)
+          ++ token  str (unpack $ blockComment c)
+          ++ token  str (unpack $ strDelim     c)
+          ++ token  str (unpack $ mStrDelim    c)
+          ++ token  str (unpack $ chrDelim     c)
+          ++ token  str (         searchTerms  s)
+          ++ tokenI str (         keywords     c)
 
     where
         token :: String -> [String] -> [(Int, String)]
-        token str l = map (withFst (+1))
-                    $ concatMap (\tk -> [(x, tk) | x <- tk `findInStr` str]) l
+        token s l = map (withFst (+1))
+                  $ concatMap (\tk -> [(x, tk) | x <- tk `findInStr` s]) l
 
         tokenI :: String -> [String] -> [(Int, String)]
-        tokenI str l = map (withFst (+1))
-                     $ concatMap (\tk -> [(x, tk) | x <- tk `findIsolated` str]) l
+        tokenI s l = map (withFst (+1))
+                   $ concatMap (\tk -> [(x, tk) | x <- tk `findIsolated` s]) l
 
         unpack :: [(a, a)] -> [a]
         unpack []         = []
         unpack ((a,b):xs) = a:b:unpack xs
 
-        ln :: (Bool, String) -> WSEdit [(Int, String)]
-        ln (_, str) = do
-            c <- ask
-            s <- get
-
-            let
-                esc  = map (+1)
-                     $ fromMaybe []
-                     $ fmap ((`findInStr` str) . return)
-                     $ escape c
-
-            return $ sort
-                   $ nubBy (\a b -> fst a == fst b)
-                   $ sortOn Down
-                   $ filter ((`notElem` esc) . (subtract 1) . fst)
-                   $ token  str (         lineComment  c)
-                  ++ token  str (unpack $ blockComment c)
-                  ++ token  str (unpack $ strDelim     c)
-                  ++ token  str (unpack $ mStrDelim    c)
-                  ++ token  str (unpack $ chrDelim     c)
-                  ++ token  str (         searchTerms  s)
-                  ++ tokenI str (         keywords     c)
-
-        fullRebuild :: WSEdit ()
-        fullRebuild = do
-            s <- get
-            c <- B.mapM ln $ edLines s
-            put $ s { l1Cache = c }
 
 
 
-rebuildL2 :: WSEdit ()
-rebuildL2 = do
-    s <- get
-    case history s of
-         Nothing -> fullRebuild
-         Just _  -> fullRebuild
+
+rebuildL2 :: Maybe EdState -> WSEdit ()
+rebuildL2 _ = fullRebuild
 
     where
         fsm :: (EdConfig, EdState) -> L2ParserState -> [(Int, String)] -> ([((Int, Int), HighlightMode)], L2ParserState)
@@ -148,3 +176,10 @@ rebuildL2 = do
                      $ l1Cache s
 
             put $ s { l2Cache = c }
+
+
+
+
+
+rebuildAll :: Maybe EdState -> WSEdit ()
+rebuildAll h = rebuildL1 h >> rebuildL2 h
