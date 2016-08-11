@@ -341,7 +341,7 @@ makeFooter = do
     return $ string (dFrameFormat d)
                 ( replicate (lNoWidth + 2) ' '
                ++ "+-----------+"
-               ++ replicate (txtCols - 7) '-'
+               ++ replicate (txtCols - 11) '-'
                ++ "+-"
                 )
           <-> (  string (dFrameFormat d)

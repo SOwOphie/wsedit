@@ -27,6 +27,8 @@ module WSEdit.Buffer
     , toLast
     , insertLeft
     , insertRight
+    , insertBefore
+    , insertAfter
     , deleteLeft
     , deleteRight
     , dropLeft
@@ -345,6 +347,21 @@ insertRight x b = b { suffix = curr b `consHashList` suffix b
                     , sufLen = sufLen b + 1
                     , curr   = x
                     }
+
+
+
+-- | Insert a new element in front of the current position.
+insertBefore :: (Hashable a) => a -> Buffer a -> Buffer a
+insertBefore x b = b { prefix  = x `consHashList` prefix b
+                     , prefLen = prefLen b + 1
+                     }
+
+-- | Insert a new element after the current position.
+insertAfter :: (Hashable a) => a -> Buffer a -> Buffer a
+insertAfter x b = b { suffix = x `consHashList` suffix b
+                    , sufLen = sufLen b + 1
+                    }
+
 
 
 -- | Drop the currently focused element, filling the void from the left.

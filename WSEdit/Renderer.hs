@@ -8,7 +8,7 @@ import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.List                (nubBy, sort, sortOn)
 import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
-import Safe                     (fromJustNote, headDef)
+import Safe                     (headDef)
 
 import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
                                            , keywords, mStrDelim, lineComment
@@ -33,13 +33,10 @@ import qualified WSEdit.Buffer as B
 
 
 
-fqn :: String -> String
-fqn = ("WSEdit.Renderer." ++)
 
 
-
-
-
+-- | Rebuilds the L1 cache. A past state may be given as a parameter to speed up
+--   the process.
 rebuildL1 :: Maybe EdState -> WSEdit ()
 rebuildL1 Nothing  = do
     s <- get
@@ -52,12 +49,12 @@ rebuildL1 (Just h) = do
     let
         (n1, n2) = B.diffZone (edLines h) (edLines s)
 
-        cHull    = B.dropLeft (n1 + 1)
-                 $ B.dropSuffix n2
+        cHull    = B.dropPrefix n1
+                 $ B.dropRight (n2 + 1)
                  $ B.moveTo (B.currPos $ edLines h)
                  $ l1Cache h
 
-        rebdFrom = B.moveTo (B.currPos cHull + 1)
+        rebdFrom = B.moveTo (B.currPos cHull)
                  $ edLines s
 
     c <- rebdL1 cHull rebdFrom
@@ -71,12 +68,15 @@ rebuildL1 (Just h) = do
             | otherwise
                 = do
                     ln <- l1Ln $ B.pos rebdFrom
-                    rebdL1 ( B.insertLeft ln cHull )
-                           ( fromJustNote (fqn "rebuildL1")
+                    rebdL1 ( B.insertBefore ln cHull )
+                           ( fromMaybe rebdFrom
                            $ B.forward rebdFrom
                            )
 
 
+-- | L1 line processor. Turns a line of text into the corresponding cache entry.
+--   The 'Bool' is only there for convenience when folding over the 'edLines'
+--   buffer and will be completely ignored.
 l1Ln :: (Bool, String) -> WSEdit [(Int, String)]
 l1Ln (_, str) = do
     c <- ask
@@ -117,6 +117,9 @@ l1Ln (_, str) = do
 
 
 
+-- | Rebuilds the L2 cache from the L1 cache, therefore this should normally be
+--   called after 'rebuildL1'. A past state may be given to speed up the
+--   process (not implemented yet, the parameter is ignored).
 rebuildL2 :: Maybe EdState -> WSEdit ()
 rebuildL2 _ = fullRebuild
 
@@ -181,5 +184,7 @@ rebuildL2 _ = fullRebuild
 
 
 
+-- | Rebuilds all caches in order. A past state may be given to speed up the
+--   process.
 rebuildAll :: Maybe EdState -> WSEdit ()
 rebuildAll h = rebuildL1 h >> rebuildL2 h
