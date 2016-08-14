@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.7"
+version = "1.1.0.8"
 
 -- | Upstream URL.
 upstream :: String
@@ -134,6 +134,9 @@ data EdState = EdState
     , l2Cache      :: L2Cache
         -- ^ Level 2 rendering cache. See the description of 'L2Cache' for more
         --   information.
+
+    , fullRebdReq  :: Bool
+        -- ^ Gets set when a full cache rebuild is required.
 
 
     , cursorPos    :: Int
@@ -210,6 +213,7 @@ instance Default EdState where
 
         , l1Cache      = B.singleton []
         , l2Cache      = []
+        , fullRebdReq  = False
 
         , cursorPos    = 1
         , loadPos      = (1, 1)

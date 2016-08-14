@@ -14,8 +14,8 @@ import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
                                            , keywords, mStrDelim, lineComment
                                            , strDelim
                                            )
-                                , EdState ( edLines, l1Cache, l2Cache
-                                          , scrollOffset, searchTerms
+                                , EdState ( edLines, fullRebdReq, l1Cache
+                                          , l2Cache, scrollOffset, searchTerms
                                           )
                                 , HighlightMode ( HComment, HError, HKeyword
                                                 , HSearch, HString
@@ -187,4 +187,10 @@ rebuildL2 _ = fullRebuild
 -- | Rebuilds all caches in order. A past state may be given to speed up the
 --   process.
 rebuildAll :: Maybe EdState -> WSEdit ()
-rebuildAll h = rebuildL1 h >> rebuildL2 h
+rebuildAll h = do
+    s <- get
+    if fullRebdReq s
+       then rebuildL1 Nothing >> rebuildL2 Nothing
+       else rebuildL1 h       >> rebuildL2 h
+
+    modify $ \s' -> s' { fullRebdReq = False }

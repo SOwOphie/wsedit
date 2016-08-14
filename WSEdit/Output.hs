@@ -436,7 +436,7 @@ makeTextFrame = do
                                  $ pad 0 0 (scrollCols + 1) 0
                                  $ (if drawBg c
                                        then id
-                                       else (<|> char ( (if l == cR
+                                       else (<|> char ( (if l == cR && not (readOnly s)
                                                             then dCurrLnMod d
                                                             else id
                                                         )
