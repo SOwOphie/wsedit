@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.6"
+version = "1.1.0.7"
 
 -- | Upstream URL.
 upstream :: String
@@ -639,7 +639,6 @@ instance Default EdDesign where
             , (Lower      , defAttr
               )
             , (Upper      , defAttr
-                            `withStyle`     bold
               )
             , (Bracket    , defAttr
                             `withForeColor` yellow
@@ -728,7 +727,6 @@ brightTheme = EdDesign
             , (Lower      , defAttr
               )
             , (Upper      , defAttr
-                            `withStyle`     bold
               )
             , (Bracket    , defAttr
                             `withForeColor` yellow

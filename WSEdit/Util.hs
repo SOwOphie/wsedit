@@ -4,6 +4,9 @@ module WSEdit.Util
     ( withPair
     , withFst
     , withSnd
+    , withPairM
+    , withFstM
+    , withSndM
     , padLeft
     , padRight
     , withN
@@ -65,6 +68,25 @@ withFst f = withPair f id
 -- | Applies a function to the second member of a pair.
 withSnd :: (b -> c) -> (a, b) -> (a, c)
 withSnd = withPair id
+
+
+
+-- | Applies a separate monadic function to each member of a pair.
+withPairM :: (Monad m) => (a -> m b) -> (c -> m d) -> (a, c) -> m (b, d)
+withPairM fa fb (a, b) = do
+    ra <- fa a
+    rb <- fb b
+    return (ra, rb)
+
+
+-- | Applies a monadic function to the first member of a pair.
+withFstM :: (Monad m) => (a -> m b) -> (a, c) -> m (b, c)
+withFstM f = withPairM f return
+
+
+-- | Applies a monadic function to the second member of a pair.
+withSndM :: (Monad m) => (b -> m c) -> (a, b) -> m (a, c)
+withSndM = withPairM return
 
 
 

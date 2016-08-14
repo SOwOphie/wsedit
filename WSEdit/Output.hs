@@ -110,6 +110,20 @@ charRep hl pos n '\t' = do
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
+charRep hl pos _ ' ' = do
+    (r, _) <- getCursor
+    st     <- get
+    d      <- edDesign <$> ask
+
+    return ( (if r == fst pos
+                   && hl /= HSelected
+                   && not (readOnly st)
+                 then dCurrLnMod d
+                 else id
+             ) $ lookupJustDef def hl (dHLStyles d)
+           , " "
+           )
+
 charRep hl pos _ c = do
     (r, _) <- getCursor
     st     <- get
@@ -442,10 +456,10 @@ makeBackground = do
     conf <- ask
     s <- get
 
-    (nRows, nCols     ) <- getViewportDimensions
-    (_    , scrollCols) <- getOffset
+    (nRows     , nCols     ) <- getViewportDimensions
+    (scrollRows, scrollCols) <- getOffset
 
-    cursor   <- getCursor >>= toCursorDispPos
+    cursor   <- getCursor
     lNoWidth <- lineNoWidth
 
     let
@@ -463,7 +477,8 @@ makeBackground = do
                                     ) l
                  )
            $ take nRows
-           $ zip [2..]
+           $ drop scrollRows
+           $ zip [1..]
            $ repeat
            $ ('#' :)
            $ take nCols
