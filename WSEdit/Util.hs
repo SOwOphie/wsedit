@@ -33,18 +33,27 @@ module WSEdit.Util
     , findIsolated
     , findDelimBy
     , lookupBy
+    , readEncFile
     ) where
 
+import Codec.Text.Detect (detectEncodingName)
 import Control.Exception (SomeException, try)
-import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
+import Data.Char         (chr, isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intercalate, intersect, tails)
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
+import System.IO         ( IOMode (ReadMode)
+                         , hSetEncoding, hSetNewlineMode, mkTextEncoding
+                         , universalNewlineMode, char8, withFile
+                         )
+import System.IO.Strict  (hGetContents)
 import System.IO.Unsafe  (unsafePerformIO)
 import System.Process    (readProcessWithExitCode)
 import Text.Show.Pretty  (ppShow)
+
+import qualified Data.ByteString.Lazy as S
 
 
 
@@ -437,3 +446,28 @@ findDelimBy mC       delim (x:  xs)          =
 lookupBy :: (a -> Bool) -> [(a, b)] -> Maybe b
 lookupBy _ []          = Nothing
 lookupBy f ((k, v):xs) = if f k then Just v else lookupBy f xs
+
+
+
+
+
+-- | Reads a file strictly and returns its text encoding, if applicable,
+--   alongside its contents.
+readEncFile :: FilePath -> IO (Maybe String, String)
+readEncFile f = do
+    raw <- S.readFile f
+
+    withFile f ReadMode $ \h -> do
+        hSetNewlineMode h universalNewlineMode
+
+        case detectEncodingName raw of
+            Nothing -> do
+                hSetEncoding h char8
+                s <- hGetContents h
+                return (Nothing, s)
+
+            Just en -> do
+                e <- mkTextEncoding en
+                hSetEncoding h e
+                s <- hGetContents h
+                return (Just en, dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) s)

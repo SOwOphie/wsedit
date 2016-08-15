@@ -27,8 +27,8 @@ import WSEdit.Data              ( WSEdit
                                 , setStatus
                                 )
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
-                                , linesPlus, longestCommonPrefix, unlinesPlus
-                                , wordsPlus
+                                , linesPlus, longestCommonPrefix, readEncFile
+                                , unlinesPlus, wordsPlus
                                 )
 import WSEdit.WordTree          (addWord, complete)
 
@@ -53,7 +53,7 @@ dictAdd f = do
                $ buildDict s
 
     unless (null depths) $ do
-        txt <- liftIO $ readFile f
+        txt <- fmap snd $ liftIO $ readEncFile f
 
         d <- liftIO
            $ evaluate

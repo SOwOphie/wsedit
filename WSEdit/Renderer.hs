@@ -5,7 +5,7 @@ module WSEdit.Renderer
 
 import Control.Monad            (foldM)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.List                (nubBy, sort, sortOn)
+import Data.List                (nubBy, sort, sortOn, (\\))
 import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
 import Safe                     (headDef)
@@ -88,10 +88,12 @@ l1Ln (_, str) = do
              $ fmap ((`findInStr` str) . return)
              $ escape c
 
+        esc' = esc \\ map (+1) esc
+
     return $ sort
            $ nubBy (\a b -> fst a == fst b)
            $ sortOn Down
-           $ filter ((`notElem` esc) . (subtract 1) . fst)
+           $ filter ((`notElem` esc') . (subtract 1) . fst)
            $ token  str (         lineComment  c)
           ++ token  str (unpack $ blockComment c)
           ++ token  str (unpack $ strDelim     c)
@@ -131,8 +133,11 @@ rebuildL2 _ = fullRebuild
         fsm _         (PLnString n1 _    ) []           = ([((n1, maxBound), HError  )], PNothing       )
         fsm _         _                    []           = ([]                          , PNothing       )
 
+        fsm (c, s)    (PChString n1 str l) (_:(n2, x):xs)
+            | n2 <= l && str == x = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing          xs
+
         fsm (c, s)    (PChString n1 str l) ((n2, x):xs)
-            | str == x && n2 <= l = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing          xs
+            | n2 <= l && str == x = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing          xs
             | otherwise           =                                                 fsm (c, s) PNothing ((n2, x):xs)
 
         fsm (c, s) st                      ((n , x):xs)

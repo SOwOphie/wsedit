@@ -16,13 +16,11 @@ module WSEdit.Control.Global
     ) where
 
 
-import Codec.Text.Detect           (detectEncoding)
 import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
-import Data.Char                   (chr)
-import Data.Maybe                  (fromMaybe)
+import Data.Maybe                  (fromMaybe, isJust)
 import Graphics.Vty                (Vty (shutdown))
 import Safe                        (fromJustNote, headDef)
 import System.Directory            ( doesFileExist, getHomeDirectory
@@ -31,12 +29,11 @@ import System.Directory            ( doesFileExist, getHomeDirectory
                                    , writable
                                    )
 import System.Exit                 (exitFailure)
-import System.IO                   ( IOMode (AppendMode, ReadMode, WriteMode)
+import System.IO                   ( IOMode (AppendMode, WriteMode)
                                    , NewlineMode
-                                   , char8, hPutStr, hSetEncoding
-                                   , hSetNewlineMode, mkTextEncoding, withFile
+                                   , hPutStr, hSetEncoding, hSetNewlineMode
+                                   , mkTextEncoding, withFile
                                    )
-import System.IO.Strict            (hGetContents)
 import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
@@ -57,10 +54,9 @@ import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
-import WSEdit.Util                 (linesPlus, unlinesPlus, withPair)
+import WSEdit.Util                 (linesPlus, readEncFile, unlinesPlus, withPair)
 import WSEdit.WordTree             (empty)
 
-import qualified Data.ByteString.Lazy as S
 import qualified WSEdit.Buffer        as B
 
 
@@ -193,7 +189,9 @@ save = refuseOnReadOnly $ do
 
             setStatus $ "Saved "
                      ++ show (B.length (edLines s))
-                     ++ " lines of text."
+                     ++ " lines of "
+                     ++ fromMaybe "native" (encoding c)
+                     ++ " text."
 
     dictAddRec
 
@@ -223,39 +221,36 @@ load = alterState $ do
 
     s <- get
 
-    (encSucc, txt) <- if b
-                         then liftIO $ readF p'
-                         else return $ (True, "")
+    (mEnc, txt) <- liftIO $ readEncFile p'
 
-    let txt' = if encSucc
-                  then dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) txt
-                  else txt
-
-        l    = fromMaybe (B.singleton (False, ""))
-             $ B.fromList
-             $ zip (repeat False)
-             $ map (filter (/= '\r'))
-             $ linesPlus txt'
+    let l = fromMaybe (B.singleton (False, ""))
+          $ B.fromList
+          $ zip (repeat False)
+          $ linesPlus txt
 
     put $ s
         { edLines     = B.toFirst l
         , fname       = p'
         , cursorPos   = 1
-        , readOnly    = not (encSucc && w && not (readOnly s))
+        , readOnly    = not (isJust mEnc && w && not (readOnly s))
         , replaceTabs = if detectTabs s
                            then '\t' `notElem` txt
                            else replaceTabs s
         }
 
-    setStatus $ case (b    , w    , encSucc) of
-                     (True , True , True   ) -> "Loaded "
+    setStatus $ case (b    , w    , mEnc) of
+                     (True , True , Just e ) -> "Loaded "
                                              ++ show (length $ linesPlus txt)
-                                             ++ " lines of text."
+                                             ++ " lines of "
+                                             ++ e
+                                             ++ " text."
 
-                     (True , False, True   ) -> "Warning: file not writable, "
+                     (True , False, Just e ) -> "Warning: "
+                                             ++ e
+                                             ++ " file not writable, "
                                              ++ "opening in read-only mode ..."
 
-                     (True , _    , False  ) -> "Warning: unknown character "
+                     (True , _    , Nothing) -> "Warning: unknown character "
                                              ++ "encoding, opening raw..."
 
                      (False, True , _      ) -> "Warning: file "
@@ -276,20 +271,6 @@ load = alterState $ do
     where
         dec :: Int -> Int
         dec n = n - 1
-
-        -- | Returns the string, plus whether the file encoding could safely be
-        --   determined.
-        readF :: FilePath -> IO (Bool, String)
-        readF f = S.readFile f >>= detectEncoding >>= \case
-            Nothing -> withFile f ReadMode $ \h -> do
-                hSetEncoding h char8
-                s <- hGetContents h
-                return (False, s)
-
-            Just  e -> withFile f ReadMode $ \h -> do
-                hSetEncoding h e
-                s <- hGetContents h
-                return (True, s)
 
 
 
