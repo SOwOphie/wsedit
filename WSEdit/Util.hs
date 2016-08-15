@@ -34,12 +34,16 @@ module WSEdit.Util
     , findDelimBy
     , lookupBy
     , readEncFile
+    , combineAttrs
     ) where
 
 import Codec.Text.Detect (detectEncodingName)
 import Control.Exception (SomeException, try)
 import Data.Char         (chr, isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intercalate, intersect, tails)
+import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
+                         , MaybeDefault (Default, KeepCurrent,SetTo)
+                         )
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
@@ -471,3 +475,22 @@ readEncFile f = do
                 hSetEncoding h e
                 s <- hGetContents h
                 return (Just en, dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) s)
+
+
+
+
+
+-- | Combines two vty attributes. Conflicts are resolved in a left-biased way.
+combineAttrs :: Attr -> Attr -> Attr
+combineAttrs a b = Attr
+    { attrStyle     = combineMayDef (attrStyle     a) (attrStyle     b)
+    , attrForeColor = combineMayDef (attrForeColor a) (attrForeColor b)
+    , attrBackColor = combineMayDef (attrBackColor a) (attrBackColor b)
+    }
+    where
+        combineMayDef :: MaybeDefault a -> MaybeDefault a -> MaybeDefault a
+        combineMayDef (SetTo x)   _           = SetTo x
+        combineMayDef _           (SetTo x)   = SetTo x
+        combineMayDef KeepCurrent _           = KeepCurrent
+        combineMayDef _           KeepCurrent = KeepCurrent
+        combineMayDef _           _           = Default

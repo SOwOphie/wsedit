@@ -51,8 +51,8 @@ import Graphics.Vty             ( Attr
                                 , black, blue, bold, brightBlack, brightGreen
                                 , brightMagenta, brightRed, brightWhite
                                 , brightYellow, cyan, green, defAttr
-                                , displayBounds, green, magenta, red, white
-                                , withBackColor, withForeColor, withStyle
+                                , displayBounds, green, magenta, red, underline
+                                , white, withBackColor, withForeColor, withStyle
                                 , yellow
                                 )
 import Safe                     ( fromJustNote, headNote, initNote, lastNote
@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.9"
+version = "1.1.0.10"
 
 -- | Upstream URL.
 upstream :: String
@@ -516,6 +516,9 @@ data EdConfig = EdConfig
 
     , escape       :: Maybe Char
         -- ^ Escape character for strings.
+
+    , brackets     :: [(String, String)]
+        -- ^ List of bracket pairs.
     }
 
 -- | Create a default `EdConfig`.
@@ -538,6 +541,7 @@ mkDefConfig v k = EdConfig
                 , chrDelim     = []
                 , keywords     = []
                 , escape       = Nothing
+                , brackets     = []
               }
 
 
@@ -578,8 +582,11 @@ data EdDesign = EdDesign
         -- ^ vty attribute for everything in the background
 
 
-    , dCurrLnMod     :: Attr -> Attr
+    , dCurrLnMod     :: Attr
         -- ^ Attribute modifications to apply to the current line
+
+    , dBrMod         :: Attr
+        -- ^ Attribute modifications for bracket matching.
 
     , dJumpMarkFmt   :: Attr
         -- ^ vty attribute for jump marks
@@ -626,7 +633,12 @@ instance Default EdDesign where
         , dBGFormat      = defAttr
                             `withForeColor` black
 
-        , dCurrLnMod     = flip withBackColor black
+        , dCurrLnMod     = defAttr
+                            `withBackColor` black
+
+        , dBrMod         = defAttr
+                            `withStyle`     underline
+
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
@@ -714,7 +726,12 @@ brightTheme = EdDesign
         , dBGFormat      = defAttr
                             `withForeColor` white
 
-        , dCurrLnMod     = flip withBackColor white
+        , dCurrLnMod     = defAttr
+                            `withBackColor` white
+
+        , dBrMod         = defAttr
+                            `withStyle`     underline
+
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 

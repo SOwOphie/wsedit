@@ -12,17 +12,18 @@ module WSEdit.Data.Pretty
 import Graphics.Vty      (Attr, Event, Vty)
 import System.IO         (NewlineMode)
 
-import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, chrDelim, drawBg
-                                    , dumpEvents, edDesign, encoding, escape
-                                    , histSize, keymap, keywords, lineComment
-                                    , mStrDelim, newlineMode, purgeOnClose
-                                    , strDelim, tabWidth, vtyObj
+import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, brackets, chrDelim
+                                    , drawBg, dumpEvents, edDesign, encoding
+                                    , escape, histSize, keymap, keywords
+                                    , lineComment, mStrDelim, newlineMode
+                                    , purgeOnClose, strDelim, tabWidth, vtyObj
                                     )
-                         , EdDesign ( EdDesign, dBGChar, dBGFormat, dCharStyles
-                                    , dColChar, dColNoFormat, dColNoInterval
-                                    , dCurrLnMod, dFrameFormat, dHLStyles
-                                    , dJumpMarkFmt, dLineNoFormat, dLineNoInterv
-                                    , dStatusFormat, dTabExt, dTabStr
+                         , EdDesign ( EdDesign, dBGChar, dBGFormat, dBrMod
+                                    , dCharStyles, dColChar, dColNoFormat
+                                    , dColNoInterval, dCurrLnMod, dFrameFormat
+                                    , dHLStyles, dJumpMarkFmt, dLineNoFormat
+                                    , dLineNoInterv, dStatusFormat, dTabExt
+                                    , dTabStr
                                     )
                          , HighlightMode
                          , Keymap
@@ -50,6 +51,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pChrDelim     :: [(String, String)]
     , pKeywords     :: [String]
     , pEscape       :: Maybe Char
+    , pBrackets     :: [(String, String)]
     }
     deriving (Eq, Read, Show)
 
@@ -73,28 +75,30 @@ prettyEdConfig c = PrettyEdConfig
     , pChrDelim     =                  chrDelim     c
     , pKeywords     =                  keywords     c
     , pEscape       =                  escape       c
+    , pBrackets     =                  brackets     c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
-unPrettyEdConfig :: Vty -> Keymap -> (Attr -> Attr) -> PrettyEdConfig -> EdConfig
-unPrettyEdConfig v k f p = EdConfig
+unPrettyEdConfig :: Vty -> Keymap -> PrettyEdConfig -> EdConfig
+unPrettyEdConfig v k p = EdConfig
     { vtyObj       = v
-    , edDesign     = unPrettyEdDesign f $ pEdDesign p
+    , edDesign     = unPrettyEdDesign $ pEdDesign p
     , keymap       = k
-    , histSize     = pHistSize                      p
-    , tabWidth     = pTabWidth                      p
-    , drawBg       = pDrawBg                        p
-    , dumpEvents   = pDumpEvents                    p
-    , purgeOnClose = pPurgeOnClose                  p
-    , newlineMode  = pNewlineMode                   p
-    , encoding     = pEncoding                      p
-    , lineComment  = pLineComment                   p
-    , blockComment = pBlockComment                  p
-    , strDelim     = pStrDelim                      p
-    , mStrDelim    = pMStrDelim                     p
-    , chrDelim     = pChrDelim                      p
-    , keywords     = pKeywords                      p
-    , escape       = pEscape                        p
+    , histSize     = pHistSize                    p
+    , tabWidth     = pTabWidth                    p
+    , drawBg       = pDrawBg                      p
+    , dumpEvents   = pDumpEvents                  p
+    , purgeOnClose = pPurgeOnClose                p
+    , newlineMode  = pNewlineMode                 p
+    , encoding     = pEncoding                    p
+    , lineComment  = pLineComment                 p
+    , blockComment = pBlockComment                p
+    , strDelim     = pStrDelim                    p
+    , mStrDelim    = pMStrDelim                   p
+    , chrDelim     = pChrDelim                    p
+    , keywords     = pKeywords                    p
+    , escape       = pEscape                      p
+    , brackets     = pBrackets                    p
     }
 
 
@@ -111,7 +115,8 @@ data PrettyEdDesign = PrettyEdDesign
     , pDBGChar        :: Char
     , pDColChar       :: Maybe Char
     , pDBGFormat      :: Attr
-    , pDCurrLnMod     :: ()
+    , pDCurrLnMod     :: Attr
+    , pDBrMod         :: Attr
     , pDJumpMarkFmt   :: Attr
     , pDTabStr        :: String
     , pDTabExt        :: Char
@@ -132,7 +137,8 @@ prettyEdDesign d = PrettyEdDesign
     , pDBGChar        = dBGChar        d
     , pDColChar       = dColChar       d
     , pDBGFormat      = dBGFormat      d
-    , pDCurrLnMod     = ()
+    , pDCurrLnMod     = dCurrLnMod     d
+    , pDBrMod         = dBrMod         d
     , pDJumpMarkFmt   = dJumpMarkFmt   d
     , pDTabStr        = dTabStr        d
     , pDTabExt        = dTabExt        d
@@ -141,8 +147,8 @@ prettyEdDesign d = PrettyEdDesign
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
-unPrettyEdDesign :: (Attr -> Attr) -> PrettyEdDesign -> EdDesign
-unPrettyEdDesign f p = EdDesign
+unPrettyEdDesign :: PrettyEdDesign -> EdDesign
+unPrettyEdDesign p = EdDesign
     { dFrameFormat   = pDFrameFormat   p
     , dStatusFormat  = pDStatusFormat  p
     , dLineNoFormat  = pDLineNoFormat  p
@@ -152,7 +158,8 @@ unPrettyEdDesign f p = EdDesign
     , dBGChar        = pDBGChar        p
     , dColChar       = pDColChar       p
     , dBGFormat      = pDBGFormat      p
-    , dCurrLnMod     = f
+    , dCurrLnMod     = pDCurrLnMod     p
+    , dBrMod         = pDBrMod         p
     , dJumpMarkFmt   = pDJumpMarkFmt   p
     , dTabStr        = pDTabStr        p
     , dTabExt        = pDTabExt        p

@@ -59,7 +59,8 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                 , getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, lookupBy, padLeft, padRight
+                                , charClass, combineAttrs, lookupBy, padLeft
+                                , padRight
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -102,7 +103,7 @@ charRep hl pos n '\t' = do
     return ( (if r == fst pos
                    && hl /= HSelected
                    && not (readOnly st)
-                 then currSty
+                 then combineAttrs currSty
                  else id
              ) $ case hl of
                       HSelected -> lookupJustDef def HSelected $ dHLStyles   d
@@ -118,7 +119,7 @@ charRep hl pos _ ' ' = do
     return ( (if r == fst pos
                    && hl /= HSelected
                    && not (readOnly st)
-                 then dCurrLnMod d
+                 then combineAttrs $ dCurrLnMod d
                  else id
              ) $ lookupJustDef def hl (dHLStyles d)
            , " "
@@ -132,7 +133,7 @@ charRep hl pos _ c = do
     return ( (if r == fst pos
                    && hl /= HSelected
                    && not (readOnly st)
-                 then dCurrLnMod d
+                 then combineAttrs $ dCurrLnMod d
                  else id
              ) $ lookupJustDef
                     (lookupJustDef def (charClass c) (dCharStyles d))
@@ -326,9 +327,10 @@ makeLineNos = do
         mkLn s d lNoWidth r n =
              char (dLineNoFormat d) ' '
          <|> string (case () of
-                    _ | r == n && not (readOnly s)   -> dCurrLnMod d $ dLineNoFormat d
-                      | n `mod` dLineNoInterv d == 0 ->                dLineNoFormat d
-                      | otherwise                    ->                dFrameFormat  d
+                    _ | r == n && not (readOnly s)   -> combineAttrs (dCurrLnMod    d)
+                                                                     (dLineNoFormat d)
+                      | n `mod` dLineNoInterv d == 0 ->               dLineNoFormat d
+                      | otherwise                    ->               dFrameFormat  d
                     )
              ( padLeft lNoWidth ' '
              $ case () of
@@ -437,7 +439,7 @@ makeTextFrame = do
                                  $ (if drawBg c
                                        then id
                                        else (<|> char ( (if l == cR && not (readOnly s)
-                                                            then dCurrLnMod d
+                                                            then combineAttrs $ dCurrLnMod d
                                                             else id
                                                         )
                                                       $ lookupJustDef def Whitesp
@@ -548,10 +550,10 @@ makeScrollbar = do
         repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
         repl (d, s, cProg, marksAt) (n, c) =
             char (dFrameFormat d) '|' <|> case () of
-                _ | readOnly s       -> char (               dFrameFormat  d)  c
-                  | n == cProg       -> char (dCurrLnMod d $ dLineNoFormat d) '<'
-                  | n `elem` marksAt -> char (               dJumpMarkFmt  d) '•'
-                  | otherwise        -> char (               dFrameFormat  d)  c
+                _ | readOnly s       -> char (dFrameFormat  d)  c
+                  | n == cProg       -> char (dLineNoFormat d) '<'
+                  | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
+                  | otherwise        -> char (dFrameFormat  d)  c
 
 
 

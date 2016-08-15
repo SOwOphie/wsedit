@@ -35,14 +35,13 @@ import System.IO                ( Newline (LF, CRLF)
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
                                 )
-import WSEdit.Data              ( EdConfig ( blockComment, chrDelim, drawBg
-                                           , dumpEvents, edDesign, encoding
-                                           , escape, keymap, keywords
+import WSEdit.Data              ( EdConfig ( blockComment, brackets, chrDelim
+                                           , drawBg, dumpEvents, edDesign
+                                           , encoding, escape, keymap, keywords
                                            , lineComment, mStrDelim, newlineMode
                                            , purgeOnClose, strDelim, vtyObj
                                            , tabWidth
                                            )
-                                , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
                                           , loadPos, readOnly, replaceTabs
@@ -160,7 +159,6 @@ start = do
                                         conf' = unPrettyEdConfig
                                                 (vtyObj conf)
                                                 (keymap conf)
-                                                (dCurrLnMod $ edDesign conf)
                                               $ readNote (fqn "start:1")
                                               $ unlinesPlus cLines
 
@@ -250,6 +248,8 @@ argLoop h f (('-':'b'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c {
 argLoop h f (('-':'B'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = True                                                           }, s)
 argLoop h f (('-':'e'            :x ):xs) (c, s) = argLoop h f          xs  (c { encoding     = Just x                                                         }, s)
 argLoop h f (('-':'E'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { encoding     = Nothing                                                        }, s)
+argLoop h f (('-':'f':'b':'r':'+':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = withSnd (drop 1) (span (/='_') x) : brackets c                 }, s)
+argLoop h f (('-':'f':'b':'r':'-':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = filter (/= withSnd (drop 1) (span (/='_') x)) $ brackets c     }, s)
 argLoop h f (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Just e                                                         }, s)
 argLoop h f (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Nothing                                                        }, s)
 argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = x : keywords c                                                 }, s)
