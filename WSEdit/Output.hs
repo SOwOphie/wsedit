@@ -48,10 +48,9 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                            , dJumpMarkFmt, dStatusFormat
                                            , dTabExt, dTabStr
                                            )
-                                , EdState ( changed, edLines, fname, l2Cache
-                                          , markPos, overwrite, readOnly
-                                          , replaceTabs, scrollOffset
-                                          , status
+                                , EdState ( changed, edLines, fname, markPos
+                                          , overwrite, rangeCache, readOnly
+                                          , replaceTabs, scrollOffset, status
                                           )
                                 , HighlightMode (HNone, HSelected)
                                 , WSEdit
@@ -153,7 +152,7 @@ lineRep lNo str = do
     maySel <- getSelBounds
 
     let
-        fmt = atDef [] (map fst $ l2Cache st) (length (l2Cache st) - lNo)
+        fmt = atDef [] (map fst $ rangeCache st) (length (rangeCache st) - lNo)
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do

@@ -38,7 +38,7 @@ import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
-                                   , refuseOnReadOnly
+                                   , refuseOnReadOnly, standby
                                    )
 import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
                                               , purgeOnClose, vtyObj
@@ -54,7 +54,9 @@ import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
-import WSEdit.Util                 (linesPlus, readEncFile, unlinesPlus, withPair)
+import WSEdit.Util                 ( linesPlus, readEncFile, unlinesPlus
+                                   , withPair
+                                   )
 import WSEdit.WordTree             (empty)
 
 import qualified WSEdit.Buffer        as B
@@ -172,6 +174,8 @@ canWriteFile = do
 -- | Saves the text buffer to the file name in the editor state.
 save :: WSEdit ()
 save = refuseOnReadOnly $ do
+    standby "Saving..."
+
     s <- get
 
     if not (changed s)
@@ -212,6 +216,8 @@ save = refuseOnReadOnly $ do
 -- | Tries to load the text buffer from the file name in the editor state.
 load :: WSEdit ()
 load = alterState $ do
+    standby "Loading..."
+
     p <- fname <$> get
     when (p == "") $ quitComplain "Will not load an empty filename."
 

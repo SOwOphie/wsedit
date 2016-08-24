@@ -14,16 +14,18 @@ import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
                                            , keywords, mStrDelim, lineComment
                                            , strDelim
                                            )
-                                , EdState ( edLines, fullRebdReq, l1Cache
-                                          , l2Cache, scrollOffset, searchTerms
+                                , EdState ( edLines, fullRebdReq, rangeCache
+                                          , scrollOffset, searchTerms
+                                          , tokenCache
                                           )
                                 , HighlightMode ( HComment, HError, HKeyword
                                                 , HSearch, HString
                                                 )
-                                , L2Cache
-                                , L2ParserState ( PNothing, PChString, PBComment
-                                                , PLnString, PMLString
-                                                )
+                                , RangeCache
+                                , FmtParserState ( PNothing, PChString
+                                                 , PBComment, PLnString
+                                                 , PMLString
+                                                 )
                                 , WSEdit
                                 )
 import WSEdit.Output            (getViewportDimensions)
@@ -35,15 +37,15 @@ import qualified WSEdit.Buffer as B
 
 
 
--- | Rebuilds the L1 cache. A past state may be given as a parameter to speed up
---   the process.
-rebuildL1 :: Maybe EdState -> WSEdit ()
-rebuildL1 Nothing  = do
+-- | Rebuilds the token cache. A past state may be given as a parameter to speed
+--   up the process.
+rebuildTk :: Maybe EdState -> WSEdit ()
+rebuildTk Nothing  = do
     s <- get
-    c <- B.mapM l1Ln $ edLines s
-    put $ s { l1Cache = c }
+    c <- B.mapM tkLn $ edLines s
+    put $ s { tokenCache = c }
 
-rebuildL1 (Just h) = do
+rebuildTk (Just h) = do
     s <- get
 
     let
@@ -52,33 +54,33 @@ rebuildL1 (Just h) = do
         cHull    = B.dropPrefix n1
                  $ B.dropRight (n2 + 1)
                  $ B.moveTo (B.currPos $ edLines h)
-                 $ l1Cache h
+                 $ tokenCache h
 
         rebdFrom = B.moveTo (B.currPos cHull)
                  $ edLines s
 
-    c <- rebdL1 cHull rebdFrom
-    modify $ \st -> st { l1Cache = c }
+    c <- rebdTk cHull rebdFrom
+    modify $ \st -> st { tokenCache = c }
 
     where
-        rebdL1 :: B.Buffer [(Int, String)] -> B.Buffer (Bool, String) -> WSEdit (B.Buffer [(Int, String)])
-        rebdL1 cHull rebdFrom
+        rebdTk :: B.Buffer [(Int, String)] -> B.Buffer (Bool, String) -> WSEdit (B.Buffer [(Int, String)])
+        rebdTk cHull rebdFrom
             | B.length cHull == B.length rebdFrom
                 = return cHull
             | otherwise
                 = do
-                    ln <- l1Ln $ B.pos rebdFrom
-                    rebdL1 ( B.insertBefore ln cHull )
+                    ln <- tkLn $ B.pos rebdFrom
+                    rebdTk ( B.insertBefore ln cHull )
                            ( fromMaybe rebdFrom
                            $ B.forward rebdFrom
                            )
 
 
--- | L1 line processor. Turns a line of text into the corresponding cache entry.
---   The 'Bool' is only there for convenience when folding over the 'edLines'
---   buffer and will be completely ignored.
-l1Ln :: (Bool, String) -> WSEdit [(Int, String)]
-l1Ln (_, str) = do
+-- | Token line processor. Turns a line of text into the corresponding cache
+--   entry. The 'Bool' is only there for convenience when folding over the
+--   'edLines' buffer and will be completely ignored.
+tkLn :: (Bool, String) -> WSEdit [(Int, String)]
+tkLn (_, str) = do
     c <- ask
     s <- get
 
@@ -119,14 +121,14 @@ l1Ln (_, str) = do
 
 
 
--- | Rebuilds the L2 cache from the L1 cache, therefore this should normally be
---   called after 'rebuildL1'. A past state may be given to speed up the
---   process (not implemented yet, the parameter is ignored).
-rebuildL2 :: Maybe EdState -> WSEdit ()
-rebuildL2 _ = fullRebuild
+-- | Rebuilds the range cache from the token cache, therefore this should
+--   normally be called after 'rebuildTk'. A past state may be given to speed up
+--   the process (not implemented yet, the parameter is ignored).
+rebuildFmt :: Maybe EdState -> WSEdit ()
+rebuildFmt _ = fullRebuild
 
     where
-        fsm :: (EdConfig, EdState) -> L2ParserState -> [(Int, String)] -> ([((Int, Int), HighlightMode)], L2ParserState)
+        fsm :: (EdConfig, EdState) -> FmtParserState -> [(Int, String)] -> ([((Int, Int), HighlightMode)], FmtParserState)
 
         fsm _         (PMLString n1 str  ) []           = ([((n1, maxBound), HString )], PMLString 1 str)
         fsm _         (PBComment n1 str  ) []           = ([((n1, maxBound), HComment)], PBComment 1 str)
@@ -167,7 +169,7 @@ rebuildL2 _ = fullRebuild
         fsm (c,s)      PNothing            (_      :xs) = fsm (c,s) PNothing xs
 
 
-        ln :: L2Cache -> [(Int, String)] -> WSEdit L2Cache
+        ln :: RangeCache -> [(Int, String)] -> WSEdit RangeCache
         ln cs l = do
             c <- ask
             s <- get
@@ -181,9 +183,9 @@ rebuildL2 _ = fullRebuild
 
             c       <- foldM ln []
                      $ B.sub 0 (rs + fst (scrollOffset s))
-                     $ l1Cache s
+                     $ tokenCache s
 
-            put $ s { l2Cache = c }
+            put $ s { rangeCache = c }
 
 
 
@@ -195,7 +197,7 @@ rebuildAll :: Maybe EdState -> WSEdit ()
 rebuildAll h = do
     s <- get
     if fullRebdReq s
-       then rebuildL1 Nothing >> rebuildL2 Nothing
-       else rebuildL1 h       >> rebuildL2 h
+       then rebuildTk Nothing >> rebuildFmt Nothing
+       else rebuildTk h       >> rebuildFmt h
 
     modify $ \s' -> s' { fullRebdReq = False }

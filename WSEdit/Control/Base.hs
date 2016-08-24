@@ -5,6 +5,7 @@ module WSEdit.Control.Base
     , moveViewport
     , moveCursor
     , fetchCursor
+    , standby
     ) where
 
 
@@ -12,13 +13,14 @@ import Control.Monad            (unless)
 import Control.Monad.RWS.Strict (get, modify, put)
 
 import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
-                                           , readOnly, scrollOffset, wantsPos
+                                           , readOnly, scrollOffset, status
+                                           , wantsPos
                                            )
                                 , WSEdit
                                 , alter, getCursor, getOffset, setCursor
                                 , setStatus, setOffset
                                 )
-import WSEdit.Output            ( cursorOffScreen, getViewportDimensions
+import WSEdit.Output            ( cursorOffScreen, draw, getViewportDimensions
                                 , txtToVisPos, visToTxtPos
                                 )
 import WSEdit.Util              (withPair)
@@ -148,3 +150,14 @@ fetchCursor = refuseOnReadOnly $ do
             }
 
     moveCursor (fst (scrollOffset s) + (r `div` 2)) 0
+
+
+
+-- | Display a message on the status bar until the next draw call. Restores the
+--   original contents of the status bar before returning.
+standby :: String -> WSEdit ()
+standby str = do
+    s <- get
+    setStatus str
+    draw
+    setStatus $ status s

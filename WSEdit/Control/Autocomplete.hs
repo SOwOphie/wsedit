@@ -17,7 +17,7 @@ import System.Directory         ( doesDirectoryExist, doesFileExist
                                 , listDirectory, makeAbsolute
                                 )
 
-import WSEdit.Control.Base      (alterBuffer)
+import WSEdit.Control.Base      (alterBuffer, standby)
 import WSEdit.Control.Text      (insertRaw)
 import WSEdit.Data              ( WSEdit
                                 , EdConfig (lineComment, tabWidth)
@@ -103,6 +103,8 @@ dictAdd f = do
 --   to the dictionary.
 dictAddRec :: WSEdit ()
 dictAddRec = do
+    standby "Rebuilding dictionary..."
+
     s <- get
 
     -- Skip everything if dictionary building is disabled

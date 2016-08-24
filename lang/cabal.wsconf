@@ -8,6 +8,9 @@
 #                                                                              #
 ################################################################################
 #                                                                              #
+# Syntax highlighting                                                          #
+cabal: -flc+--
+#                                                                              #
 # Keywords                                                                     #
 cabal: -fk+name
 cabal: -fk+version

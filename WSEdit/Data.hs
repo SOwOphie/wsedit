@@ -7,8 +7,8 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
-    , L2ParserState (..)
-    , L2Cache
+    , FmtParserState (..)
+    , RangeCache
     , EdState (..)
     , getCursor
     , setCursor
@@ -81,7 +81,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.10"
+version = "1.1.0.11"
 
 -- | Upstream URL.
 upstream :: String
@@ -95,19 +95,19 @@ licenseVersion = "1.1"
 
 
 
-data L2ParserState = PNothing
-                   | PChString Int String Int
-                   | PLnString Int String
-                   | PMLString Int String
-                   | PBComment Int String
+data FmtParserState = PNothing
+                    | PChString Int String Int
+                    | PLnString Int String
+                    | PMLString Int String
+                    | PBComment Int String
     deriving (Eq, Read, Show)
 
 
 
--- | Level 2 cache type.  Stores ranges of highlighted areas, as well as the
---   parser's stack at the end of each line. Only built from the start of the
---   file to the end of the viewport, lines are stored in reverse order.
-type L2Cache = [([((Int, Int), HighlightMode)], L2ParserState)]
+-- | Stores ranges of highlighted areas, as well as the parser's stack at the
+--   end of each line. Only built from the start of the file to the end of the
+--   viewport, lines are stored in reverse order.
+type RangeCache = [([((Int, Int), HighlightMode)], FmtParserState)]
 
 
 
@@ -127,13 +127,12 @@ data EdState = EdState
         --   the write permissions on the actual file.
 
 
-    , l1Cache      :: B.Buffer [(Int, String)]
-        -- ^ Level 1 rendering cache. Stores relevant tokens alongside their
-        --   starting position for each line.
+    , tokenCache   :: B.Buffer [(Int, String)]
+        -- ^ Stores relevant tokens alongside their starting position for each
+        --   line.
 
-    , l2Cache      :: L2Cache
-        -- ^ Level 2 rendering cache. See the description of 'L2Cache' for more
-        --   information.
+    , rangeCache   :: RangeCache
+        -- ^ See the description of 'RangeCache' for more information.
 
     , fullRebdReq  :: Bool
         -- ^ Gets set when a full cache rebuild is required.
@@ -211,8 +210,8 @@ instance Default EdState where
         , fname        = ""
         , readOnly     = False
 
-        , l1Cache      = B.singleton []
-        , l2Cache      = []
+        , tokenCache   = B.singleton []
+        , rangeCache   = []
         , fullRebdReq  = False
 
         , cursorPos    = 1
@@ -766,7 +765,10 @@ brightTheme = EdDesign
             ]
 
         , dHLStyles      =
-            [ (HComment , defAttr
+            [ (HBracket , defAttr
+                            `withStyle` underline
+              )
+            , (HComment , defAttr
                             `withForeColor` brightMagenta
                             `withStyle`     bold
               )
@@ -822,6 +824,7 @@ type Keymap = [Maybe (Event, (WSEdit (), String))]
 
 -- | Mode for syntax highlighting.
 data HighlightMode = HNone
+                   | HBracket
                    | HComment
                    | HError
                    | HKeyword
