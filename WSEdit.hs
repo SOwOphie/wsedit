@@ -34,6 +34,7 @@ import System.IO                ( Newline (LF, CRLF)
 
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
+                                , standby
                                 )
 import WSEdit.Data              ( EdConfig ( blockComment, brackets, chrDelim
                                            , drawBg, dumpEvents, edDesign
@@ -352,10 +353,13 @@ mainLoop = do
             if b
                then do
                     modify (\s -> s { fname = "CRASH-RESCUE" })
+                    standby $ "An error occured: " ++ show e
+                           ++ "\n\n"
+                           ++ "Dumping unsaved changes..."
                     save
                     bail $ "An error occured: " ++ show e
                         ++ "\n\n"
-                        ++ "Your unsaved work has been rescued to"
+                        ++ "All unsaved changes have been dumped to"
                         ++ " ./CRASH-RESCUE ."
 
                else bail $ "An error occured: " ++ show e

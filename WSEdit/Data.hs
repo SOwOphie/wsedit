@@ -102,12 +102,21 @@ data FmtParserState = PNothing
                     | PBComment Int String
     deriving (Eq, Read, Show)
 
+type BracketStack = [((Int, Int), String)]
+
 
 
 -- | Stores ranges of highlighted areas, as well as the parser's stack at the
 --   end of each line. Only built from the start of the file to the end of the
 --   viewport, lines are stored in reverse order.
 type RangeCache = [([((Int, Int), HighlightMode)], FmtParserState)]
+
+
+
+-- | Stores bracketed ranges, as well as the parser's stack at the end of each
+--   line. Only built from the start of the file to the end of the viewport,
+--   lines are stored in reverse order.
+type BracketCache = [([((Int, Int), (Int, Int))], BracketStack)]
 
 
 
@@ -133,6 +142,9 @@ data EdState = EdState
 
     , rangeCache   :: RangeCache
         -- ^ See the description of 'RangeCache' for more information.
+
+    , bracketCache :: BracketCache
+        -- ^ See the description of 'BracketCache' for more information.
 
     , fullRebdReq  :: Bool
         -- ^ Gets set when a full cache rebuild is required.
@@ -212,6 +224,7 @@ instance Default EdState where
 
         , tokenCache   = B.singleton []
         , rangeCache   = []
+        , bracketCache = []
         , fullRebdReq  = False
 
         , cursorPos    = 1

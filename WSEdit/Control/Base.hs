@@ -11,11 +11,14 @@ module WSEdit.Control.Base
 
 import Control.Monad            (unless)
 import Control.Monad.RWS.Strict (get, modify, put)
+import Data.Maybe               (fromMaybe)
 
 import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
-                                           , readOnly, scrollOffset, status
+                                           , rangeCache, readOnly, scrollOffset
                                            , wantsPos
                                            )
+                                , FmtParserState (PNothing)
+                                , HighlightMode (HSearch)
                                 , WSEdit
                                 , alter, getCursor, getOffset, setCursor
                                 , setStatus, setOffset
@@ -23,7 +26,7 @@ import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
 import WSEdit.Output            ( cursorOffScreen, draw, getViewportDimensions
                                 , txtToVisPos, visToTxtPos
                                 )
-import WSEdit.Util              (withPair)
+import WSEdit.Util              (linesPlus, withPair)
 
 import qualified WSEdit.Buffer as B
 
@@ -158,6 +161,18 @@ fetchCursor = refuseOnReadOnly $ do
 standby :: String -> WSEdit ()
 standby str = do
     s <- get
-    setStatus str
+
+    let
+        strLn = linesPlus str
+
+    put $ s { edLines      = fromMaybe (B.singleton (False, ""))
+                           $ B.fromList
+                           $ zip (repeat False) strLn
+
+            , rangeCache   = replicate (max 1 $ length strLn)
+                                       ([((1, maxBound), HSearch)], PNothing)
+            , scrollOffset = (0, 0)
+            , readOnly     = True
+            }
     draw
-    setStatus $ status s
+    put s

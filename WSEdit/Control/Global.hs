@@ -83,24 +83,31 @@ bail s = do
     c <- ask
     st <- get
 
-    drawExitFrame
+    standby $ unlinesPlus
+        [ s
+        , ""
+        , "Writing state dump to ./CRASH-DUMP ..."
+        ]
 
-    liftIO $ do
-        shutdown $ vtyObj c
-        putStrLn s
-        putStrLn "Writing state dump to ./CRASH-DUMP ..."
-        writeFile "CRASH-DUMP"
-            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
-           ++ "Error message: " ++ (headDef "" $ lines s)
-           ++ "\n\nEditor configuration:\n"
-           ++ indent (ppShow $ prettyEdConfig c)
-           ++ "\n\nEditor state:\n"
-           ++ indent ( ppShow
+    liftIO $ writeFile "CRASH-DUMP"
+           $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+          ++ "Error message: " ++ (headDef "" $ lines s)
+          ++ "\n\nEditor configuration:\n"
+          ++ indent (ppShow $ prettyEdConfig c)
+          ++ "\n\nEditor state:\n"
+          ++ indent ( ppShow
                      $ mapPast (\h -> h { dict = empty })
                      $ fromJustNote (fqn "bail")
                      $ chopHist 10
                      $ Just st
                      )
+
+    drawExitFrame
+
+    liftIO $ do
+        shutdown $ vtyObj c
+        putStrLn s
+        putStrLn "A state dump is located at ./CRASH-DUMP ."
 
         exitFailure
 
