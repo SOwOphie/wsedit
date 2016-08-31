@@ -1,5 +1,6 @@
 # Wyvernscale Source Code Editor (wsedit)
 
+
 ## Introduction
 
 `wsedit` is a neat **little** (as in *don't expect too much from a student's
@@ -7,15 +8,17 @@ first piece of code on github*) terminal-based editor written in haskell,
 sitting comfortably in the niche between `nano` and `vim`.  It is designed to be
 intuitive (as in "Press Ctrl-C to copy stuff"), simple, elegant and pragmatic.
 
+
 ## Features
 
 * __Dynamic dictionary-based autocompletion__: Specify which files to index, and
   how (e.g. ignore comments, only global definitions, ...).
 
-* __Pragmatic syntax highlighting__: Highlights keywords, strings and comments
-  declared in your config files.  Default patterns for some languages are
-  availabe for import in `lang/*.wsconf`, writing your own should take no longer
-  than 30 minutes, including the submission of a pull requrest on GitHub =).
+* __Pragmatic syntax highlighting__: Highlights keywords, strings, matching
+  brackets and comments declared in your config files.  Default patterns for
+  some languages are availabe for import in `lang/*.wsconf`, writing your own
+  should take no longer than 30 minutes, including the submission of a pull
+  requrest on GitHub =).
 
 * __Character class highlighting__: This will color your text by character class
   (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...),
@@ -31,19 +34,6 @@ intuitive (as in "Press Ctrl-C to copy stuff"), simple, elegant and pragmatic.
   clipboard__: Make sure to have `xclip` or `xsel` installed; an internal
   fallback is provided.
 
-## Upcoming features / Developer's wishlist
-
-__There is no guarantee that any of these features will ever see the light of
-day!__
-
-In no particular order:
-
-* __Support for block comments.__ Unfortunately, our current, line-based
-  renderer cannot do it.
-
-* __Elastic tabstops.__ Another thing our current renderer cannot do.
-
-* __Bracket matching.__ Are you starting to notice a pattern here?
 
 ## Platforms / Installation
 
@@ -52,12 +42,10 @@ In no particular order:
 The whole idea of running a terminal editor on Windows seems a bit strange to
 me.  However, you are free to try building it from source (see below).
 
-### Linux: use the precompiled binary (`x86_64` only) **or** build from source
+### Linux: build from source
 
-Check out __Releases__ on the bottom of the GitHub page header (directly above
-the green bar).
-
-Contact me if you want to package `wsedit` for your distribution.
+No packages available yet, contact me if you want to package `wsedit` for your
+distribution.
 
 ### OSX: Homebrew
 
@@ -68,25 +56,63 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
 
 ### Building from source
 
-1. Install the
-   [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
-2. *Optional*, Linux only: Install either `xclip` or `xsel` with your package
-   manager. If this step is skipped, `wsedit` will use an internal buffer
-   instead of the system facilities for copy/paste functionality.
-3. Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
-4. `cd` into the newly created directory (`cd wsedit`).
-5. Run `stack setup` to pull in the correct version of `ghc`.
-6. Run `stack install` to build the dependencies and `wsedit`.
-7. Either:
+1.  Install the
+    [Haskell Tool Stack](http://docs.haskellstack.org/en/stable/README/).
+2.  Make sure you have `ncurses` with unicode support installed.
+3.  *Optional*, Linux only: Install either `xclip` or `xsel` with your package
+    manager. If this step is skipped, `wsedit` will use an internal buffer
+    instead of the system facilities for copy/paste functionality.
+4.  Clone the repository (`git clone https://github.com/SirBoonami/wsedit`).
+5.  `cd` into the newly created directory (`cd wsedit`).
+6.  Run `stack setup` to pull in the correct version of `ghc`.
+7.  Run `stack install` to build the dependencies and `wsedit`.
+8.  Either:
     * Add `~/.local/bin/` to your `$PATH`
     * Copy `~/.local/bin/wsedit` to a directory in your `$PATH`, e.g.
       `/usr/local/bin/`.
-8. To install language definitions, create the folder `~/.config/wsedit` and
-   paste them there.  Quite a few languages and formats have pre-defined
-   highlighting rules in the `lang` subdirectory of this repository, feel free
-   to write your own and create a pull request!
-9. Run `wsedit <some file>` to test everything, or `wsedit -h` for a list of all
-   the available options.
+9.  To install language definitions, create the folder `~/.config/wsedit` and
+    paste them there.  Quite a few languages and formats have pre-defined
+    highlighting rules in the `lang` subdirectory of this repository, feel free
+    to write your own and create a pull request!
+10. Run `wsedit <some file>` to test everything, or `wsedit -h` for a list of
+    all the available options.
+
+
+## Bugs / Crashes and how to report them properly
+
+There will be bugs. No doubt about that. I'm trying my best to keep their
+severity and frequency down, but I *will* miss some.
+
+Please submit every kind of weird behaviour you encounter as an
+[issue on GitHub](https://github.com/SirBoonami/wsedit/issues/new). If possible,
+obtain a state dump as described below.
+
+### Crashes
+
+The editor main loop runs inside an exception handler that will do the following:
+
+1. Dump the current state of your file to `~/CRASH-RESCUE` if it has been
+   modified since the last save.
+2. Dump the editor's configuration, state and some additional info to
+   `~/CRASH-DUMP`. This file can be used to restart the editor in the last
+   coherent state before it crashed.
+3. Shutdown `vty` + `ncurses` so your terminal doesn't get rekt.
+
+This means that even in the event of a crash, data loss is highly unlikely to
+occur.
+
+The state dump is of great importance to fixing the bug. However, it contains
+your entire configuration as well as the entire file you edited when the crash
+happened. Make sure you're okay with that becoming public before uploading it.
+Also, please don't provide a modified dump file, as any changes made will throw
+off the line hash based caching system.
+
+### Non-fatal bugs
+
+Most non-fatal bugs will probably be rendering glitches. Reproduce the
+situation, point the cursor at it if possible, then press Meta + ".".
+This will simulate a crash and create the above-mentioned files.
+
 
 ## Known issues / Troubleshooting
 
@@ -94,7 +120,7 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
 
   * Use `-b` to disable background rendering, which remedies this for the most
     part.
-  * Performance is highly dependant on your terminal emulator. I can personllay
+  * Performance is highly dependant on your terminal emulator. I can personally
     recommend `rxvt-unicode` and `xterm`.
 
 ### The build fails with some obscure error message
