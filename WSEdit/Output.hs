@@ -40,8 +40,8 @@ import Numeric                  (showHex)
 import Safe                     (atDef, lookupJustDef)
 
 import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
-                                , EdDesign ( dBGChar, dBGFormat, dCharStyles
-                                           , dColChar, dColNoFormat
+                                , EdDesign ( dBGChar, dBGFormat, dBrMod
+                                           , dCharStyles, dColChar, dColNoFormat
                                            , dColNoInterval, dCurrLnMod
                                            , dFrameFormat, dHLStyles
                                            , dLineNoFormat, dLineNoInterv
@@ -54,12 +54,12 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                           )
                                 , HighlightMode (HNone, HSelected)
                                 , WSEdit
-                                , getCursor, getDisplayBounds, getOffset
-                                , getSelBounds
+                                , getCurrBracket, getCursor, getDisplayBounds
+                                , getOffset, getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, combineAttrs, lookupBy, padLeft
-                                , padRight
+                                , charClass, combineAttrs, iff, lookupBy
+                                , padLeft, padRight
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -86,9 +86,10 @@ type Snippet = (Attr, String)
 
 
 -- | Returns the visual representation of a character at a given buffer position
---   and in a given display column.
-charRep :: HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
-charRep hl pos n '\t' = do
+--   and in a given display column. The first argument toggles the bracket
+--   format modifier.
+charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
+charRep br hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
     c      <- ask
@@ -99,44 +100,38 @@ charRep hl pos n '\t' = do
         tW      = tabWidth c
         extTab  = padLeft tW (dTabExt d) $ dTabStr d
 
-    return ( (if r == fst pos
-                   && hl /= HSelected
-                   && not (readOnly st)
-                 then combineAttrs currSty
-                 else id
-             ) $ case hl of
-                      HSelected -> lookupJustDef def HSelected $ dHLStyles   d
-                      _         -> lookupJustDef def Whitesp   $ dCharStyles d
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs currSty)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ case hl of
+                  HSelected -> lookupJustDef def HSelected $ dHLStyles   d
+                  _         -> lookupJustDef def Whitesp   $ dCharStyles d
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
-charRep hl pos _ ' ' = do
+charRep br hl pos _ ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    return ( (if r == fst pos
-                   && hl /= HSelected
-                   && not (readOnly st)
-                 then combineAttrs $ dCurrLnMod d
-                 else id
-             ) $ lookupJustDef def hl (dHLStyles d)
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs $ dCurrLnMod d)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ lookupJustDef def hl (dHLStyles d)
            , " "
            )
 
-charRep hl pos _ c = do
+charRep br hl pos _ c = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    return ( (if r == fst pos
-                   && hl /= HSelected
-                   && not (readOnly st)
-                 then combineAttrs $ dCurrLnMod d
-                 else id
-             ) $ lookupJustDef
-                    (lookupJustDef def (charClass c) (dCharStyles d))
-                    hl
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs $ dCurrLnMod d)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ lookupJustDef
+                (lookupJustDef def (charClass c) (dCharStyles d))
+                hl
                     (dHLStyles d)
            , if charClass c == Unprintable
                 then "?#" ++ showHex (ord c) ";"
@@ -150,23 +145,27 @@ lineRep :: Int -> String -> WSEdit Image
 lineRep lNo str = do
     st <- get
     maySel <- getSelBounds
+    mayBr  <- getCurrBracket
 
     let
         fmt = atDef [] (map fst $ rangeCache st) (length (rangeCache st) - lNo)
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
-            i <- charRep
-                    (case (maySel, lookupBy (`inRange` tPos) fmt) of
-                          (Just (sS, sE), _     ) | sS <= (lNo, tPos)
-                                                    && (lNo, tPos) <= sE
-                                                    -> HSelected
+            i <- charRep (fromMaybe False $ fmap (`in2DRange` (lNo, tPos)) mayBr)
+                         (case (maySel, lookupBy (`inRange` tPos) fmt) of
+                               (Just (sS, sE), _     )
+                                    | (sS, sE) `in2DRange` (lNo, tPos)
+                                    -> HSelected
 
-                          (_,             Just s)   -> s
+                               (_            , Just s) -> s
 
-                          _                       | otherwise
-                                                    -> HNone
-                    ) (lNo, tPos) vPos c
+                               _    | otherwise
+                                    -> HNone
+                         )
+                         (lNo, tPos)
+                         vPos
+                         c
 
             return (i:im, tPos + 1, vPos + length (snd i))
 
@@ -185,6 +184,10 @@ lineRep lNo str = do
         groupSnippet (Just (a, s)) ((xa, xs):xxs)
             | a == xa   =          groupSnippet (Just (a , s ++ xs)) xxs
             | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
+
+        in2DRange :: (Ord a) => ((a, a), (a, a)) -> (a, a) -> Bool
+        in2DRange ((a, b), (c, d)) (x, y) = (a, b) <= (x, y)
+                                         && (x, y) <= (c, d)
 
 
 

@@ -8,6 +8,7 @@ module WSEdit.Data
     , upstream
     , licenseVersion
     , FmtParserState (..)
+    , BracketStack
     , RangeCacheElem
     , RangeCache
     , BracketCacheElem
@@ -31,6 +32,7 @@ module WSEdit.Data
     , getSelection
     , delSelection
     , getDisplayBounds
+    , getCurrBracket
     , EdConfig (..)
     , mkDefConfig
     , EdDesign (..)
@@ -58,8 +60,8 @@ import Graphics.Vty             ( Attr
                                 , white, withBackColor, withForeColor, withStyle
                                 , yellow
                                 )
-import Safe                     ( fromJustNote, headNote, initNote, lastNote
-                                , tailNote
+import Safe                     ( fromJustNote, headMay, headNote, initNote
+                                , lastNote, tailNote
                                 )
 import System.IO                (NewlineMode, universalNewlineMode)
 
@@ -67,7 +69,7 @@ import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
                                            , Special, Unprintable, Upper
                                            , Whitesp
                                            )
-                                , unlinesPlus
+                                , unlinesPlus, withSnd
                                 )
 import WSEdit.WordTree          (WordTree, empty)
 
@@ -84,7 +86,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.1.0.11"
+version = "1.1.0.12"
 
 -- | Upstream URL.
 upstream :: String
@@ -188,20 +190,9 @@ data EdState = EdState
         -- ^ Last recorded input event.
 
 
-    , changed      :: Bool
-        -- ^ Whether the file has been changed since the last load/save.
-
-    , history      :: Maybe EdState
-        -- ^ Editor state prior to the last action, used to implement undo
-        --   facilities.  Horrible memory efficiency, but it seems to work.
-
-
     , buildDict    :: [(Maybe String, Maybe Int)]
         -- ^ File suffix and indentation depth pairs for dictionary building.
         --   'Nothing' stands for the current file or all depths.
-
-    , dict         :: WordTree
-        -- ^ Autocompletion dictionary.
 
     , canComplete  :: Bool
         -- ^ Whether the autocomplete function can be invoked at this moment
@@ -219,9 +210,19 @@ data EdState = EdState
     , overwrite    :: Bool
         -- ^ Whether overwrite mode is on.
 
-
     , searchTerms  :: [String]
         -- ^ List of search terms to highlight
+
+
+    , changed      :: Bool
+        -- ^ Whether the file has been changed since the last load/save.
+
+    , history      :: Maybe EdState
+        -- ^ Editor state prior to the last action, used to implement undo
+        --   facilities.  Horrible memory efficiency, but it seems to work.
+
+    , dict         :: WordTree
+        -- ^ Autocompletion dictionary.
     }
     deriving (Eq, Read, Show)
 
@@ -246,16 +247,16 @@ instance Default EdState where
         , status       = ""
         , lastEvent    = Nothing
 
-        , changed      = False
-        , history      = Nothing
-
         , buildDict    = []
-        , dict         = empty
         , canComplete  = False
         , replaceTabs  = False
         , detectTabs   = True
         , overwrite    = False
         , searchTerms  = []
+
+        , changed      = False
+        , history      = Nothing
+        , dict         = empty
         }
 
 
@@ -476,6 +477,33 @@ delSelection = getSelBounds >>= \case
 --   , frames and similar woo.
 getDisplayBounds :: WSEdit (Int, Int)
 getDisplayBounds = fmap swap (displayBounds . outputIface . vtyObj =<< ask)
+
+
+
+-- | Returns the bounds of the brackets the cursor currently resides in.
+getCurrBracket :: WSEdit (Maybe ((Int, Int), (Int, Int)))
+getCurrBracket = do
+    (cR, cC) <- getCursor
+
+    s <- get
+
+    let
+        brs1 = filter ((<= (cR, cC)) . fst)
+             $ concat
+             $ drop (cR - 1)
+             $ reverse
+             $ map fst
+             $ bracketCache s
+
+        brs2 = map (withSnd $ const (maxBound, maxBound))
+             $ fromMaybe []
+             $ fmap snd
+             $ headMay
+             $ bracketCache s
+
+        brs  = filter ((>= (cR, cC)) . snd) $ brs1 ++ brs2
+
+    return $ headMay brs
 
 
 

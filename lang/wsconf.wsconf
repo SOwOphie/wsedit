@@ -30,6 +30,7 @@ wsconf: -fk+-fbc
 wsconf: -fk+-fms
 wsconf: -fk+-fcs
 wsconf: -fk+-fs
+wsconf: -fk+-fbr
 wsconf: -fk+-h
 wsconf: -fk+-hk
 wsconf: -fk+-i

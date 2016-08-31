@@ -35,7 +35,10 @@ module WSEdit.Util
     , lookupBy
     , readEncFile
     , combineAttrs
+    , iff
     ) where
+
+
 
 import Codec.Text.Detect (detectEncodingName)
 import Control.Exception (SomeException, try)
@@ -494,3 +497,12 @@ combineAttrs a b = Attr
         combineMayDef KeepCurrent _           = KeepCurrent
         combineMayDef _           KeepCurrent = KeepCurrent
         combineMayDef _           _           = Default
+
+
+
+
+
+-- | Applies the function if the first parameter is true, or 'id's otherwise.
+iff :: Bool -> (a -> a) -> a -> a
+iff True  f = f
+iff False _ = id

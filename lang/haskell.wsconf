@@ -18,6 +18,9 @@ hs: -fcs+'_'
 hs: -fms+"_"
 hs: -fs+`_`
 hs: -fe+\
+hs: -fbr+(_)
+hs: -fbr+[_]
+hs: -fbr+{_}
 #                                                                              #
 # Keywords                                                                     #
 hs: -fk+as

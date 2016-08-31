@@ -10,13 +10,16 @@ import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
 import Safe                     (headDef)
 
-import WSEdit.Data              ( EdConfig ( brackets, chrDelim, blockComment
+import WSEdit.Data              ( BracketCache
+                                , BracketCacheElem
+                                , BracketStack
+                                , EdConfig ( brackets, chrDelim, blockComment
                                            , escape, keywords, mStrDelim
                                            , lineComment, strDelim
                                            )
-                                , EdState ( edLines, fullRebdReq, rangeCache
-                                          , scrollOffset, searchTerms
-                                          , tokenCache
+                                , EdState ( bracketCache, edLines, fullRebdReq
+                                          , rangeCache, scrollOffset
+                                          , searchTerms, tokenCache
                                           )
                                 , HighlightMode ( HComment, HError, HKeyword
                                                 , HSearch, HString
@@ -30,7 +33,9 @@ import WSEdit.Data              ( EdConfig ( brackets, chrDelim, blockComment
                                 , WSEdit
                                 )
 import WSEdit.Output            (getViewportDimensions)
-import WSEdit.Util              (findInStr, findIsolated, withFst)
+import WSEdit.Util              ( findInStr, findIsolated, withFst, withPair
+                                , withSnd
+                                )
 
 import qualified WSEdit.Buffer as B
 
@@ -133,64 +138,76 @@ rebuildFmt :: Maybe EdState -> WSEdit ()
 rebuildFmt _ = fullRebuild
 
     where
-        fsm :: (EdConfig, EdState) -> FmtParserState -> [(Int, String)] -> RangeCacheElem
+        fsm :: (EdConfig, EdState)              -- ^ Editor parameters
+            -> Int                              -- ^ Line number
+            -> (FmtParserState, BracketStack)   -- ^ State of the FSM leaving the last line
+            -> [(Int, String)]                  -- ^ Tokens in the line
+            -> (RangeCacheElem, BracketCacheElem)
 
-        fsm _         (PMLString n1 str  ) []           = ([((n1, maxBound), HString )], PMLString 1 str)
-        fsm _         (PBComment n1 str  ) []           = ([((n1, maxBound), HComment)], PBComment 1 str)
-        fsm _         (PLnString n1 _    ) []           = ([((n1, maxBound), HError  )], PNothing       )
-        fsm _         _                    []           = ([]                          , PNothing       )
+        fsm _      _   (PMLString n1 str  , st         ) []             = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
+        fsm _      _   (PBComment n1 str  , st         ) []             = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
+        fsm _      _   (PLnString n1 _    , st         ) []             = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
+        fsm _      _   (_                 , st         ) []             = (([]                          , PNothing       ), ([], st))
 
-        fsm (c, s)    (PChString n1 str l) (_:(n2, x):xs)
-            | n2 <= l && str == x = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing          xs
+        fsm (c, s) lNo (PChString n1 str l, st         ) (_:(n2, x):xs)
+            | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
 
-        fsm (c, s)    (PChString n1 str l) ((n2, x):xs)
-            | n2 <= l && str == x = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing          xs
-            | otherwise           =                                                 fsm (c, s) PNothing ((n2, x):xs)
+        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, x):xs)
+            | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
+            | otherwise           =                                                           fsm (c, s) lNo (PNothing, st) ((n2, x):xs)
 
-        fsm (c, s) st                      ((n , x):xs)
-            | x `elem` searchTerms s = withFst (((n, n + length x - 1), HSearch):) $ fsm (c, s) st xs
+        fsm (c, s) lNo st                                ((n , x):xs)
+            | x `elem` searchTerms s = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
 
-        fsm (c, s) st@(PLnString n1 str  ) ((n2, x):xs)
-            | str == x  = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing xs
-            | otherwise =                                  fsm (c, s) st       xs
+        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, x):xs)
+            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
+            | otherwise =                                                            fsm (c, s) lNo (PLnString n1 str, st) xs
 
-        fsm (c, s) st@(PMLString n1 str  ) ((n2, x):xs)
-            | str == x  = withFst (((n1, n2 + length x - 1), HString):) $ fsm (c, s) PNothing xs
-            | otherwise =                                  fsm (c, s) st       xs
+        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, x):xs)
+            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
+            | otherwise =                                                            fsm (c, s) lNo (PMLString n1 str, st) xs
 
-        fsm (c, s) st@(PBComment n1 str  ) ((n2, x):xs)
-            | str == x  = withFst (((n1, n2 + length x - 1), HComment):) $ fsm (c, s) PNothing xs
-            | otherwise =                                  fsm (c, s) st       xs
+        fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
+            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HComment):)) $ fsm (c, s) lNo (PNothing        , st) xs
+            | otherwise =                                                            fsm (c, s) lNo (PBComment n1 str, st) xs
 
-        fsm (c,s)      PNothing            ((n1, x):xs)
-            |            x `elem`   lineComment  c = ([((n1, maxBound), HComment)], PNothing)
-            | Just cl <- x `lookup` blockComment c = fsm (c, s) (PBComment n1 cl                    ) xs
-            | Just cl <- x `lookup` strDelim     c = fsm (c, s) (PLnString n1 cl                    ) xs
-            | Just cl <- x `lookup` mStrDelim    c = fsm (c, s) (PMLString n1 cl                    ) xs
-            | Just cl <- x `lookup` chrDelim     c = fsm (c, s) (PChString n1 cl $ n1 + length x + 2) xs
-            |            x `elem`   keywords     c = withFst (((n1, n1 + length x - 1), HKeyword):)
-                                                   $ fsm (c, s) PNothing xs
+        fsm (c, s) lNo (PNothing          , (p, str):bs) ((n1, x):xs)
+            | str == x = withSnd (withFst ((p, (lNo, n1)):)) $ fsm (c, s) lNo (PNothing, bs) xs
 
-        fsm (c,s)      PNothing            (_      :xs) = fsm (c,s) PNothing xs
+        fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
+            |            x `elem`   lineComment  c = (([((n1, maxBound), HComment)], PNothing), ([], st))
+            | Just cl <- x `lookup` brackets     c = fsm (c, s) lNo (PNothing                           , ((lNo, n1), cl) : st) xs
+            | Just cl <- x `lookup` blockComment c = fsm (c, s) lNo (PBComment n1 cl                    ,                   st) xs
+            | Just cl <- x `lookup` strDelim     c = fsm (c, s) lNo (PLnString n1 cl                    ,                   st) xs
+            | Just cl <- x `lookup` mStrDelim    c = fsm (c, s) lNo (PMLString n1 cl                    ,                   st) xs
+            | Just cl <- x `lookup` chrDelim     c = fsm (c, s) lNo (PChString n1 cl $ n1 + length x + 2,                   st) xs
+            |            x `elem`   keywords     c = withFst (withFst (((n1, n1 + length x - 1), HKeyword):))
+                                                   $ fsm (c, s) lNo (PNothing                           ,                   st) xs
+
+            | otherwise                            = withFst (withFst (((n1, n1 + length x - 1), HError  ):))
+                                                   $ fsm (c, s) lNo (PNothing                           ,                   st) xs
 
 
-        ln :: RangeCache -> [(Int, String)] -> WSEdit RangeCache
-        ln cs l = do
+        ln :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)
+        ln (rc, bc) (lNo, l) = do
             c <- ask
             s <- get
-            return $ (:cs) $ fsm (c,s) (headDef PNothing $ map snd cs) l
+            return $ withPair (:rc) (:bc) $ fsm (c,s) lNo (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
 
 
         fullRebuild :: WSEdit ()
         fullRebuild = do
-            s       <- get
-            (rs, _) <- getViewportDimensions
+            s        <- get
+            (rs, _ ) <- getViewportDimensions
 
-            c       <- foldM ln []
-                     $ B.sub 0 (rs + fst (scrollOffset s))
-                     $ tokenCache s
+            (rc, bc) <- foldM ln ([], [])
+                      $ zip [1..]
+                      $ B.sub 0 (rs + fst (scrollOffset s))
+                      $ tokenCache s
 
-            put $ s { rangeCache = c }
+            put $ s { rangeCache   = rc
+                    , bracketCache = bc
+                    }
 
 
 
