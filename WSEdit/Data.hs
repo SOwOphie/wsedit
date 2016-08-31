@@ -8,7 +8,10 @@ module WSEdit.Data
     , upstream
     , licenseVersion
     , FmtParserState (..)
+    , RangeCacheElem
     , RangeCache
+    , BracketCacheElem
+    , BracketCache
     , EdState (..)
     , getCursor
     , setCursor
@@ -107,16 +110,22 @@ type BracketStack = [((Int, Int), String)]
 
 
 -- | Stores ranges of highlighted areas, as well as the parser's stack at the
---   end of each line. Only built from the start of the file to the end of the
---   viewport, lines are stored in reverse order.
-type RangeCache = [([((Int, Int), HighlightMode)], FmtParserState)]
+--   end of each line.
+type RangeCacheElem = ([((Int, Int), HighlightMode)], FmtParserState)
+
+-- | Only built from the start of the file to the end of the viewport, lines are
+--   stored in reverse order.
+type RangeCache     = [RangeCacheElem]
 
 
 
 -- | Stores bracketed ranges, as well as the parser's stack at the end of each
---   line. Only built from the start of the file to the end of the viewport,
---   lines are stored in reverse order.
-type BracketCache = [([((Int, Int), (Int, Int))], BracketStack)]
+--   line.
+type BracketCacheElem = ([((Int, Int), (Int, Int))], BracketStack)
+
+-- | Only built from the start of the file to the end of the viewport, lines are
+--   stored in reverse order.
+type BracketCache     = [BracketCacheElem]
 
 
 
@@ -500,6 +509,9 @@ data EdConfig = EdConfig
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
 
+    , initJMarks   :: [Int]
+        -- ^ Where to put jump marks on load.
+
 
     , newlineMode  :: NewlineMode
         -- ^ Newline conversion to use.
@@ -544,6 +556,7 @@ mkDefConfig v k = EdConfig
                 , drawBg       = True
                 , dumpEvents   = False
                 , purgeOnClose = False
+                , initJMarks   = []
                 , newlineMode  = universalNewlineMode
                 , encoding     = Nothing
                 , lineComment  = []

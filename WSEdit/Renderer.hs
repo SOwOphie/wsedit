@@ -10,9 +10,9 @@ import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
 import Safe                     (headDef)
 
-import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
-                                           , keywords, mStrDelim, lineComment
-                                           , strDelim
+import WSEdit.Data              ( EdConfig ( brackets, chrDelim, blockComment
+                                           , escape, keywords, mStrDelim
+                                           , lineComment, strDelim
                                            )
                                 , EdState ( edLines, fullRebdReq, rangeCache
                                           , scrollOffset, searchTerms
@@ -22,6 +22,7 @@ import WSEdit.Data              ( EdConfig ( chrDelim, blockComment, escape
                                                 , HSearch, HString
                                                 )
                                 , RangeCache
+                                , RangeCacheElem
                                 , FmtParserState ( PNothing, PChString
                                                  , PBComment, PLnString
                                                  , PMLString
@@ -66,7 +67,10 @@ rebuildTk (Just h) = do
         rebdTk :: B.Buffer [(Int, String)] -> B.Buffer (Bool, String) -> WSEdit (B.Buffer [(Int, String)])
         rebdTk cHull rebdFrom
             | B.length cHull == B.length rebdFrom
-                = return cHull
+                = do
+                    ln <- tkLn $ B.pos rebdFrom
+                    return $ B.setPos ln cHull
+
             | otherwise
                 = do
                     ln <- tkLn $ B.pos rebdFrom
@@ -101,6 +105,7 @@ tkLn (_, str) = do
           ++ token  str (unpack $ strDelim     c)
           ++ token  str (unpack $ mStrDelim    c)
           ++ token  str (unpack $ chrDelim     c)
+          ++ token  str (unpack $ brackets     c)
           ++ token  str (         searchTerms  s)
           ++ tokenI str (         keywords     c)
 
@@ -128,7 +133,7 @@ rebuildFmt :: Maybe EdState -> WSEdit ()
 rebuildFmt _ = fullRebuild
 
     where
-        fsm :: (EdConfig, EdState) -> FmtParserState -> [(Int, String)] -> ([((Int, Int), HighlightMode)], FmtParserState)
+        fsm :: (EdConfig, EdState) -> FmtParserState -> [(Int, String)] -> RangeCacheElem
 
         fsm _         (PMLString n1 str  ) []           = ([((n1, maxBound), HString )], PMLString 1 str)
         fsm _         (PBComment n1 str  ) []           = ([((n1, maxBound), HComment)], PBComment 1 str)

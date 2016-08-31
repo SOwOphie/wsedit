@@ -40,8 +40,9 @@ import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    , refuseOnReadOnly, standby
                                    )
-import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
-                                              , purgeOnClose, vtyObj
+import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
+                                              , newlineMode, purgeOnClose
+                                              , vtyObj
                                               )
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines, fname
@@ -55,7 +56,7 @@ import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
 import WSEdit.Util                 ( linesPlus, readEncFile, unlinesPlus
-                                   , withPair
+                                   , withFst, withPair
                                    )
 import WSEdit.WordTree             (empty)
 
@@ -233,12 +234,16 @@ load = alterState $ do
     p' <- liftIO $ makeRelativeToCurrentDirectory p
 
     s <- get
+    c <- ask
 
-    (mEnc, txt) <- liftIO $ readEncFile p'
+    (mEnc, txt) <- if b
+                      then liftIO $ readEncFile p'
+                      else return (Just undefined, "")
 
     let l = fromMaybe (B.singleton (False, ""))
           $ B.fromList
-          $ zip (repeat False)
+          $ map (withFst (`elem` initJMarks c))
+          $ zip [1..]
           $ linesPlus txt
 
     put $ s

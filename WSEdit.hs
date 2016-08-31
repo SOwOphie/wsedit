@@ -38,8 +38,9 @@ import WSEdit.Control           ( bail, deleteSelection, insert
                                 )
 import WSEdit.Data              ( EdConfig ( blockComment, brackets, chrDelim
                                            , drawBg, dumpEvents, edDesign
-                                           , encoding, escape, keymap, keywords
-                                           , lineComment, mStrDelim, newlineMode
+                                           , encoding, escape, initJMarks
+                                           , keymap, keywords, lineComment
+                                           , mStrDelim, newlineMode
                                            , purgeOnClose, strDelim, vtyObj
                                            , tabWidth
                                            )
@@ -150,6 +151,10 @@ start = do
                                             exitFailure
 
                                Just  f -> do
+                                    _ <- runRWST (standby "Reading state dump...")
+                                                 conf
+                                                 def
+
                                     r <- readFile f
 
                                     let (cLines, sLines) = withSnd (drop 2)
@@ -267,6 +272,8 @@ argLoop h f (('-':'f':'m':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c {
 argLoop h f (('-':'f':'m':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { mStrDelim    = filter (/= withSnd (drop 1) (span (/='_') x)) $ mStrDelim c    }, s)
 argLoop h f (('-':'f':'c':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = withSnd (drop 1) (span (/='_') x) : chrDelim c                 }, s)
 argLoop h f (('-':'f':'c':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = filter (/= withSnd (drop 1) (span (/='_') x)) $ chrDelim c     }, s)
+argLoop h f (('-':'j'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = readNote (fqn "argLoop") x : initJMarks c                      }, s)
+argLoop h f (('-':'J'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = filter (/= readNote (fqn "argLoop") x) $ initJMarks c          }, s)
 argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n                                     }, s)
 argLoop h f (('-':'l':'u'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF LF                                            }, s)
 argLoop h f (('-':'l':'w'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF CRLF                                          }, s)

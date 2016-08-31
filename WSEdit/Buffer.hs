@@ -3,6 +3,7 @@
 module WSEdit.Buffer
     ( Buffer
     , pos
+    , setPos
     , prefLength
     , sufLength
     , diffZone
@@ -123,6 +124,12 @@ data Buffer a = Buffer
 -- | Returns the currently focused element.
 pos :: Buffer a -> a
 pos = curr
+
+
+
+-- | Set the element at the current position.
+setPos :: a -> Buffer a -> Buffer a
+setPos el b = b { curr = el }
 
 
 

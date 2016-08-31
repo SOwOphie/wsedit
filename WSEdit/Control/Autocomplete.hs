@@ -53,7 +53,10 @@ dictAdd f = do
                $ buildDict s
 
     unless (null depths) $ do
-        txt <- fmap snd $ liftIO $ readEncFile f
+        b   <- liftIO $ doesFileExist f
+        txt <- if b
+                  then fmap snd $ liftIO $ readEncFile f
+                  else return ""
 
         d <- liftIO
            $ evaluate

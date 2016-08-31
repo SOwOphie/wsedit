@@ -14,9 +14,10 @@ import System.IO         (NewlineMode)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, brackets, chrDelim
                                     , drawBg, dumpEvents, edDesign, encoding
-                                    , escape, histSize, keymap, keywords
-                                    , lineComment, mStrDelim, newlineMode
-                                    , purgeOnClose, strDelim, tabWidth, vtyObj
+                                    , escape, histSize, initJMarks, keymap
+                                    , keywords, lineComment, mStrDelim
+                                    , newlineMode, purgeOnClose, strDelim
+                                    , tabWidth, vtyObj
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dBrMod
                                     , dCharStyles, dColChar, dColNoFormat
@@ -42,6 +43,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pDrawBg       :: Bool
     , pDumpEvents   :: Bool
     , pPurgeOnClose :: Bool
+    , pInitJMarks   :: [Int]
     , pNewlineMode  :: NewlineMode
     , pEncoding     :: Maybe String
     , pLineComment  :: [String]
@@ -66,6 +68,7 @@ prettyEdConfig c = PrettyEdConfig
     , pDrawBg       =                  drawBg       c
     , pDumpEvents   =                  dumpEvents   c
     , pPurgeOnClose =                  purgeOnClose c
+    , pInitJMarks   =                  initJMarks   c
     , pNewlineMode  =                  newlineMode  c
     , pEncoding     =                  encoding     c
     , pLineComment  =                  lineComment  c
@@ -89,6 +92,7 @@ unPrettyEdConfig v k p = EdConfig
     , drawBg       = pDrawBg                      p
     , dumpEvents   = pDumpEvents                  p
     , purgeOnClose = pPurgeOnClose                p
+    , initJMarks   = pInitJMarks                  p
     , newlineMode  = pNewlineMode                 p
     , encoding     = pEncoding                    p
     , lineComment  = pLineComment                 p
