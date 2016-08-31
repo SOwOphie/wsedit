@@ -55,7 +55,6 @@ library
     -Wall
     -Werror
     -O2
-    -ferror-spans
 
 executable wsedit
   hs-source-dirs:   exec/

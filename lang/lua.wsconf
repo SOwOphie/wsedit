@@ -6,6 +6,7 @@
 #   ######                                                            ######   #
 #     ##                                                                ##     #
 #                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
@@ -22,6 +23,9 @@ lua: -fbc+--[=========[_]========]
 lua: -fs+"_"
 lua: -fs+'_'
 lua: -fe+\
+lua: -fbr+(_)
+lua: -fbr+[_]
+lua: -fbr+{_}
 #                                                                              #
 # Keywords                                                                     #
 lua: -fk+and

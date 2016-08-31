@@ -6,6 +6,7 @@
 #  ##########                                                  ##########      #
 #    ##  ##    ##                                                ##  ##    ##  #
 #                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
@@ -13,8 +14,12 @@ sh: -flc+#
 sh: -fms+'_'
 sh: -fms+"_"
 sh: -fs+`_`
-sh: -fs+$(_)
 sh: -fe+\
+sh: -fbr+$(_)
+sh: -fbr+(_)
+sh: -fbr+${_}
+sh: -fbr+{_}
+sh: -fbr+[_]
 #                                                                              #
 # Keywords                                                                     #
 sh: -fk+alias

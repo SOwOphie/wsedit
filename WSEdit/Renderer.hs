@@ -5,6 +5,7 @@ module WSEdit.Renderer
 
 import Control.Monad            (foldM)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
+import Data.Ix                  (inRange)
 import Data.List                (nubBy, sort, sortOn, (\\))
 import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
@@ -102,17 +103,18 @@ tkLn (_, str) = do
         esc' = esc \\ map (+1) esc
 
     return $ sort
-           $ nubBy (\a b -> fst a == fst b)
-           $ sortOn Down
-           $ filter ((`notElem` esc') . (subtract 1) . fst)
+           $ nubBy overlap
+           $ sortOn (\(n, x) -> Down (length x, n))
            $ token  str (         lineComment  c)
           ++ token  str (unpack $ blockComment c)
-          ++ token  str (unpack $ strDelim     c)
-          ++ token  str (unpack $ mStrDelim    c)
-          ++ token  str (unpack $ chrDelim     c)
           ++ token  str (unpack $ brackets     c)
           ++ token  str (         searchTerms  s)
           ++ tokenI str (         keywords     c)
+          ++ filter ((`notElem` esc') . (subtract 1) . fst)
+             ( token  str (unpack $ strDelim     c)
+            ++ token  str (unpack $ mStrDelim    c)
+            ++ token  str (unpack $ chrDelim     c)
+             )
 
     where
         token :: String -> [String] -> [(Int, String)]
@@ -126,6 +128,10 @@ tkLn (_, str) = do
         unpack :: [(a, a)] -> [a]
         unpack []         = []
         unpack ((a,b):xs) = a:b:unpack xs
+
+        overlap :: (Int, String) -> (Int, String) -> Bool
+        overlap (n1, s1) (n2, s2) = (n1, n1 + length s1 - 1) `inRange` n2
+                                 || (n2, n2 + length s2 - 1) `inRange` n1
 
 
 
