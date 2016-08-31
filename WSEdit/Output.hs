@@ -89,7 +89,7 @@ type Snippet = (Attr, String)
 --   and in a given display column. The first argument toggles the bracket
 --   format modifier.
 charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
-charRep br hl pos n '\t' = do
+charRep _  hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
     c      <- ask
@@ -102,21 +102,19 @@ charRep br hl pos n '\t' = do
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
                  (combineAttrs currSty)
-           $ iff br (combineAttrs $ dBrMod d)
            $ case hl of
                   HSelected -> lookupJustDef def HSelected $ dHLStyles   d
                   _         -> lookupJustDef def Whitesp   $ dCharStyles d
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
-charRep br hl pos _ ' ' = do
+charRep _  hl pos _ ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
                  (combineAttrs $ dCurrLnMod d)
-           $ iff br (combineAttrs $ dBrMod d)
            $ lookupJustDef def hl (dHLStyles d)
            , " "
            )

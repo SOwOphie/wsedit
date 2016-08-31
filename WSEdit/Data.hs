@@ -488,8 +488,7 @@ getCurrBracket = do
     s <- get
 
     let
-        brs1 = filter ((<= (cR, cC)) . fst)
-             $ concat
+        brs1 = concat
              $ drop (cR - 1)
              $ reverse
              $ map fst
@@ -501,7 +500,9 @@ getCurrBracket = do
              $ headMay
              $ bracketCache s
 
-        brs  = filter ((>= (cR, cC)) . snd) $ brs1 ++ brs2
+        brs  = filter ((>= (cR, cC)) . snd)
+             $ filter ((<= (cR, cC)) . fst)
+             $ brs1 ++ brs2
 
     return $ headMay brs
 
