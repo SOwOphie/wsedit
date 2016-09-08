@@ -24,8 +24,8 @@ import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
                                 , refuseOnReadOnly
                                 )
 import WSEdit.Data              ( EdConfig (tabWidth)
-                                , EdState (cursorPos, edLines, markPos
-                                          , replaceTabs, searchTerms
+                                , EdState (cursorPos, edLines, fullRebdReq
+                                          , markPos, replaceTabs, searchTerms
                                           )
                                 , WSEdit
                                 , clearMark, delSelection, getMark, getCursor
@@ -140,7 +140,7 @@ paste = alterBuffer $ do
 
                        else B.insertLeft (False, lastNote (fqn "paste") c
                                               ++ drop (cursorPos s - 1)
-                                                      (snd $ B.curr $ edLines s)
+                                                      (snd $ B.pos $ edLines s)
                                          )
                           $ flip (foldl (flip B.insertLeft))
                                  ( zip (repeat False)
@@ -239,13 +239,16 @@ unindentSelection = alterBuffer
 -- | Add the currently selected area to the list of search terms, or pop the
 --   last search term from the list if the selection is empty.
 searchFor :: WSEdit ()
-searchFor = getSelection >>= \case
-    Nothing -> headMay . searchTerms <$> get >>= \case
-        Nothing -> setStatus "Warning: no search terms."
-        Just  s -> do
-            modify (\c -> c { searchTerms =     drop 1       $ searchTerms c  })
-            setStatus $ "Removed \"" ++ s ++ "\" from the list of search terms."
+searchFor = do
+    getSelection >>= \case
+        Nothing -> headMay . searchTerms <$> get >>= \case
+            Nothing -> setStatus "Warning: no search terms."
+            Just  s -> do
+                modify (\c -> c { searchTerms =     drop 1       $ searchTerms c  })
+                setStatus $ "Removed \"" ++ s ++ "\" from the list of search terms."
 
-    Just  s -> do
-        modify (\c -> c { searchTerms = s : filter (/= s) (searchTerms c) })
-        setStatus $ "Added \"" ++ s ++ "\" to the list of search terms."
+        Just  s -> do
+            modify (\c -> c { searchTerms = s : filter (/= s) (searchTerms c) })
+            setStatus $ "Added \"" ++ s ++ "\" to the list of search terms."
+
+    modify $ \s -> s { fullRebdReq = True }

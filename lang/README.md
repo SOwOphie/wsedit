@@ -30,6 +30,7 @@ than 30 minutes.
    * Place your masterpiece at both sides of the header, two columns away from
      the border.
    * Put a name in line 5, starting at column 30.
+   * Put your name and mail into line 9.
 
 5. **Only set indentation / tab replacement settings if the official language
    definitions explicitly state/encourage it** or if you want to spark a crusade
@@ -37,15 +38,18 @@ than 30 minutes.
 
 6. Declare all syntax symbols:
    * Use one line per definition.
-   * __Strings__: `-fs+ab`, where `a` is the character marking the beginning of
-     a string, and `b` the one marking the end.
+   * __Strings__: `-fs+a_b`, where `a` marks the beginning of a string, and `b`
+     its end (e.g. `-fs+"_"`). Use `-fms+a_b` for multi-line strings and
+     `-fsc+a_b` for strings that may only contain a single character.
    * __Escape characters__: `-fe+c`, where `c` is the character used to mask
      string delimiters inside a string.  Don't use this if the language uses
      doubled delimiters instead of escape characters (e.g. in Basic, `""""` is a
      string containing a single quote).
    * __Line comments__: `-flc+xxx` where `xxx` is the string used to start a
-     comment.
-   * __Block comments__: are not supported yet.
+     comment (e.g. `-flc+//`)..
+   * __Block comments__: `-fbc+a_b` where everything from `a` to `b` is a
+     comment (e.g. `-fbc+/*_*/`).
+   * __Brackets__: `-fbr+a_b`, where ... you get the point (e.g. `-fbr+(_).`).
 
 7. Find a list of all language keywords and list them down with `-fk+keyword`.
    Again, use one line per definition.

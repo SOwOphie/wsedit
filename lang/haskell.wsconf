@@ -6,6 +6,7 @@
 #   # # #  ##                                                       # # #  ##  #
 #  # #   #                                                         # #   #     #
 #                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
@@ -13,10 +14,14 @@ hs: -ts
 #                                                                              #
 # Syntax highlighting                                                          #
 hs: -flc+--
-hs: -fs+""
-hs: -fs+''
-hs: -fs+``
+hs: -fbc+{-_-}
+hs: -fcs+'_'
+hs: -fms+"_"
+hs: -fs+`_`
 hs: -fe+\
+hs: -fbr+(_)
+hs: -fbr+[_]
+hs: -fbr+{_}
 #                                                                              #
 # Keywords                                                                     #
 hs: -fk+as

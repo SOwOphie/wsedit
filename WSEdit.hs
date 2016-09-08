@@ -34,14 +34,16 @@ import System.IO                ( Newline (LF, CRLF)
 
 import WSEdit.Control           ( bail, deleteSelection, insert
                                 , listAutocomplete, load, quitComplain, save
+                                , standby
                                 )
-import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
-                                           , encoding, escape, keymap, keywords
-                                           , lineComment, newlineMode
+import WSEdit.Data              ( EdConfig ( blockComment, brackets, chrDelim
+                                           , drawBg, dumpEvents, edDesign
+                                           , encoding, escape, initJMarks
+                                           , keymap, keywords, lineComment
+                                           , mStrDelim, newlineMode
                                            , purgeOnClose, strDelim, vtyObj
                                            , tabWidth
                                            )
-                                , EdDesign (dCurrLnMod)
                                 , EdState ( buildDict, changed, continue
                                           , detectTabs, fname, lastEvent
                                           , loadPos, readOnly, replaceTabs
@@ -54,6 +56,7 @@ import WSEdit.Data              ( EdConfig ( drawBg, dumpEvents, edDesign
 import WSEdit.Data.Pretty       (unPrettyEdConfig)
 import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
+import WSEdit.Renderer          (rebuildAll)
 import WSEdit.Output            (draw, drawExitFrame)
 import WSEdit.Util              ( getExt, linesPlus, mayReadFile, unlinesPlus
                                 , withSnd
@@ -148,6 +151,10 @@ start = do
                                             exitFailure
 
                                Just  f -> do
+                                    _ <- runRWST (standby "Reading state dump...")
+                                                 conf
+                                                 def
+
                                     r <- readFile f
 
                                     let (cLines, sLines) = withSnd (drop 2)
@@ -158,7 +165,6 @@ start = do
                                         conf' = unPrettyEdConfig
                                                 (vtyObj conf)
                                                 (keymap conf)
-                                                (dCurrLnMod $ edDesign conf)
                                               $ readNote (fqn "start:1")
                                               $ unlinesPlus cLines
 
@@ -204,6 +210,8 @@ start = do
                 quitComplain $ "An uncommon I/O error occured while loading:\n\n"
                             ++ show e
 
+            rebuildAll Nothing
+
             mainLoop
             drawExitFrame
 
@@ -242,28 +250,40 @@ argLoop _ _ (('-':'V'            :_ ):_ ) _      = Left (ExitSuccess, versionHel
 argLoop h _ (('-':'!'            :_ ):xs) (c, s) = argLoop h True xs (c, s)
 argLoop h f (('-':'s'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c, s)  -- gets handled elsewhere, ignore it here.
 argLoop h f (('-':'f':'f'        :_ ):xs) (c, s) = argLoop h f          xs  (c, s)  -- same
-argLoop h f (('-':'b'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = False                           }, s)
-argLoop h f (('-':'B'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = True                            }, s)
-argLoop h f (('-':'e'            :x ):xs) (c, s) = argLoop h f          xs  (c { encoding     = Just x                          }, s)
-argLoop h f (('-':'E'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { encoding     = Nothing                         }, s)
-argLoop h f (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Just e                          }, s)
-argLoop h f (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Nothing                         }, s)
-argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = x : keywords c                  }, s)
-argLoop h f (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = filter (/= x) $ keywords c      }, s)
-argLoop h f (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = x : lineComment c               }, s)
-argLoop h f (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = filter (/= x) $ lineComment c   }, s)
-argLoop h f (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = (a, b) : strDelim c             }, s)
-argLoop h f (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= (a, b)) $ strDelim c }, s)
-argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n      }, s)
-argLoop h f (('-':'l':'u'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF LF             }, s)
-argLoop h f (('-':'l':'w'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF CRLF           }, s)
-argLoop h f (('-':'L'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = universalNewlineMode            }, s)
-argLoop h f (('-':'p'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = True                            }, s)
-argLoop h f (('-':'P'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = False                           }, s)
-argLoop h f (('-':'x'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { edDesign     = brightTheme                     }, s)
-argLoop h f (('-':'X'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { edDesign     = def                             }, s)
-argLoop h f (('-':'y'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { dumpEvents   = True                            }, s)
-argLoop h f (('-':'Y'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { dumpEvents   = False                           }, s)
+argLoop h f (('-':'b'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = False                                                          }, s)
+argLoop h f (('-':'B'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = True                                                           }, s)
+argLoop h f (('-':'e'            :x ):xs) (c, s) = argLoop h f          xs  (c { encoding     = Just x                                                         }, s)
+argLoop h f (('-':'E'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { encoding     = Nothing                                                        }, s)
+argLoop h f (('-':'f':'b':'r':'+':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = withSnd (drop 1) (span (/='_') x) : brackets c                 }, s)
+argLoop h f (('-':'f':'b':'r':'-':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = filter (/= withSnd (drop 1) (span (/='_') x)) $ brackets c     }, s)
+argLoop h f (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Just e                                                         }, s)
+argLoop h f (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Nothing                                                        }, s)
+argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = x : keywords c                                                 }, s)
+argLoop h f (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = filter (/= x) $ keywords c                                     }, s)
+argLoop h f (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = x : lineComment c                                              }, s)
+argLoop h f (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = filter (/= x) $ lineComment c                                  }, s)
+argLoop h f (('-':'f':'b':'c':'+':x ):xs) (c, s) = argLoop h f          xs  (c { blockComment = withSnd (drop 1) (span (/='_') x) : blockComment c             }, s)
+argLoop h f (('-':'f':'b':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c { blockComment = filter (/= withSnd (drop 1) (span (/='_') x)) $ blockComment c }, s)
+argLoop h f (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = ([a], [b]) : strDelim c                                        }, s)
+argLoop h f (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= ([a], [b])) $ strDelim c                            }, s)
+argLoop h f (('-':'f':'s':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { strDelim     = withSnd (drop 1) (span (/='_') x) : strDelim c                 }, s)
+argLoop h f (('-':'f':'s':'-'    :x ):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= withSnd (drop 1) (span (/='_') x)) $ strDelim c     }, s)
+argLoop h f (('-':'f':'m':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c { mStrDelim    = withSnd (drop 1) (span (/='_') x) : mStrDelim c                }, s)
+argLoop h f (('-':'f':'m':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { mStrDelim    = filter (/= withSnd (drop 1) (span (/='_') x)) $ mStrDelim c    }, s)
+argLoop h f (('-':'f':'c':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = withSnd (drop 1) (span (/='_') x) : chrDelim c                 }, s)
+argLoop h f (('-':'f':'c':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = filter (/= withSnd (drop 1) (span (/='_') x)) $ chrDelim c     }, s)
+argLoop h f (('-':'j'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = readNote (fqn "argLoop") x : initJMarks c                      }, s)
+argLoop h f (('-':'J'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = filter (/= readNote (fqn "argLoop") x) $ initJMarks c          }, s)
+argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n                                     }, s)
+argLoop h f (('-':'l':'u'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF LF                                            }, s)
+argLoop h f (('-':'l':'w'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF CRLF                                          }, s)
+argLoop h f (('-':'L'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = universalNewlineMode                                           }, s)
+argLoop h f (('-':'p'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = True                                                           }, s)
+argLoop h f (('-':'P'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { purgeOnClose = False                                                          }, s)
+argLoop h f (('-':'x'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { edDesign     = brightTheme                                                    }, s)
+argLoop h f (('-':'X'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { edDesign     = def                                                            }, s)
+argLoop h f (('-':'y'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { dumpEvents   = True                                                           }, s)
+argLoop h f (('-':'Y'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { dumpEvents   = False                                                          }, s)
 argLoop h f (('-':'c':'g'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c, s { fname       = h ++ "/.config/wsedit.wsconf"                                })
 argLoop h f (('-':'c':'l'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c, s { fname       = "./.local.wsconf"                                            })
 argLoop h f (('-':'d':'+':'*'    :x ):xs) (c, s) = argLoop h f          xs  (c, s { buildDict   = (Just x , Nothing                     ) : buildDict s        })
@@ -297,38 +317,38 @@ argLoop h True  (_                   :xs) (c, s) = argLoop h True xs (c, s)
 -- | Main editor loop. Runs once per input event processed.
 mainLoop :: WSEdit ()
 mainLoop = do
-    draw
+    flip catchEditor errHdl $ do
+        draw
+        setStatus ""
 
-    setStatus ""
-
-    c <- ask
-    ev <- liftIO $ nextEvent $ vtyObj c
-
-    modify (\s -> s { lastEvent = Just ev })
-
-    -- look up the event in the keymap
-    -- if not found: insert the pressed key
-    -- if it's not alphanumeric: show an "event not bound" warning
-    catchEditor
-        ( maybe (case ev of
-                      EvKey (KChar k) [] -> deleteSelection
-                                         >> insert k
-                                         >> listAutocomplete
-
-                      EvResize _ _       -> return ()
-                      _                  -> setStatus $ "Event not bound: "
-                                                     ++ show ev
-                )
-                fst
-        $ lookup ev
-        $ catMaybes
-        $ keymap c
-        ) errHdl
-
-
-    when (dumpEvents c) $ do
+        c <- ask
         s <- get
-        setStatus $ show ev ++ status s
+        ev <- liftIO $ nextEvent $ vtyObj c
+
+        modify (\st -> st { lastEvent = Just ev })
+
+        -- look up the event in the keymap
+        -- if not found: insert the pressed key
+        -- if it's not alphanumeric: show an "event not bound" warning
+        maybe (case ev of
+                    EvKey (KChar k) [] -> deleteSelection
+                                       >> insert k
+                                       >> listAutocomplete
+
+                    EvResize _ _       -> return ()
+                    _                  -> setStatus $ "Event not bound: "
+                                                   ++ show ev
+              )
+              fst
+              $ lookup ev
+              $ catMaybes
+              $ keymap c
+
+        rebuildAll $ Just s
+
+        when (dumpEvents c) $ do
+            st <- get
+            setStatus $ show ev ++ status st
 
     b <- continue <$> get
     when b mainLoop
@@ -340,10 +360,13 @@ mainLoop = do
             if b
                then do
                     modify (\s -> s { fname = "CRASH-RESCUE" })
+                    standby $ "An error occured: " ++ show e
+                           ++ "\n\n"
+                           ++ "Dumping unsaved changes..."
                     save
                     bail $ "An error occured: " ++ show e
                         ++ "\n\n"
-                        ++ "Your unsaved work has been rescued to"
+                        ++ "All unsaved changes have been dumped to"
                         ++ " ./CRASH-RESCUE ."
 
                else bail $ "An error occured: " ++ show e

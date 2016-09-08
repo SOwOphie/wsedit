@@ -6,14 +6,20 @@
 #  ##########                                                  ##########      #
 #    ##  ##    ##                                                ##  ##    ##  #
 #                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
 sh: -flc+#
-sh: -fs+''
-sh: -fs+""
-sh: -fs+``
+sh: -fms+'_'
+sh: -fms+"_"
+sh: -fs+`_`
 sh: -fe+\
+sh: -fbr+$(_)
+sh: -fbr+(_)
+sh: -fbr+${_}
+sh: -fbr+{_}
+sh: -fbr+[_]
 #                                                                              #
 # Keywords                                                                     #
 sh: -fk+alias
@@ -134,6 +140,7 @@ sh: -fk+ifconfig
 sh: -fk+ifdown
 sh: -fk+ifup
 sh: -fk+import
+sh: -fk+in
 sh: -fk+install
 sh: -fk+ip
 

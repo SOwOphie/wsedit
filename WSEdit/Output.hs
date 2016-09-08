@@ -19,7 +19,7 @@ module WSEdit.Output
 import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
-import Data.Char                (ord, toLower)
+import Data.Char                (ord)
 import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
@@ -37,14 +37,11 @@ import Graphics.Vty             ( Attr
                                 , (<|>), (<->)
                                 )
 import Numeric                  (showHex)
-import Safe                     (lookupJustDef, minimumNote)
+import Safe                     (atDef, lookupJustDef)
 
-import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
-                                           , lineComment, strDelim, tabWidth
-                                           , vtyObj
-                                           )
-                                , EdDesign ( dBGChar, dBGFormat, dCharStyles
-                                           , dColChar, dColNoFormat
+import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
+                                , EdDesign ( dBGChar, dBGFormat, dBrMod
+                                           , dCharStyles, dColChar, dColNoFormat
                                            , dColNoInterval, dCurrLnMod
                                            , dFrameFormat, dHLStyles
                                            , dLineNoFormat, dLineNoInterv
@@ -52,27 +49,20 @@ import WSEdit.Data              ( EdConfig ( drawBg, edDesign, escape, keywords
                                            , dTabExt, dTabStr
                                            )
                                 , EdState ( changed, edLines, fname, markPos
-                                          , overwrite, readOnly, replaceTabs
-                                          , scrollOffset, searchTerms, status
+                                          , overwrite, rangeCache, readOnly
+                                          , replaceTabs, scrollOffset, status
                                           )
-                                , HighlightMode ( HComment, HKeyword, HNone
-                                                , HSearch, HSelected, HString
-                                                )
+                                , HighlightMode (HNone, HSelected)
                                 , WSEdit
-                                , getCursor, getDisplayBounds, getOffset
-                                , getSelBounds
+                                , getCurrBracket, getCursor, getDisplayBounds
+                                , getOffset, getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
-                                , charClass, findDelimBy, findInStr
-                                , findIsolated, padLeft, padRight, withPair
+                                , charClass, combineAttrs, iff, lookupBy
+                                , padLeft, padRight
                                 )
 
 import qualified WSEdit.Buffer as B
-
-
-
-fqn :: String -> String
-fqn = ("WSEdit.Output." ++)
 
 
 
@@ -96,9 +86,10 @@ type Snippet = (Attr, String)
 
 
 -- | Returns the visual representation of a character at a given buffer position
---   and in a given display column.
-charRep :: HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
-charRep hl pos n '\t' = do
+--   and in a given display column. The first argument toggles the bracket
+--   format modifier.
+charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
+charRep br hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
     c      <- ask
@@ -109,30 +100,38 @@ charRep hl pos n '\t' = do
         tW      = tabWidth c
         extTab  = padLeft tW (dTabExt d) $ dTabStr d
 
-    return ( (if r == fst pos
-                   && hl /= HSelected
-                   && not (readOnly st)
-                 then currSty
-                 else id
-             ) $ case hl of
-                      HSelected -> lookupJustDef def HSelected $ dHLStyles   d
-                      _         -> lookupJustDef def Whitesp   $ dCharStyles d
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs currSty)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ case hl of
+                  HSelected -> lookupJustDef def HSelected $ dHLStyles   d
+                  _         -> lookupJustDef def Whitesp   $ dCharStyles d
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
-charRep hl pos _ c = do
+charRep br hl pos _ ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    return ( (if r == fst pos
-                   && hl /= HSelected
-                   && not (readOnly st)
-                 then dCurrLnMod d
-                 else id
-             ) $ lookupJustDef
-                    (lookupJustDef def (charClass c) (dCharStyles d))
-                    hl
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs $ dCurrLnMod d)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ lookupJustDef def hl (dHLStyles d)
+           , " "
+           )
+
+charRep br hl pos _ c = do
+    (r, _) <- getCursor
+    st     <- get
+    d      <- edDesign <$> ask
+
+    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                 (combineAttrs $ dCurrLnMod d)
+           $ iff br (combineAttrs $ dBrMod d)
+           $ lookupJustDef
+                (lookupJustDef def (charClass c) (dCharStyles d))
+                hl
                     (dHLStyles d)
            , if charClass c == Unprintable
                 then "?#" ++ showHex (ord c) ";"
@@ -144,61 +143,30 @@ charRep hl pos _ c = do
 -- | Returns the visual representation of a line with a given line number.
 lineRep :: Int -> String -> WSEdit Image
 lineRep lNo str = do
-    conf <- ask
     st <- get
     maySel <- getSelBounds
+    mayBr  <- getCurrBracket
 
     let
-        -- Initial list of comment starting points
-        comL :: [Int]
-        comL = map (+1)
-             $ concatMap (`findInStr` str)
-             $ lineComment conf
-
-        -- List of string bounds
-        strL :: [(Int, Int)]
-        strL = map (withPair (+1) (+1))
-             $ findDelimBy (escape conf) (strDelim conf) str
-
-        -- List of keyword bounds
-        kwL :: [(Int, Int)]
-        kwL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                            $ findIsolated k str
-                        )
-            $ keywords conf
-
-        -- List of search terms
-        sL :: [(Int, Int)]
-        sL = concatMap (\k -> map (\p -> (p + 1, p + length k))
-                           $ findInStr ( map toLower k )
-                                       $ map toLower str
-                       )
-            $ searchTerms st
-
-        -- List of comment starting points, minus those that are inside a string
-        comL' :: [Int]
-        comL' = filter (\c -> not $ any (`inRange` c) strL) comL
-
-        -- First comment starting point in the line
-        comAt :: Maybe Int
-        comAt = if null comL'
-                   then Nothing
-                   else Just $ minimumNote (fqn "lineRep") comL
-
-
+        fmt = atDef [] (map fst $ rangeCache st) (length (rangeCache st) - lNo)
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
-            i <- charRep
-                    (case maySel of
-                          Just (sS, sE) | sS <= (lNo, tPos)
-                                             && (lNo, tPos) <= sE -> HSelected
-                          _ | any (`inRange` tPos) sL             -> HSearch
-                            | fromMaybe maxBound comAt <= tPos    -> HComment
-                            | any (`inRange` tPos) strL           -> HString
-                            | any (`inRange` tPos) kwL            -> HKeyword
-                            | otherwise                           -> HNone
-                    ) (lNo, tPos) vPos c
+            i <- charRep (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
+                         (case (maySel, lookupBy (`inRange` tPos) fmt) of
+                               (Just (sS, sE), _     )
+                                    | sS <= (lNo, tPos)
+                                         && (lNo, tPos) <= sE
+                                    -> HSelected
+
+                               (_            , Just s) -> s
+
+                               _    | otherwise
+                                    -> HNone
+                         )
+                         (lNo, tPos)
+                         vPos
+                         c
 
             return (i:im, tPos + 1, vPos + length (snd i))
 
@@ -217,6 +185,14 @@ lineRep lNo str = do
         groupSnippet (Just (a, s)) ((xa, xs):xxs)
             | a == xa   =          groupSnippet (Just (a , s ++ xs)) xxs
             | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
+
+        inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
+        inBracketHL ((a, b), (c, d)) (x, y)
+            | a == x && x == c = (b,d        ) `inRange` y
+            | a == x           = (b, maxBound) `inRange` y
+            |           x == c = (0, d       ) `inRange` y
+            | a <  x && x <  c = y == 1
+            | otherwise        = False
 
 
 
@@ -255,7 +231,7 @@ lineNoWidth =  length
 toCursorDispPos :: (Int, Int) -> WSEdit (Int, Int)
 toCursorDispPos (r, c) = do
     currLine <-  snd
-              .  B.curr
+              .  B.pos
               .  edLines
              <$> get
 
@@ -283,7 +259,7 @@ cursorOffScreen = do
     s <- get
 
     let
-        currLn       = snd $ B.curr $ edLines s
+        currLn       = snd $ B.pos $ edLines s
         (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
@@ -358,9 +334,10 @@ makeLineNos = do
         mkLn s d lNoWidth r n =
              char (dLineNoFormat d) ' '
          <|> string (case () of
-                    _ | r == n && not (readOnly s)   -> dCurrLnMod d $ dLineNoFormat d
-                      | n `mod` dLineNoInterv d == 0 ->                dLineNoFormat d
-                      | otherwise                    ->                dFrameFormat  d
+                    _ | r == n && not (readOnly s)   -> combineAttrs (dCurrLnMod    d)
+                                                                     (dLineNoFormat d)
+                      | n `mod` dLineNoInterv d == 0 ->               dLineNoFormat d
+                      | otherwise                    ->               dFrameFormat  d
                     )
              ( padLeft lNoWidth ' '
              $ case () of
@@ -387,7 +364,7 @@ makeFooter = do
     return $ string (dFrameFormat d)
                 ( replicate (lNoWidth + 2) ' '
                ++ "+-----------+"
-               ++ replicate (txtCols - 7) '-'
+               ++ replicate (txtCols - 11) '-'
                ++ "+-"
                 )
           <-> (  string (dFrameFormat d)
@@ -468,8 +445,8 @@ makeTextFrame = do
                                  $ pad 0 0 (scrollCols + 1) 0
                                  $ (if drawBg c
                                        then id
-                                       else (<|> char ( (if l == cR
-                                                            then dCurrLnMod d
+                                       else (<|> char ( (if l == cR && not (readOnly s)
+                                                            then combineAttrs $ dCurrLnMod d
                                                             else id
                                                         )
                                                       $ lookupJustDef def Whitesp
@@ -488,10 +465,10 @@ makeBackground = do
     conf <- ask
     s <- get
 
-    (nRows, nCols     ) <- getViewportDimensions
-    (_    , scrollCols) <- getOffset
+    (nRows     , nCols     ) <- getViewportDimensions
+    (scrollRows, scrollCols) <- getOffset
 
-    cursor   <- getCursor >>= toCursorDispPos
+    cursor   <- getCursor
     lNoWidth <- lineNoWidth
 
     let
@@ -509,7 +486,8 @@ makeBackground = do
                                     ) l
                  )
            $ take nRows
-           $ zip [2..]
+           $ drop scrollRows
+           $ zip [1..]
            $ repeat
            $ ('#' :)
            $ take nCols
@@ -579,10 +557,10 @@ makeScrollbar = do
         repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
         repl (d, s, cProg, marksAt) (n, c) =
             char (dFrameFormat d) '|' <|> case () of
-                _ | readOnly s       -> char (               dFrameFormat  d)  c
-                  | n == cProg       -> char (dCurrLnMod d $ dLineNoFormat d) '<'
-                  | n `elem` marksAt -> char (               dJumpMarkFmt  d) '•'
-                  | otherwise        -> char (               dFrameFormat  d)  c
+                _ | readOnly s       -> char (dFrameFormat  d)  c
+                  | n == cProg       -> char (dLineNoFormat d) '<'
+                  | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
+                  | otherwise        -> char (dFrameFormat  d)  c
 
 
 

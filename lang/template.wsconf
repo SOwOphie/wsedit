@@ -6,6 +6,7 @@
 #  ####################                                  ####################  #
 #  ####################                                  ####################  #
 #                                                                              #
+# by <your name here> (<your email here>)                                      #
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
@@ -13,8 +14,10 @@ wsed-template: -i8 -tt
 #                                                                              #
 # Syntax highlighting                                                          #
 wsed-template: -flc+//
-wsed-template: -fs+""
+wsed-template: -fbc+/*_*/
+wsed-template: -fs+"_"
 wsed-template: -fe+\
+wsed-template: -fbr+(_)
 #                                                                              #
 # Keywords                                                                     #
 wsed-template: -fk+keyword1

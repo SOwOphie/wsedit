@@ -17,7 +17,7 @@ import System.Directory         ( doesDirectoryExist, doesFileExist
                                 , listDirectory, makeAbsolute
                                 )
 
-import WSEdit.Control.Base      (alterBuffer)
+import WSEdit.Control.Base      (alterBuffer, standby)
 import WSEdit.Control.Text      (insertRaw)
 import WSEdit.Data              ( WSEdit
                                 , EdConfig (lineComment, tabWidth)
@@ -27,8 +27,8 @@ import WSEdit.Data              ( WSEdit
                                 , setStatus
                                 )
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
-                                , linesPlus, longestCommonPrefix, unlinesPlus
-                                , wordsPlus
+                                , linesPlus, longestCommonPrefix, readEncFile
+                                , unlinesPlus, wordsPlus
                                 )
 import WSEdit.WordTree          (addWord, complete)
 
@@ -53,7 +53,10 @@ dictAdd f = do
                $ buildDict s
 
     unless (null depths) $ do
-        txt <- liftIO $ readFile f
+        b   <- liftIO $ doesFileExist f
+        txt <- if b
+                  then fmap snd $ liftIO $ readEncFile f
+                  else return ""
 
         d <- liftIO
            $ evaluate
@@ -62,7 +65,7 @@ dictAdd f = do
            $ unlinesPlus
            $ map ( (\l -> take ( minimum
                                $ maxBound
-                               : concat [ findInStr x l | x <- lineComment c]
+                               : concat [ findInStr x l | x <- lineComment c ]
                                ) l
                    )
                  . dropWhile isSpace
@@ -103,6 +106,9 @@ dictAdd f = do
 --   to the dictionary.
 dictAddRec :: WSEdit ()
 dictAddRec = do
+    standby $ "Rebuilding dictionary...\n\n"
+           ++ "Revisit your -d settings if this takes forever."
+
     s <- get
 
     -- Skip everything if dictionary building is disabled
@@ -138,7 +144,7 @@ listAutocomplete = do
     unless (null (buildDict s) || readOnly s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
-                $ B.curr
+                $ B.pos
                 $ edLines s of
 
                Nothing -> setStatus "..."
@@ -167,7 +173,7 @@ applyAutocomplete = do
     when (not (null $ buildDict s) && canComplete s)
         $ case getKeywordAtCursor (cursorPos s)
                 $ snd
-                $ B.curr
+                $ B.pos
                 $ edLines s of
 
                Nothing -> return ()

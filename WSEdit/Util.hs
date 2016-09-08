@@ -4,6 +4,9 @@ module WSEdit.Util
     ( withPair
     , withFst
     , withSnd
+    , withPairM
+    , withFstM
+    , withSndM
     , padLeft
     , padRight
     , withN
@@ -29,18 +32,35 @@ module WSEdit.Util
     , findInStr
     , findIsolated
     , findDelimBy
+    , lookupBy
+    , readEncFile
+    , combineAttrs
+    , iff
     ) where
 
+
+
+import Codec.Text.Detect (detectEncodingName)
 import Control.Exception (SomeException, try)
-import Data.Char         (isAlphaNum, isControl, isMark, isPrint)
+import Data.Char         (chr, isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intercalate, intersect, tails)
+import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
+                         , MaybeDefault (Default, KeepCurrent,SetTo)
+                         )
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
 import System.Directory  (doesFileExist)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
+import System.IO         ( IOMode (ReadMode)
+                         , hSetEncoding, hSetNewlineMode, mkTextEncoding
+                         , universalNewlineMode, char8, withFile
+                         )
+import System.IO.Strict  (hGetContents)
 import System.IO.Unsafe  (unsafePerformIO)
 import System.Process    (readProcessWithExitCode)
 import Text.Show.Pretty  (ppShow)
+
+import qualified Data.ByteString.Lazy as S
 
 
 
@@ -64,6 +84,25 @@ withFst f = withPair f id
 -- | Applies a function to the second member of a pair.
 withSnd :: (b -> c) -> (a, b) -> (a, c)
 withSnd = withPair id
+
+
+
+-- | Applies a separate monadic function to each member of a pair.
+withPairM :: (Monad m) => (a -> m b) -> (c -> m d) -> (a, c) -> m (b, d)
+withPairM fa fb (a, b) = do
+    ra <- fa a
+    rb <- fb b
+    return (ra, rb)
+
+
+-- | Applies a monadic function to the first member of a pair.
+withFstM :: (Monad m) => (a -> m b) -> (a, c) -> m (b, c)
+withFstM f = withPairM f return
+
+
+-- | Applies a monadic function to the second member of a pair.
+withSndM :: (Monad m) => (b -> m c) -> (a, b) -> m (a, c)
+withSndM = withPairM return
 
 
 
@@ -405,3 +444,65 @@ findDelimBy mC       delim (x:  xs)          =
         find (Just e) c (y:_:ys) | e == y    = (+2) <$> find (Just e) c ys
         find mE       c (y  :ys) | c == y    = Just 0
                                  | otherwise = (+1) <$> find mE       c ys
+
+
+
+
+
+-- | Generic version of `lookup`.
+lookupBy :: (a -> Bool) -> [(a, b)] -> Maybe b
+lookupBy _ []          = Nothing
+lookupBy f ((k, v):xs) = if f k then Just v else lookupBy f xs
+
+
+
+
+
+-- | Reads a file strictly and returns its text encoding, if applicable,
+--   alongside its contents.
+readEncFile :: FilePath -> IO (Maybe String, String)
+readEncFile f = do
+    raw <- S.readFile f
+
+    withFile f ReadMode $ \h -> do
+        hSetNewlineMode h universalNewlineMode
+
+        case detectEncodingName raw of
+            Nothing -> do
+                hSetEncoding h char8
+                s <- hGetContents h
+                return (Nothing, s)
+
+            Just en -> do
+                e <- mkTextEncoding en
+                hSetEncoding h e
+                s <- hGetContents h
+                return (Just en, dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) s)
+
+
+
+
+
+-- | Combines two vty attributes. Conflicts are resolved in a left-biased way.
+combineAttrs :: Attr -> Attr -> Attr
+combineAttrs a b = Attr
+    { attrStyle     = combineMayDef (attrStyle     a) (attrStyle     b)
+    , attrForeColor = combineMayDef (attrForeColor a) (attrForeColor b)
+    , attrBackColor = combineMayDef (attrBackColor a) (attrBackColor b)
+    }
+    where
+        combineMayDef :: MaybeDefault a -> MaybeDefault a -> MaybeDefault a
+        combineMayDef (SetTo x)   _           = SetTo x
+        combineMayDef _           (SetTo x)   = SetTo x
+        combineMayDef KeepCurrent _           = KeepCurrent
+        combineMayDef _           KeepCurrent = KeepCurrent
+        combineMayDef _           _           = Default
+
+
+
+
+
+-- | Applies the function if the first parameter is true, or 'id's otherwise.
+iff :: Bool -> (a -> a) -> a -> a
+iff True  f = f
+iff False _ = id

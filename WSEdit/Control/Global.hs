@@ -16,35 +16,33 @@ module WSEdit.Control.Global
     ) where
 
 
-import Codec.Text.Detect           (detectEncoding)
 import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
-import Data.Char                   (chr)
-import Data.Maybe                  (fromMaybe)
+import Data.Maybe                  (fromMaybe, isJust)
 import Graphics.Vty                (Vty (shutdown))
-import Safe                        (fromJustNote)
+import Safe                        (fromJustNote, headDef)
 import System.Directory            ( doesFileExist, getHomeDirectory
                                    , getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
                                    , writable
                                    )
 import System.Exit                 (exitFailure)
-import System.IO                   ( IOMode (AppendMode, ReadMode, WriteMode)
+import System.IO                   ( IOMode (AppendMode, WriteMode)
                                    , NewlineMode
-                                   , char8, hPutStr, hSetEncoding
-                                   , hSetNewlineMode, mkTextEncoding, withFile
+                                   , hPutStr, hSetEncoding, hSetNewlineMode
+                                   , mkTextEncoding, withFile
                                    )
-import System.IO.Strict            (hGetContents)
 import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
-                                   , refuseOnReadOnly
+                                   , refuseOnReadOnly, standby
                                    )
-import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
-                                              , purgeOnClose, vtyObj
+import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
+                                              , newlineMode, purgeOnClose
+                                              , vtyObj
                                               )
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines, fname
@@ -57,10 +55,11 @@ import WSEdit.Data                 ( EdConfig ( encoding, newlineMode
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
-import WSEdit.Util                 (linesPlus, unlinesPlus, withPair)
+import WSEdit.Util                 ( linesPlus, readEncFile, unlinesPlus
+                                   , withFst, withPair
+                                   )
 import WSEdit.WordTree             (empty)
 
-import qualified Data.ByteString.Lazy as S
 import qualified WSEdit.Buffer        as B
 
 
@@ -85,24 +84,31 @@ bail s = do
     c <- ask
     st <- get
 
-    drawExitFrame
+    standby $ unlinesPlus
+        [ s
+        , ""
+        , "Writing state dump to ./CRASH-DUMP ..."
+        ]
 
-    liftIO $ do
-        shutdown $ vtyObj c
-        putStrLn s
-        putStrLn "Writing state dump to ./CRASH-DUMP ..."
-        writeFile "CRASH-DUMP"
-            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
-           ++ "Error message: " ++ s
-           ++ "\n\nEditor configuration:\n"
-           ++ indent (ppShow $ prettyEdConfig c)
-           ++ "\nEditor state:\n"
-           ++ indent ( ppShow
+    liftIO $ writeFile "CRASH-DUMP"
+           $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+          ++ "Error message: " ++ (headDef "" $ lines s)
+          ++ "\n\nEditor configuration:\n"
+          ++ indent (ppShow $ prettyEdConfig c)
+          ++ "\n\nEditor state:\n"
+          ++ indent ( ppShow
                      $ mapPast (\h -> h { dict = empty })
                      $ fromJustNote (fqn "bail")
                      $ chopHist 10
                      $ Just st
                      )
+
+    drawExitFrame
+
+    liftIO $ do
+        shutdown $ vtyObj c
+        putStrLn s
+        putStrLn "A state dump is located at ./CRASH-DUMP ."
 
         exitFailure
 
@@ -176,6 +182,8 @@ canWriteFile = do
 -- | Saves the text buffer to the file name in the editor state.
 save :: WSEdit ()
 save = refuseOnReadOnly $ do
+    standby "Saving..."
+
     s <- get
 
     if not (changed s)
@@ -193,7 +201,9 @@ save = refuseOnReadOnly $ do
 
             setStatus $ "Saved "
                      ++ show (B.length (edLines s))
-                     ++ " lines of text."
+                     ++ " lines of "
+                     ++ fromMaybe "native" (encoding c)
+                     ++ " text."
 
     dictAddRec
 
@@ -214,6 +224,8 @@ save = refuseOnReadOnly $ do
 -- | Tries to load the text buffer from the file name in the editor state.
 load :: WSEdit ()
 load = alterState $ do
+    standby "Loading..."
+
     p <- fname <$> get
     when (p == "") $ quitComplain "Will not load an empty filename."
 
@@ -222,40 +234,41 @@ load = alterState $ do
     p' <- liftIO $ makeRelativeToCurrentDirectory p
 
     s <- get
+    c <- ask
 
-    (encSucc, txt) <- if b
-                         then liftIO $ readF p'
-                         else return $ (True, "")
+    (mEnc, txt) <- if b
+                      then liftIO $ readEncFile p'
+                      else return (Just undefined, "")
 
-    let txt' = if encSucc
-                  then dropWhile (`elem` [chr 0xFFFE, chr 0xFEFF]) txt
-                  else txt
-
-        l    = fromMaybe (B.singleton (False, ""))
-             $ B.fromList
-             $ zip (repeat False)
-             $ map (filter (/= '\r'))
-             $ linesPlus txt'
+    let l = fromMaybe (B.singleton (False, ""))
+          $ B.fromList
+          $ map (withFst (`elem` initJMarks c))
+          $ zip [1..]
+          $ linesPlus txt
 
     put $ s
         { edLines     = B.toFirst l
         , fname       = p'
         , cursorPos   = 1
-        , readOnly    = not (encSucc && w && not (readOnly s))
+        , readOnly    = not (isJust mEnc && w && not (readOnly s))
         , replaceTabs = if detectTabs s
                            then '\t' `notElem` txt
                            else replaceTabs s
         }
 
-    setStatus $ case (b    , w    , encSucc) of
-                     (True , True , True   ) -> "Loaded "
+    setStatus $ case (b    , w    , mEnc) of
+                     (True , True , Just e ) -> "Loaded "
                                              ++ show (length $ linesPlus txt)
-                                             ++ " lines of text."
+                                             ++ " lines of "
+                                             ++ e
+                                             ++ " text."
 
-                     (True , False, True   ) -> "Warning: file not writable, "
+                     (True , False, Just e ) -> "Warning: "
+                                             ++ e
+                                             ++ " file not writable, "
                                              ++ "opening in read-only mode ..."
 
-                     (True , _    , False  ) -> "Warning: unknown character "
+                     (True , _    , Nothing) -> "Warning: unknown character "
                                              ++ "encoding, opening raw..."
 
                      (False, True , _      ) -> "Warning: file "
@@ -276,20 +289,6 @@ load = alterState $ do
     where
         dec :: Int -> Int
         dec n = n - 1
-
-        -- | Returns the string, plus whether the file encoding could safely be
-        --   determined.
-        readF :: FilePath -> IO (Bool, String)
-        readF f = S.readFile f >>= detectEncoding >>= \case
-            Nothing -> withFile f ReadMode $ \h -> do
-                hSetEncoding h char8
-                s <- hGetContents h
-                return (False, s)
-
-            Just  e -> withFile f ReadMode $ \h -> do
-                hSetEncoding h e
-                s <- hGetContents h
-                return (True, s)
 
 
 

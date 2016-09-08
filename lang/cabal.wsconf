@@ -6,7 +6,11 @@
 #   ###    ####                                                  ###    ####   #
 #    # #  ####                                                    # #  ####    #
 #                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+cabal: -flc+--
 #                                                                              #
 # Keywords                                                                     #
 cabal: -fk+name

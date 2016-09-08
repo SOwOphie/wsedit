@@ -7,6 +7,12 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
+    , FmtParserState (..)
+    , BracketStack
+    , RangeCacheElem
+    , RangeCache
+    , BracketCacheElem
+    , BracketCache
     , EdState (..)
     , getCursor
     , setCursor
@@ -26,6 +32,7 @@ module WSEdit.Data
     , getSelection
     , delSelection
     , getDisplayBounds
+    , getCurrBracket
     , EdConfig (..)
     , mkDefConfig
     , EdDesign (..)
@@ -49,12 +56,12 @@ import Graphics.Vty             ( Attr
                                 , black, blue, bold, brightBlack, brightGreen
                                 , brightMagenta, brightRed, brightWhite
                                 , brightYellow, cyan, green, defAttr
-                                , displayBounds, green, magenta, red, white
-                                , withBackColor, withForeColor, withStyle
+                                , displayBounds, green, magenta, red, underline
+                                , white, withBackColor, withForeColor, withStyle
                                 , yellow
                                 )
-import Safe                     ( fromJustNote, headNote, initNote, lastNote
-                                , tailNote
+import Safe                     ( fromJustNote, headMay, headNote, initNote
+                                , lastNote, tailNote
                                 )
 import System.IO                (NewlineMode, universalNewlineMode)
 
@@ -62,7 +69,7 @@ import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
                                            , Special, Unprintable, Upper
                                            , Whitesp
                                            )
-                                , unlinesPlus
+                                , unlinesPlus, withSnd
                                 )
 import WSEdit.WordTree          (WordTree, empty)
 
@@ -79,7 +86,7 @@ fqn = ("WSEdit.Data." ++)
 
 -- | Version number constant.
 version :: String
-version = "1.0.0.13"
+version = "1.1.0.12"
 
 -- | Upstream URL.
 upstream :: String
@@ -88,6 +95,39 @@ upstream = "https://github.com/SirBoonami/wsedit"
 -- | License version number constant.
 licenseVersion :: String
 licenseVersion = "1.1"
+
+
+
+
+
+data FmtParserState = PNothing
+                    | PChString Int String Int
+                    | PLnString Int String
+                    | PMLString Int String
+                    | PBComment Int String
+    deriving (Eq, Read, Show)
+
+type BracketStack = [((Int, Int), String)]
+
+
+
+-- | Stores ranges of highlighted areas, as well as the parser's stack at the
+--   end of each line.
+type RangeCacheElem = ([((Int, Int), HighlightMode)], FmtParserState)
+
+-- | Only built from the start of the file to the end of the viewport, lines are
+--   stored in reverse order.
+type RangeCache     = [RangeCacheElem]
+
+
+
+-- | Stores bracketed ranges, as well as the parser's stack at the end of each
+--   line.
+type BracketCacheElem = ([((Int, Int), (Int, Int))], BracketStack)
+
+-- | Only built from the start of the file to the end of the viewport, lines are
+--   stored in reverse order.
+type BracketCache     = [BracketCacheElem]
 
 
 
@@ -105,6 +145,20 @@ data EdState = EdState
     , readOnly     :: Bool
         -- ^ Whether the file is opened in read only mode. Has no relation to
         --   the write permissions on the actual file.
+
+
+    , tokenCache   :: B.Buffer [(Int, String)]
+        -- ^ Stores relevant tokens alongside their starting position for each
+        --   line.
+
+    , rangeCache   :: RangeCache
+        -- ^ See the description of 'RangeCache' for more information.
+
+    , bracketCache :: BracketCache
+        -- ^ See the description of 'BracketCache' for more information.
+
+    , fullRebdReq  :: Bool
+        -- ^ Gets set when a full cache rebuild is required.
 
 
     , cursorPos    :: Int
@@ -136,20 +190,9 @@ data EdState = EdState
         -- ^ Last recorded input event.
 
 
-    , changed      :: Bool
-        -- ^ Whether the file has been changed since the last load/save.
-
-    , history      :: Maybe EdState
-        -- ^ Editor state prior to the last action, used to implement undo
-        --   facilities.  Horrible memory efficiency, but it seems to work.
-
-
     , buildDict    :: [(Maybe String, Maybe Int)]
         -- ^ File suffix and indentation depth pairs for dictionary building.
         --   'Nothing' stands for the current file or all depths.
-
-    , dict         :: WordTree
-        -- ^ Autocompletion dictionary.
 
     , canComplete  :: Bool
         -- ^ Whether the autocomplete function can be invoked at this moment
@@ -167,9 +210,19 @@ data EdState = EdState
     , overwrite    :: Bool
         -- ^ Whether overwrite mode is on.
 
-
     , searchTerms  :: [String]
         -- ^ List of search terms to highlight
+
+
+    , changed      :: Bool
+        -- ^ Whether the file has been changed since the last load/save.
+
+    , history      :: Maybe EdState
+        -- ^ Editor state prior to the last action, used to implement undo
+        --   facilities.  Horrible memory efficiency, but it seems to work.
+
+    , dict         :: WordTree
+        -- ^ Autocompletion dictionary.
     }
     deriving (Eq, Read, Show)
 
@@ -178,6 +231,11 @@ instance Default EdState where
         { edLines      = B.singleton (False, "")
         , fname        = ""
         , readOnly     = False
+
+        , tokenCache   = B.singleton []
+        , rangeCache   = []
+        , bracketCache = []
+        , fullRebdReq  = False
 
         , cursorPos    = 1
         , loadPos      = (1, 1)
@@ -189,16 +247,16 @@ instance Default EdState where
         , status       = ""
         , lastEvent    = Nothing
 
-        , changed      = False
-        , history      = Nothing
-
         , buildDict    = []
-        , dict         = empty
         , canComplete  = False
         , replaceTabs  = False
         , detectTabs   = True
         , overwrite    = False
         , searchTerms  = []
+
+        , changed      = False
+        , history      = Nothing
+        , dict         = empty
         }
 
 
@@ -342,7 +400,7 @@ getSelection = getSelBounds >>= \case
                        $ drop (sC - 1)
                        $ take eC
                        $ snd
-                       $ B.curr l
+                       $ B.pos l
 
            else
                 let
@@ -387,7 +445,7 @@ delSelection = getSelBounds >>= \case
                 put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (mC - 1) l
                                                               ++ drop (cC - 1)
                                                                  ( snd
-                                                                 $ B.curr
+                                                                 $ B.pos
                                                                  $ edLines s
                                                                  )
                                                              )
@@ -401,7 +459,7 @@ delSelection = getSelBounds >>= \case
              GT -> do
                 put $ s { edLines   = B.withCurr (\(b, l) -> (b, take (cC - 1)
                                                                ( snd
-                                                               $ B.curr
+                                                               $ B.pos
                                                                $ edLines s
                                                                )
                                                               ++ drop (mC - 1) l
@@ -419,6 +477,34 @@ delSelection = getSelBounds >>= \case
 --   , frames and similar woo.
 getDisplayBounds :: WSEdit (Int, Int)
 getDisplayBounds = fmap swap (displayBounds . outputIface . vtyObj =<< ask)
+
+
+
+-- | Returns the bounds of the brackets the cursor currently resides in.
+getCurrBracket :: WSEdit (Maybe ((Int, Int), (Int, Int)))
+getCurrBracket = do
+    (cR, cC) <- getCursor
+
+    s <- get
+
+    let
+        brs1 = concat
+             $ drop (cR - 1)
+             $ reverse
+             $ map fst
+             $ bracketCache s
+
+        brs2 = map (withSnd $ const (maxBound, maxBound))
+             $ fromMaybe []
+             $ fmap snd
+             $ headMay
+             $ bracketCache s
+
+        brs  = filter ((>= (cR, cC)) . snd)
+             $ filter ((<= (cR, cC)) . fst)
+             $ brs1 ++ brs2
+
+    return $ headMay brs
 
 
 
@@ -452,6 +538,9 @@ data EdConfig = EdConfig
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
 
+    , initJMarks   :: [Int]
+        -- ^ Where to put jump marks on load.
+
 
     , newlineMode  :: NewlineMode
         -- ^ Newline conversion to use.
@@ -463,14 +552,26 @@ data EdConfig = EdConfig
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
 
-    , strDelim     :: [(Char, Char)]
+    , blockComment :: [(String, String)]
+        -- ^ List of block comment delimiters.
+
+    , strDelim     :: [(String, String)]
         -- ^ List of string delimiters.
+
+    , mStrDelim    :: [(String, String)]
+        -- ^ List of multi-line string delimiters.
+
+    , chrDelim     :: [(String, String)]
+        -- ^ List of char delimiters
 
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
 
     , escape       :: Maybe Char
         -- ^ Escape character for strings.
+
+    , brackets     :: [(String, String)]
+        -- ^ List of bracket pairs.
     }
 
 -- | Create a default `EdConfig`.
@@ -484,12 +585,17 @@ mkDefConfig v k = EdConfig
                 , drawBg       = True
                 , dumpEvents   = False
                 , purgeOnClose = False
+                , initJMarks   = []
                 , newlineMode  = universalNewlineMode
                 , encoding     = Nothing
                 , lineComment  = []
+                , blockComment = []
                 , strDelim     = []
+                , mStrDelim    = []
+                , chrDelim     = []
                 , keywords     = []
                 , escape       = Nothing
+                , brackets     = []
               }
 
 
@@ -530,8 +636,11 @@ data EdDesign = EdDesign
         -- ^ vty attribute for everything in the background
 
 
-    , dCurrLnMod     :: Attr -> Attr
+    , dCurrLnMod     :: Attr
         -- ^ Attribute modifications to apply to the current line
+
+    , dBrMod         :: Attr
+        -- ^ Attribute modifications for bracket matching.
 
     , dJumpMarkFmt   :: Attr
         -- ^ vty attribute for jump marks
@@ -578,7 +687,12 @@ instance Default EdDesign where
         , dBGFormat      = defAttr
                             `withForeColor` black
 
-        , dCurrLnMod     = flip withBackColor black
+        , dCurrLnMod     = defAttr
+                            `withBackColor` black
+
+        , dBrMod         = defAttr
+                            `withStyle`     underline
+
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
@@ -595,7 +709,6 @@ instance Default EdDesign where
             , (Lower      , defAttr
               )
             , (Upper      , defAttr
-                            `withStyle`     bold
               )
             , (Bracket    , defAttr
                             `withForeColor` yellow
@@ -616,6 +729,10 @@ instance Default EdDesign where
         , dHLStyles      =
             [ (HComment , defAttr
                             `withForeColor` brightMagenta
+                            `withStyle`     bold
+              )
+            , (HError   , defAttr
+                            `withBackColor` brightRed
                             `withStyle`     bold
               )
             , (HKeyword , defAttr
@@ -663,7 +780,12 @@ brightTheme = EdDesign
         , dBGFormat      = defAttr
                             `withForeColor` white
 
-        , dCurrLnMod     = flip withBackColor white
+        , dCurrLnMod     = defAttr
+                            `withBackColor` white
+
+        , dBrMod         = defAttr
+                            `withStyle`     underline
+
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
@@ -680,7 +802,6 @@ brightTheme = EdDesign
             , (Lower      , defAttr
               )
             , (Upper      , defAttr
-                            `withStyle`     bold
               )
             , (Bracket    , defAttr
                             `withForeColor` yellow
@@ -699,8 +820,15 @@ brightTheme = EdDesign
             ]
 
         , dHLStyles      =
-            [ (HComment , defAttr
+            [ (HBracket , defAttr
+                            `withStyle` underline
+              )
+            , (HComment , defAttr
                             `withForeColor` brightMagenta
+                            `withStyle`     bold
+              )
+            , (HError   , defAttr
+                            `withBackColor` brightRed
                             `withStyle`     bold
               )
             , (HKeyword , defAttr
@@ -751,7 +879,9 @@ type Keymap = [Maybe (Event, (WSEdit (), String))]
 
 -- | Mode for syntax highlighting.
 data HighlightMode = HNone
+                   | HBracket
                    | HComment
+                   | HError
                    | HKeyword
                    | HSearch
                    | HSelected
