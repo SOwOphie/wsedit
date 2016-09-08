@@ -89,7 +89,7 @@ type Snippet = (Attr, String)
 --   and in a given display column. The first argument toggles the bracket
 --   format modifier.
 charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
-charRep _  hl pos n '\t' = do
+charRep br hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
     c      <- ask
@@ -102,19 +102,21 @@ charRep _  hl pos n '\t' = do
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
                  (combineAttrs currSty)
+           $ iff br (combineAttrs $ dBrMod d)
            $ case hl of
                   HSelected -> lookupJustDef def HSelected $ dHLStyles   d
                   _         -> lookupJustDef def Whitesp   $ dCharStyles d
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
-charRep _  hl pos _ ' ' = do
+charRep br hl pos _ ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
                  (combineAttrs $ dCurrLnMod d)
+           $ iff br (combineAttrs $ dBrMod d)
            $ lookupJustDef def hl (dHLStyles d)
            , " "
            )
@@ -150,10 +152,11 @@ lineRep lNo str = do
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
-            i <- charRep (fromMaybe False $ fmap (`in2DRange` (lNo, tPos)) mayBr)
+            i <- charRep (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
                          (case (maySel, lookupBy (`inRange` tPos) fmt) of
                                (Just (sS, sE), _     )
-                                    | (sS, sE) `in2DRange` (lNo, tPos)
+                                    | sS <= (lNo, tPos)
+                                         && (lNo, tPos) <= sE
                                     -> HSelected
 
                                (_            , Just s) -> s
@@ -183,9 +186,13 @@ lineRep lNo str = do
             | a == xa   =          groupSnippet (Just (a , s ++ xs)) xxs
             | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
 
-        in2DRange :: (Ord a) => ((a, a), (a, a)) -> (a, a) -> Bool
-        in2DRange ((a, b), (c, d)) (x, y) = (a, b) <= (x, y)
-                                         && (x, y) <= (c, d)
+        inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
+        inBracketHL ((a, b), (c, d)) (x, y)
+            | a == x && x == c = (b,d        ) `inRange` y
+            | a == x           = (b, maxBound) `inRange` y
+            |           x == c = (0, d       ) `inRange` y
+            | a <  x && x <  c = y == 1
+            | otherwise        = False
 
 
 
