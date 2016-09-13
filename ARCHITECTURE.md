@@ -11,22 +11,22 @@ recommend you to run `stack haddock` and take a look at its output (located at
 
 The file tree looks somewhat like this:
 
-    **exec**
+    exec/
         Main.hs
-    **lang**
+    lang/
         < many .wsconf files >
     Setup.hs
     stack.yaml
-    **WSEdit**
+    WSEdit/
         Buffer.hs
-        **Control**
+        Control/
             Autocomplete.hs
             Base.hs
             Marks.hs
             Selection.hs
             Text.hs
         Control.hs
-        **Data**
+        Data/
             Algorithms.hs
             Pretty.hs
         Data.hs
