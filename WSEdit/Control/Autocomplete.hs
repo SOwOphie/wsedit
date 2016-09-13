@@ -24,8 +24,8 @@ import WSEdit.Data              ( WSEdit
                                 , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
                                           )
-                                , setStatus
                                 )
+import WSEdit.Data.Algorithms   (setStatus)
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
                                 , linesPlus, longestCommonPrefix, readEncFile
                                 , unlinesPlus, wordsPlus

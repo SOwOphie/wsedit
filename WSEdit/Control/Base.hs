@@ -20,7 +20,8 @@ import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
                                 , FmtParserState (PNothing)
                                 , HighlightMode (HSearch)
                                 , WSEdit
-                                , alter, getCursor, getOffset, setCursor
+                                )
+import WSEdit.Data.Algorithms   ( alter, getCursor, getOffset, setCursor
                                 , setStatus, setOffset
                                 )
 import WSEdit.Output            ( cursorOffScreen, draw, getViewportDimensions

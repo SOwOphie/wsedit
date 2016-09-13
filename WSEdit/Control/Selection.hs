@@ -28,7 +28,8 @@ import WSEdit.Data              ( EdConfig (tabWidth)
                                           , markPos, replaceTabs, searchTerms
                                           )
                                 , WSEdit
-                                , clearMark, delSelection, getMark, getCursor
+                                )
+import WSEdit.Data.Algorithms   ( clearMark, delSelection, getMark, getCursor
                                 , getSelection, setMark, setStatus
                                 )
 import WSEdit.Util              ( checkClipboardSupport, linesPlus, mayReadFile

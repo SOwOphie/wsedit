@@ -146,15 +146,19 @@ rebuildFmt _ = fullRebuild
     where
         fsm :: (EdConfig, EdState)              -- ^ Editor parameters
             -> Int                              -- ^ Line number
-            -> (FmtParserState, BracketStack)   -- ^ State of the FSM leaving the last line
+            -> (FmtParserState, BracketStack)   -- ^ State of the FSM leaving the previous line
             -> [(Int, String)]                  -- ^ Tokens in the line
             -> (RangeCacheElem, BracketCacheElem)
 
+        -- If the line ends in a state that should transfer to the next one, facilitate that.
         fsm _      _   (PMLString n1 str  , st         ) []             = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
         fsm _      _   (PBComment n1 str  , st         ) []             = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
+        -- Single-line strings shouldn't, so mark the opening tag as an error and proceed with the next line.
         fsm _      _   (PLnString n1 _    , st         ) []             = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
+        -- Otherwise, set the parser to the empty state for the next line.
         fsm _      _   (_                 , st         ) []             = (([]                          , PNothing       ), ([], st))
 
+        -- Close character strings
         fsm (c, s) lNo (PChString n1 str l, st         ) (_:(n2, x):xs)
             | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
 
@@ -162,24 +166,35 @@ rebuildFmt _ = fullRebuild
             | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
             | otherwise           =                                                           fsm (c, s) lNo (PNothing, st) ((n2, x):xs)
 
+        -- Highlight search terms regardless of current parser state, no magic here
         fsm (c, s) lNo st                                ((n , x):xs)
             | x `elem` searchTerms s = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
 
+        -- Close regular strings
         fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, x):xs)
             | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
             | otherwise =                                                            fsm (c, s) lNo (PLnString n1 str, st) xs
 
+        -- Close multi-line strings
         fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, x):xs)
             | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
             | otherwise =                                                            fsm (c, s) lNo (PMLString n1 str, st) xs
 
+        -- Close block comments
         fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
             | str == x  = withFst (withFst (((n1, n2 + length x - 1), HComment):)) $ fsm (c, s) lNo (PNothing        , st) xs
             | otherwise =                                                            fsm (c, s) lNo (PBComment n1 str, st) xs
 
+        -- Close brackets (only outside highlighted ranges)
         fsm (c, s) lNo (PNothing          , (p, str):bs) ((n1, x):xs)
-            | str == x = withSnd (withFst ((p, (lNo, n1)):)) $ fsm (c, s) lNo (PNothing, bs) xs
+            | str == x                      = withSnd (withFst ((p, (lNo, n1)):)) $ fsm (c, s) lNo (PNothing, bs) xs
 
+        -- Stray closing bracket? Tag it as an error!
+        fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
+            | x `elem` map snd (brackets c) = withFst (withFst (((n1, n1 + length x - 1), HError):))
+                                            $ fsm (c, s) lNo (PNothing, st) xs
+
+        -- Open various ranges
         fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
             |            x `elem`   lineComment  c = (([((n1, maxBound), HComment)], PNothing), ([], st))
             | Just cl <- x `lookup` brackets     c = fsm (c, s) lNo (PNothing                           , ((lNo, n1), cl) : st) xs

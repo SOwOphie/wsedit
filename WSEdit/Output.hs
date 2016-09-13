@@ -54,7 +54,8 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                           )
                                 , HighlightMode (HNone, HSelected)
                                 , WSEdit
-                                , getCurrBracket, getCursor, getDisplayBounds
+                                )
+import WSEdit.Data.Algorithms   ( getCurrBracket, getCursor, getDisplayBounds
                                 , getOffset, getSelBounds
                                 )
 import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
@@ -92,16 +93,16 @@ charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
 charRep br hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
-    c      <- ask
+    conf   <- ask
 
     let
-        d       = edDesign   c
+        d       = edDesign   conf
         currSty = dCurrLnMod d
-        tW      = tabWidth c
+        tW      = tabWidth conf
         extTab  = padLeft tW (dTabExt d) $ dTabStr d
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (combineAttrs currSty)
+                 (flip combineAttrs currSty)
            $ iff br (combineAttrs $ dBrMod d)
            $ case hl of
                   HSelected -> lookupJustDef def HSelected $ dHLStyles   d
@@ -115,27 +116,27 @@ charRep br hl pos _ ' ' = do
     d      <- edDesign <$> ask
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (combineAttrs $ dCurrLnMod d)
+                 (flip combineAttrs $ dCurrLnMod d)
            $ iff br (combineAttrs $ dBrMod d)
            $ lookupJustDef def hl (dHLStyles d)
            , " "
            )
 
-charRep br hl pos _ c = do
+charRep br hl pos _ ch = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (combineAttrs $ dCurrLnMod d)
+                 (flip combineAttrs $ dCurrLnMod d)
            $ iff br (combineAttrs $ dBrMod d)
            $ lookupJustDef
-                (lookupJustDef def (charClass c) (dCharStyles d))
+                (lookupJustDef def (charClass ch) (dCharStyles d))
                 hl
                     (dHLStyles d)
-           , if charClass c == Unprintable
-                then "?#" ++ showHex (ord c) ";"
-                else [c]
+           , if charClass ch == Unprintable
+                then "?#" ++ showHex (ord ch) ";"
+                else [ch]
            )
 
 
@@ -152,21 +153,16 @@ lineRep lNo str = do
 
         f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
         f (im, tPos, vPos) c = do
-            i <- charRep (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
-                         (case (maySel, lookupBy (`inRange` tPos) fmt) of
-                               (Just (sS, sE), _     )
-                                    | sS <= (lNo, tPos)
-                                         && (lNo, tPos) <= sE
-                                    -> HSelected
-
-                               (_            , Just s) -> s
-
-                               _    | otherwise
-                                    -> HNone
-                         )
-                         (lNo, tPos)
-                         vPos
-                         c
+            i <- charRep
+                    (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
+                    (case (maySel, lookupBy (`inRange` tPos) fmt) of
+                          (Just (sS, sE), _     ) | sS <= (lNo, tPos) && (lNo, tPos) <= sE -> HSelected
+                          (_            , Just s)                                          -> s
+                          _                       | otherwise                              -> HNone
+                    )
+                    (lNo, tPos)
+                    vPos
+                    c
 
             return (i:im, tPos + 1, vPos + length (snd i))
 
@@ -187,12 +183,8 @@ lineRep lNo str = do
             | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
 
         inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
-        inBracketHL ((a, b), (c, d)) (x, y)
-            | a == x && x == c = (b,d        ) `inRange` y
-            | a == x           = (b, maxBound) `inRange` y
-            |           x == c = (0, d       ) `inRange` y
-            | a <  x && x <  c = y == 1
-            | otherwise        = False
+        inBracketHL ((a, b), (c, d)) (x, y) = (x, y) `elem` [(a, b), (c, d)]
+                                           || a /= c && a <= x && x <= c && y == 1
 
 
 
@@ -443,17 +435,14 @@ makeTextFrame = do
                                    )
                                  $ translateX (-scrollCols)
                                  $ pad 0 0 (scrollCols + 1) 0
-                                 $ (if drawBg c
-                                       then id
-                                       else (<|> char ( (if l == cR && not (readOnly s)
-                                                            then combineAttrs $ dCurrLnMod d
-                                                            else id
-                                                        )
-                                                      $ lookupJustDef def Whitesp
-                                                      $ dCharStyles d
-                                                      ) (dBGChar d)
-                                            )
-                                 ) ln
+                                 $ (iff (not $ drawBg c)
+                                        (<|> char ( iff (l == cR && not (readOnly s))
+                                                        (combineAttrs $ dCurrLnMod d)
+                                                  $ lookupJustDef def Whitesp
+                                                  $ dCharStyles d
+                                                  ) (dBGChar d)
+                                        )
+                                   ) ln
                  )
            $ zip [1 + scrollRows ..] txt
 

@@ -50,8 +50,9 @@ import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
                                               , readOnly, replaceTabs
                                               )
                                    , WSEdit
-                                   , chopHist, mapPast, popHist, setStatus
                                    , version
+                                   )
+import WSEdit.Data.Algorithms      ( chopHist, mapPast, popHist, setStatus
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)

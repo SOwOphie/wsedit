@@ -27,8 +27,8 @@ import WSEdit.Data                 ( WSEdit
                                    , EdState ( cursorPos, edLines, overwrite
                                              , replaceTabs
                                              )
-                                   , getCursor
                                    )
+import WSEdit.Data.Algorithms      (getCursor)
 import WSEdit.Output               (stringWidth)
 import WSEdit.Util                 (delN, withPair, withSnd)
 

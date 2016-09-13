@@ -26,7 +26,8 @@ import WSEdit.Control.Selection    ( copy, deleteSelection, ifMarked
 import WSEdit.Control.Text         ( cleanse, delLeft, delRight, insertTab
                                    , smartHome, smartNewLine
                                    )
-import WSEdit.Data                 (Keymap, clearMark)
+import WSEdit.Data                 (Keymap)
+import WSEdit.Data.Algorithms      (clearMark)
 
 
 

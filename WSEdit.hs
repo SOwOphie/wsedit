@@ -50,9 +50,9 @@ import WSEdit.Data              ( EdConfig ( blockComment, brackets, chrDelim
                                           , searchTerms, status
                                           )
                                 , WSEdit
-                                , brightTheme, catchEditor, mkDefConfig
-                                , setStatus
+                                , brightTheme, mkDefConfig
                                 )
+import WSEdit.Data.Algorithms   (catchEditor, setStatus)
 import WSEdit.Data.Pretty       (unPrettyEdConfig)
 import WSEdit.Help              (confHelp, keymapHelp, usageHelp, versionHelp)
 import WSEdit.Keymaps           (defaultKM)
@@ -262,16 +262,66 @@ argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c {
 argLoop h f (('-':'f':'k':'-'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = filter (/= x) $ keywords c                                     }, s)
 argLoop h f (('-':'f':'l':'c':'+':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = x : lineComment c                                              }, s)
 argLoop h f (('-':'f':'l':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c { lineComment  = filter (/= x) $ lineComment c                                  }, s)
-argLoop h f (('-':'f':'b':'c':'+':x ):xs) (c, s) = argLoop h f          xs  (c { blockComment = withSnd (drop 1) (span (/='_') x) : blockComment c             }, s)
-argLoop h f (('-':'f':'b':'c':'-':x ):xs) (c, s) = argLoop h f          xs  (c { blockComment = filter (/= withSnd (drop 1) (span (/='_') x)) $ blockComment c }, s)
+
+argLoop h f (('-':'f':'b':'c':'+':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { blockComment = (a, b) : blockComment c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fbc+")
+
+argLoop h f (('-':'f':'b':'c':'-':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { blockComment = filter (/= (a, b)) $ blockComment c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fbc-")
+
 argLoop h f (('-':'f':'s':'+':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = ([a], [b]) : strDelim c                                        }, s)
 argLoop h f (('-':'f':'s':'-':a:b:[]):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= ([a], [b])) $ strDelim c                            }, s)
-argLoop h f (('-':'f':'s':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { strDelim     = withSnd (drop 1) (span (/='_') x) : strDelim c                 }, s)
-argLoop h f (('-':'f':'s':'-'    :x ):xs) (c, s) = argLoop h f          xs  (c { strDelim     = filter (/= withSnd (drop 1) (span (/='_') x)) $ strDelim c     }, s)
-argLoop h f (('-':'f':'m':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c { mStrDelim    = withSnd (drop 1) (span (/='_') x) : mStrDelim c                }, s)
-argLoop h f (('-':'f':'m':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { mStrDelim    = filter (/= withSnd (drop 1) (span (/='_') x)) $ mStrDelim c    }, s)
-argLoop h f (('-':'f':'c':'s':'+':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = withSnd (drop 1) (span (/='_') x) : chrDelim c                 }, s)
-argLoop h f (('-':'f':'c':'s':'-':x ):xs) (c, s) = argLoop h f          xs  (c { chrDelim     = filter (/= withSnd (drop 1) (span (/='_') x)) $ chrDelim c     }, s)
+
+argLoop h f (('-':'f':'s':'+'    :x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { strDelim = (a, b) : strDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fs+")
+
+argLoop h f (('-':'f':'s':'-'    :x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { strDelim = filter (/= (a, b)) $ strDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fs-")
+
+argLoop h f (('-':'f':'m':'s':'+':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { mStrDelim = (a, b) : mStrDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fms+")
+
+argLoop h f (('-':'f':'m':'s':'-':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { mStrDelim = filter (/= (a, b)) $ mStrDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fms-")
+
+argLoop h f (('-':'f':'c':'s':'+':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { chrDelim = (a, b) : chrDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fcs+")
+
+argLoop h f (('-':'f':'c':'s':'-':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { chrDelim = filter (/= (a, b)) $ chrDelim c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fcs-")
+
 argLoop h f (('-':'j'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = readNote (fqn "argLoop") x : initJMarks c                      }, s)
 argLoop h f (('-':'J'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = filter (/= readNote (fqn "argLoop") x) $ initJMarks c          }, s)
 argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n                                     }, s)

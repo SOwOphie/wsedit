@@ -26,6 +26,7 @@ library
     WSEdit.Control.Selection,
     WSEdit.Control.Text,
     WSEdit.Data,
+    WSEdit.Data.Algorithms,
     WSEdit.Data.Pretty,
     WSEdit.Help,
     WSEdit.Keymaps,
@@ -53,7 +54,7 @@ library
   ghc-options:
     -threaded
     -Wall
-    -Werror
+--    -Werror
     -O2
 
 executable wsedit
@@ -68,5 +69,5 @@ executable wsedit
   ghc-options:
     -threaded
     -Wall
-    -Werror
+--    -Werror
     -O2
