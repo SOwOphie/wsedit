@@ -54,7 +54,7 @@ library
   ghc-options:
     -threaded
     -Wall
---    -Werror
+    -Werror
     -O2
 
 executable wsedit
@@ -69,5 +69,5 @@ executable wsedit
   ghc-options:
     -threaded
     -Wall
---    -Werror
+    -Werror
     -O2
