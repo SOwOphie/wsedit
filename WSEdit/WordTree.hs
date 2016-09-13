@@ -13,7 +13,7 @@ import Data.Maybe (catMaybes)
 
 
 
--- | Autocomplete dictionary.
+-- | Autocomplete dictionary. 'Nothing' denotes the end of a valid word.
 data WordTree = Node [Maybe (Char, WordTree)]
     deriving (Eq, Ord, Read, Show)
 

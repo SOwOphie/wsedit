@@ -37,8 +37,7 @@ import qualified WSEdit.Buffer as B
 
 
 
--- | Adds a file to the dictionary, parsing all lines at the given indentation
---   depth.
+-- | Adds a file to the dictionary.
 dictAdd :: FilePath -> WSEdit ()
 dictAdd f = do
     s <- get
@@ -102,8 +101,7 @@ dictAdd f = do
 
 
 
--- | Adds all files with the right extension in the current working directory
---   to the dictionary.
+-- | Rebuilds the dictionary.
 dictAddRec :: WSEdit ()
 dictAddRec = do
     standby $ "Rebuilding dictionary...\n\n"

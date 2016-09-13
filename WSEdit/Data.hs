@@ -578,7 +578,7 @@ type WSEdit = RWST EdConfig () EdState IO
 
 
 -- | Map of events to actions (and their descriptions). 'Nothing's are used to
---   mark sections.
+--   delimit sections in the auto-generated keymap help.
 type Keymap = [Maybe (Event, (WSEdit (), String))]
 
 

@@ -215,12 +215,12 @@ mayReadFile f = do
 
 
 -- | Character classes.
-data CharClass = Whitesp     -- ^ Whitespace (@"\t\n\r "@)
+data CharClass = Whitesp     -- ^ Whitespace (@"\\t\\n\\r "@)
                | Digit       -- ^ Digit (@['0'..'9']@)
                | Lower       -- ^ Lowercase letter (@'_':['a'..'z']@)
                | Upper       -- ^ Uppercase letter (@['A'..'Z']@)
                | Bracket     -- ^ Bracket (@"()[]{}"@)
-               | Operator    -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|@"@)
+               | Operator    -- ^ Operator (@"+-*/\\$!'\"%&^=?´`~#.:,;<>|\@"@)
                | Unprintable -- ^ Unprintable or unicode mark characters.
                | Special     -- ^ Everything else
     deriving (Eq, Read, Show)
