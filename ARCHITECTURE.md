@@ -10,6 +10,7 @@ recommend you to run `stack haddock` and take a look at its output (located at
 ## Files and Modules
 
 The file tree looks somewhat like this:
+
     **exec**
         Main.hs
     **lang**
