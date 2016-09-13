@@ -59,7 +59,7 @@ Let's go through them one by one.
  * __wsedit.cabal__: `cabal`'s main config file, details the build process.
    Should be self-explanatory.
 
-Now that we've covered all the boring boilerplate, let's get to the juicy part.
+Now that we've covered all the boring boilerplate, let's get to the juicy part!
 
  * __WSEdit.hs__: Main file, gets called first. Contains the whole
    initialization process, options parsing, the main loop and runtime error
@@ -151,4 +151,4 @@ re-launch the editor in the state before the error occured.
 
 ## The Rendering Pipeline
 
-<TODO>
+__TODO__
