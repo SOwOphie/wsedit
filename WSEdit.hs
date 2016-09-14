@@ -17,7 +17,7 @@ import Graphics.Vty             ( Event (EvKey, EvResize)
                                 , mkVty, nextEvent, shutdown
                                 )
 import Safe                     ( atDef, headDef, headMay, lastNote, readDef
-                                , readNote
+                                , readMay, readNote
                                 )
 import System.Directory         ( doesDirectoryExist, getHomeDirectory
                                 , listDirectory
@@ -179,8 +179,7 @@ start = do
                                  )
 
     _ <- case argLoop h False sw (conf', st) of
-              Right (c, s)    -> do
-
+              Right (c          , s  ) -> do
                 -- Test whether the file encoding is actually usable
                 case encoding c of
                      Nothing -> return ()
@@ -194,10 +193,16 @@ start = do
 
                 runRWST (exec $ not dashS) c s
 
-              Left  (ex, msg) -> do
-                                    shutdown v
-                                    putStrLn msg
-                                    exitWith ex
+              Left  (ExitSuccess, msg) -> do
+                shutdown v
+                putStrLn msg
+                exitWith ExitSuccess
+
+              Left  (ex         , msg) -> do
+                shutdown v
+                putStrLn $ "An error occured while parsing options: " ++ msg
+                        ++ "\nUse -! to ignore errors on startup."
+                exitWith ex
 
     -- Shutdown vty
     shutdown v
@@ -322,9 +327,27 @@ argLoop h f (('-':'f':'c':'s':'-':x ):xs) (c, s) =
                                   then argLoop h f xs (c, s)
                                   else Left (ExitFailure 1, "Syntax error in -fcs-")
 
-argLoop h f (('-':'j'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = readNote (fqn "argLoop") x : initJMarks c                      }, s)
-argLoop h f (('-':'J'            :x ):xs) (c, s) = argLoop h f          xs  (c { initJMarks   = filter (/= readNote (fqn "argLoop") x) $ initJMarks c          }, s)
-argLoop h f (('-':'i'            :n ):xs) (c, s) = argLoop h f          xs  (c { tabWidth     = readNote (fqn "argLoop") n                                     }, s)
+argLoop h f (('-':'j'            :x ):xs) (c, s) =
+    case readMay x of
+         Just n  -> argLoop h f xs (c { initJMarks = n : initJMarks c }, s)
+         Nothing -> if f
+                       then argLoop h f xs (c, s)
+                       else Left (ExitFailure 1, "Syntax error in -j")
+
+argLoop h f (('-':'J'            :x ):xs) (c, s) =
+    case readMay x of
+         Just n  -> argLoop h f xs (c { initJMarks = filter (/= n) $ initJMarks c }, s)
+         Nothing -> if f
+                       then argLoop h f xs (c, s)
+                       else Left (ExitFailure 1, "Syntax error in -J")
+
+argLoop h f (('-':'i'            :x ):xs) (c, s) =
+    case readMay x of
+         Just n  -> argLoop h f xs (c { tabWidth = n }, s)
+         Nothing -> if f
+                       then argLoop h f xs (c, s)
+                       else Left (ExitFailure 1, "Syntax error in -i")
+
 argLoop h f (('-':'l':'u'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF LF                                            }, s)
 argLoop h f (('-':'l':'w'        :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = NewlineMode CRLF CRLF                                          }, s)
 argLoop h f (('-':'L'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { newlineMode  = universalNewlineMode                                           }, s)
