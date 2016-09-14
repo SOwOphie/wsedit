@@ -259,8 +259,22 @@ argLoop h f (('-':'b'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c {
 argLoop h f (('-':'B'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { drawBg       = True                                                           }, s)
 argLoop h f (('-':'e'            :x ):xs) (c, s) = argLoop h f          xs  (c { encoding     = Just x                                                         }, s)
 argLoop h f (('-':'E'            :x ):xs) (c, s) = argLoop h f (('-':x):xs) (c { encoding     = Nothing                                                        }, s)
-argLoop h f (('-':'f':'b':'r':'+':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = withSnd (drop 1) (span (/='_') x) : brackets c                 }, s)
-argLoop h f (('-':'f':'b':'r':'-':x ):xs) (c, s) = argLoop h f          xs  (c { brackets     = filter (/= withSnd (drop 1) (span (/='_') x)) $ brackets c     }, s)
+argLoop h f (('-':'f':'b':'r':'+':x ):xs) (c, s) =
+
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { brackets = (a, b) : brackets c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fbr+")
+
+argLoop h f (('-':'f':'b':'r':'-':x ):xs) (c, s) =
+    case withSnd (drop 1) $ span (/='_') x of
+         (a@(_:_), b@(_:_)) -> argLoop h f xs (c { brackets = filter (/= (a, b)) $ brackets c }, s)
+         _                  -> if f
+                                  then argLoop h f xs (c, s)
+                                  else Left (ExitFailure 1, "Syntax error in -fbr-")
+
+
 argLoop h f (('-':'f':'e':'+': e :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Just e                                                         }, s)
 argLoop h f (('-':'f':'e':'-'    :[]):xs) (c, s) = argLoop h f          xs  (c { escape       = Nothing                                                        }, s)
 argLoop h f (('-':'f':'k':'+'    :x ):xs) (c, s) = argLoop h f          xs  (c { keywords     = x : keywords c                                                 }, s)
