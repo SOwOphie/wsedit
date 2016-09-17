@@ -159,7 +159,7 @@ start = do
 
                                     let (cLines, sLines) = withSnd (drop 2)
                                                          $ span (/= "")
-                                                         $ drop 4
+                                                         $ drop 5
                                                          $ linesPlus r
 
                                         conf' = unPrettyEdConfig
@@ -212,9 +212,10 @@ start = do
         exec :: Bool -> WSEdit ()
         exec b = do
             when b $ catchEditor load $ \e ->
-                quitComplain $ "An uncommon I/O error occured while loading:\n\n"
+                quitComplain $ "An I/O error occured while loading:\n\n"
                             ++ show e
 
+            standby "Building initial rendering cache..."
             rebuildAll Nothing
 
             mainLoop
@@ -404,16 +405,18 @@ argLoop h True  (_                   :xs) (c, s) = argLoop h True xs (c, s)
 -- | Main editor loop. Runs once per input event processed.
 mainLoop :: WSEdit ()
 mainLoop = do
-    flip catchEditor errHdl $ do
+    c <- ask
+    s <- get
+
+    ev <- flip catchEditor (errHdlDraw >> return undefined) $ do
         draw
         setStatus ""
 
-        c <- ask
-        s <- get
         ev <- liftIO $ nextEvent $ vtyObj c
-
         modify (\st -> st { lastEvent = Just ev })
+        return ev
 
+    flip catchEditor errHdlControl $ do
         -- look up the event in the keymap
         -- if not found: insert the pressed key
         -- if it's not alphanumeric: show an "event not bound" warning
@@ -431,6 +434,7 @@ mainLoop = do
               $ catMaybes
               $ keymap c
 
+    flip catchEditor errHdlRenderer $ do
         rebuildAll $ Just s
 
         when (dumpEvents c) $ do
@@ -441,8 +445,12 @@ mainLoop = do
     when b mainLoop
 
     where
-        errHdl :: SomeException -> WSEdit ()
-        errHdl e = do
+        errHdlDraw     = errHdl "Draw call"
+        errHdlControl  = errHdl "Control"
+        errHdlRenderer = errHdl "Renderer"
+
+        errHdl :: String -> SomeException -> WSEdit ()
+        errHdl comp e = do
             b <- changed <$> get
             if b
                then do
@@ -451,9 +459,9 @@ mainLoop = do
                            ++ "\n\n"
                            ++ "Dumping unsaved changes..."
                     save
-                    bail $ "An error occured: " ++ show e
-                        ++ "\n\n"
-                        ++ "All unsaved changes have been dumped to"
-                        ++ " ./CRASH-RESCUE ."
+                    bail (Just comp) $ "An error occured: " ++ show e
+                                    ++ "\n\n"
+                                    ++ "All unsaved changes have been dumped to"
+                                    ++ " ./CRASH-RESCUE ."
 
-               else bail $ "An error occured: " ++ show e
+               else bail (Just comp) $ "An error occured: " ++ show e

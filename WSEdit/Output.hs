@@ -58,7 +58,7 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
 import WSEdit.Data.Algorithms   ( getCurrBracket, getCursor, getDisplayBounds
                                 , getOffset, getSelBounds
                                 )
-import WSEdit.Util              ( CharClass (Unprintable, Whitesp)
+import WSEdit.Util              ( CharClass (Bracket, Unprintable, Whitesp)
                                 , charClass, combineAttrs, iff, lookupBy
                                 , padLeft, padRight
                                 )
@@ -184,7 +184,6 @@ lineRep lNo str = do
 
         inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
         inBracketHL ((a, b), (c, d)) (x, y) = (x, y) `elem` [(a, b), (c, d)]
-                                           || a /= c && a <= x && x <= c && y == 1
 
 
 
@@ -416,6 +415,7 @@ makeTextFrame = do
     let d = edDesign c
 
     lNoWidth <- lineNoWidth
+    mayBr    <- getCurrBracket
 
     (scrollRows, scrollCols) <- getOffset
     (   txtRows, txtCols   ) <- getViewportDimensions
@@ -429,20 +429,26 @@ makeTextFrame = do
     return $ pad (lNoWidth + 3) 2 0 0
            $ cropRight (txtCols + 1)  -- +1 to compensate for the leading blank
            $ vertCat
-           $ map (\(l, (b, ln)) -> (if b
-                                       then (char (dJumpMarkFmt  d) '•' <|>)
-                                       else (char (dLineNoFormat d) ' ' <|>)
-                                   )
-                                 $ translateX (-scrollCols)
-                                 $ pad 0 0 (scrollCols + 1) 0
-                                 $ (iff (not $ drawBg c)
-                                        (<|> char ( iff (l == cR && not (readOnly s))
-                                                        (combineAttrs $ dCurrLnMod d)
-                                                  $ lookupJustDef def Whitesp
-                                                  $ dCharStyles d
-                                                  ) (dBGChar d)
-                                        )
-                                   ) ln
+           $ map (\(l, (b, ln)) ->
+                    (case (mayBr, b) of
+                          (_                    , True) -> (char (dJumpMarkFmt d) '•' <|>)
+
+                          (Just ((x, _), (y, _)), _   )
+                            | x == l || l == y -> (char (lookupJustDef def Bracket $ dCharStyles d) '*' <|>)
+                            | x <  l && l <  y -> (char (lookupJustDef def Bracket $ dCharStyles d) '|' <|>)
+
+                          _ -> (char (dLineNoFormat d) ' ' <|>)
+                    )
+                    $ translateX (-scrollCols)
+                    $ pad 0 0 (scrollCols + 1) 0
+                    $ (iff (not $ drawBg c)
+                           (<|> char ( iff (l == cR && not (readOnly s))
+                                           (combineAttrs $ dCurrLnMod d)
+                                     $ lookupJustDef def Whitesp
+                                     $ dCharStyles d
+                                     ) (dBGChar d)
+                           )
+                      ) ln
                  )
            $ zip [1 + scrollRows ..] txt
 

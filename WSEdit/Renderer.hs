@@ -49,6 +49,7 @@ import qualified WSEdit.Buffer as B
 rebuildTk :: Maybe EdState -> WSEdit ()
 rebuildTk Nothing  = do
     s <- get
+
     c <- B.mapM tkLn $ edLines s
     put $ s { tokenCache = c }
 

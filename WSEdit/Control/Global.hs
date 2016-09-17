@@ -46,8 +46,8 @@ import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
                                               )
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines, fname
-                                              , loadPos, markPos, overwrite
-                                              , readOnly, replaceTabs
+                                              , lastEvent, loadPos, markPos
+                                              , overwrite, readOnly, replaceTabs
                                               )
                                    , WSEdit
                                    , version
@@ -79,9 +79,10 @@ simulateCrash = error "Simulated crash."
 
 -- | Shuts down vty gracefully, prints out an error message, creates a
 --   (potentially quite sizeable) error dump at "./CRASH-DUMP" and finally exits
---   with return code 1.
-bail :: String -> WSEdit ()
-bail s = do
+--   with return code 1. The optional first parameter can be used to indicate
+--   the subsystem where the error occured.
+bail :: Maybe String -> String -> WSEdit ()
+bail mayComp s = do
     c <- ask
     st <- get
 
@@ -94,6 +95,9 @@ bail s = do
     liftIO $ writeFile "CRASH-DUMP"
            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
           ++ "Error message: " ++ (headDef "" $ lines s)
+                ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
+          ++ "\nLast recorded event: "
+                ++ fromMaybe "-" (fmap show $ lastEvent st)
           ++ "\n\nEditor configuration:\n"
           ++ indent (ppShow $ prettyEdConfig c)
           ++ "\n\nEditor state:\n"
