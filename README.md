@@ -54,6 +54,10 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
     brew tap ararslan/pints
     brew install wsedit
 
+**IMPORTANT**: I have no access to OSX systems myself, so the amount of support
+I can provide for platform-specific issues will be heavily limited and I might
+need your help to test some things for me.
+
 ### Building from source
 
 1.  Install the
