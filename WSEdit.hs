@@ -162,16 +162,28 @@ start = do
                                                          $ drop 5
                                                          $ linesPlus r
 
-                                        conf' = unPrettyEdConfig
-                                                (vtyObj conf)
-                                                (keymap conf)
-                                              $ readNote (fqn "start:1")
+                                        conf' = fmap ( unPrettyEdConfig
+                                                       (vtyObj conf)
+                                                       (keymap conf)
+                                                     )
+                                              $ readMay
                                               $ unlinesPlus cLines
 
-                                        st    = readNote (fqn "start:2")
+                                        st    = readMay
                                               $ unlinesPlus sLines
 
-                                    return (conf', st)
+                                    case (conf', st) of
+                                         (Just c, Just s) -> return (c, s)
+                                         _                -> do
+                                            shutdown v
+
+                                            putStrLn $ "-s: parse error. Are "
+                                                    ++ "you sure you aren't "
+                                                    ++ "trying to open a "
+                                                    ++ "different version's "
+                                                    ++ "dump?"
+
+                                            exitFailure
 
                      else return (conf, def { fname   = fromMaybe "" filename
                                             , loadPos = (tLnNo, tColNo)
