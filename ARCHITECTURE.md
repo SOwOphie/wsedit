@@ -151,4 +151,40 @@ re-launch the editor in the state before the error occured.
 
 ## The Rendering Pipeline
 
-__TODO__
+Rendering the output of `wsedit` is a three-step process:
+
+ 1. Extract all syntactically relevant tokens from each line of text and put
+    them into a buffer. Some tokens may have no relevance at the moment (e.g. a
+    single quote inside a double quoted string), this will have to be taken into
+    account in step 2.
+
+ 2. Run a FSM over these lines to obtain ranges of to-be-coloured text as well
+    as ranges of matching brackets. Put these into buffers as well.
+
+ 3. On the actual draw call, look up each character's position in the caches
+    from step 2 to determine its designated colour.
+
+This process is optimized by smart recalculation as follows:
+
+ 1. Since changes in the document are most likely to happen close to the cursor,
+    we can use a blockchain-like hashing scheme to do fast difference checks
+    (this one is a bit hard to explain, take a look at `WSEdit.Buffer`s
+    implementation, especially the unexposed `HashList` functions). As the
+    results of the last run are stored per line, we can simply cut out all the
+    outdated lines from the old cache and replace them by running step 1 over
+    the altered area again. Due to the data structure used for the cache (also a
+    `WSEdit.Buffer`), this is pretty memory-efficient, since the unchanged areas
+    will not take up new space.
+
+ 2. We don't need to calculate any formatting beyond the visible area, so we
+    simply don't do that. As the FSM's state leaving each line is stored in the
+    cache it writes, we can resume parsing tokens at the first changed line and
+    stop as soon as we hit the lower edge of the screen. Also, since the cache
+    is stored as a regular list in reverse order, the common tail of two steps
+    won't take up any additional space. (This optimization is only implemented
+    partially yet. Every recalculation will start from the first line for now.
+    The potential for optimization is there, but small for files <10000 lines.)
+
+For some operations it is necessary to ignore all existing caches (e.g. changes
+in search term highlighting). `EdState` contains the field `fullRebdReq :: Bool`
+to facilitate just that.
