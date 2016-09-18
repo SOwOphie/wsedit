@@ -154,12 +154,12 @@ re-launch the editor in the state before the error occured.
 Rendering the output of `wsedit` is a three-step process:
 
  1. Extract all syntactically relevant tokens from each line of text and put
-    them into a buffer. Some tokens may have no relevance at the moment (e.g. a
+    them into a cache. Some tokens may have no relevance at the moment (e.g. a
     single quote inside a double quoted string), this will have to be taken into
     account in step 2.
 
  2. Run a FSM over these lines to obtain ranges of to-be-coloured text as well
-    as ranges of matching brackets. Put these into buffers as well.
+    as ranges of matching brackets. Put these into caches as well.
 
  3. On the actual draw call, look up each character's position in the caches
     from step 2 to determine its designated colour.

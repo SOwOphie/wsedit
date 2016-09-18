@@ -78,6 +78,18 @@ Thanks to Alex Arslan for providing a homebrew formula for wsedit:
     all the available options.
 
 
+## A small note on interface stability
+
+`wsedit`'s configuration interface is not stable as of 1.1.* . I intend to
+clean up the somewhat strange syntax for 1.2, and this will lead to changes in
+the syntax of config files. However, I do promise two things:
+
+ * All syntax changes will be for the better, allowing for more expressive
+   configuration.
+
+ * I will provide a `sed` script to update configs from release to release.
+
+
 ## Bugs / Crashes and how to report them properly
 
 There will be bugs. No doubt about that. I'm trying my best to keep their
