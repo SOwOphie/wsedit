@@ -280,27 +280,29 @@ makeHeader = do
     (_, txtCols   ) <- getViewportDimensions
 
     return
-        $ string (dColNoFormat d)
-            ( replicate (lNoWidth + 3) ' '
-           ++ take (txtCols + 1)
-                   ( drop scrollCols
-                   $ (' ':)
-                   $ concatMap ( padRight (dColNoInterval d) ' '
-                               . show
-                               )
-                     [1, dColNoInterval d + 1 ..]
-                   )
-            )
+        $ (  string (dFrameFormat d) (replicate (lNoWidth + 2) ' ' ++ "│")
+         <|> string (dColNoFormat d)
+                (take (txtCols + 1)
+                      ( drop scrollCols
+                      $ (' ':)
+                      $ concatMap ( padRight (dColNoInterval d) ' '
+                                  . show
+                                  )
+                        [1, dColNoInterval d + 1 ..]
+                      )
+                )
+         <|> string (dFrameFormat d) "│"
+          )
        <-> string (dFrameFormat d)
-            ( replicate (lNoWidth + 2) ' '
-           ++ "+"
+            ( replicate (lNoWidth + 2) '─'
+           ++ "╬"
            ++ take (txtCols + 1)
                   ( drop scrollCols
-                  $ ('-':)
+                  $ ('═':)
                   $ cycle
-                  $ 'v' : replicate (dColNoInterval d - 1) '-'
+                  $ '╬' : replicate (dColNoInterval d - 1) '═'
                   )
-           ++ "+-"
+           ++ "╬─"
             )
 
 
@@ -336,7 +338,7 @@ makeLineNos = do
                   | n `mod` dLineNoInterv d == 0 || r == n -> show n
                   | otherwise                              -> "·"
              )
-         <|> string (dFrameFormat d) " |"
+         <|> string (dFrameFormat d) " ║"
 
 
 
@@ -353,13 +355,13 @@ makeFooter = do
     (r         , c      ) <- getCursor
 
     return $ string (dFrameFormat d)
-                ( replicate (lNoWidth + 2) ' '
-               ++ "+-----------+"
-               ++ replicate (txtCols - 11) '-'
-               ++ "+-"
+                ( replicate (lNoWidth + 2) '─'
+               ++ "╬═══════════╦"
+               ++ replicate (txtCols - 11) '═'
+               ++ "╩─"
                 )
           <-> (  string (dFrameFormat d)
-                (replicate lNoWidth ' ' ++ "  | ")
+                (replicate lNoWidth ' ' ++ "  │ ")
              <|> string (dFrameFormat d)
                 ( (if replaceTabs s
                       then "SPC "
@@ -373,7 +375,7 @@ makeFooter = do
                       then "R "
                       else "W "
                   )
-               ++ "| "
+               ++ "│ "
                 )
              <|> string (dFrameFormat d)
                 ( fname s
@@ -434,8 +436,10 @@ makeTextFrame = do
                           (_                    , True) -> (char (dJumpMarkFmt d) '•' <|>)
 
                           (Just ((x, _), (y, _)), _   )
-                            | x == l || l == y -> (char (lookupJustDef def Bracket $ dCharStyles d) '*' <|>)
-                            | x <  l && l <  y -> (char (lookupJustDef def Bracket $ dCharStyles d) '|' <|>)
+                            | x == l && l == y -> (char (                            dLineNoFormat d) ' ' <|>)
+                            | x == l           -> (char (lookupJustDef def Bracket $ dCharStyles   d) '┌' <|>)
+                            |           l == y -> (char (lookupJustDef def Bracket $ dCharStyles   d) '└' <|>)
+                            | x <  l && l <  y -> (char (lookupJustDef def Bracket $ dCharStyles   d) '│' <|>)
 
                           _ -> (char (dLineNoFormat d) ' ' <|>)
                     )
@@ -543,15 +547,15 @@ makeScrollbar = do
            $ map (repl (d, s, cProg, marksAt))
            $ zip [(0 :: Int)..]
            $ replicate  stProg                 ' '
-          ++                                  ['-']
-          ++ replicate (endProg - stProg - 2 ) '|'
-          ++                                  ['-']
+          ++                                  ['┬']
+          ++ replicate (endProg - stProg - 2 ) '│'
+          ++                                  ['┴']
           ++ replicate (nRows - endProg      ) ' '
 
     where
         repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
         repl (d, s, cProg, marksAt) (n, c) =
-            char (dFrameFormat d) '|' <|> case () of
+            char (dFrameFormat d) '║' <|> case () of
                 _ | readOnly s       -> char (dFrameFormat  d)  c
                   | n == cProg       -> char (dLineNoFormat d) '<'
                   | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
