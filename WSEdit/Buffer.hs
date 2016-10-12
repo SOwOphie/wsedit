@@ -459,7 +459,7 @@ withNLeft n f b = b { prefix = P.map (f . snd) (take n $ prefix b)
 
 
 -- | Apply a function to the focused element.
-withCurr :: (Hashable a) => (a -> a) -> Buffer a -> Buffer a
+withCurr :: (a -> a) -> Buffer a -> Buffer a
 withCurr f b = b { curr = f $ curr b }
 
 
