@@ -1,5 +1,6 @@
 # Wyvernscale Source Code Editor (wsedit)
 
+[![forthebadge](http://forthebadge.com/images/badges/fuck-it-ship-it.svg)](http://forthebadge.com)
 
 ## Introduction
 

@@ -3,32 +3,19 @@ module WSEdit.Arguments
     ) where
 
 
-import Data.List   (isPrefixOf, isSuffixOf)
-import System.IO   (FilePath)
-
-import WSEdit.Util (Tri(..))
-
+import Data.List                     (isPrefixOf, isSuffixOf)
+import System.IO                     (FilePath)
+import Text.ParserCombinators.Parsec ()
 
 
-data ArgumentLine = ArgumentLine
-    { alFilePrefix :: String
-    , alFileSuffix :: String
-    , alArg        :: Argument
+
+data ABMatch = ExactName String
+             | PrefSuf   String String
+
+data ArgBlock = ArgBlock
+    { abMatch  :: ABMatch
+    , abArg    :: [Argument]
     }
-
-appliesTo :: FilePath -> FilePath -> ArgumentLine -> Bool
-appliesTo absP relP (ArgumentLine { alFilePrefix = []    , alFileSuffix = s })
-    = s `isSuffixOf` relP
-
-appliesTo absP relP (ArgumentLine { alFilePrefix = (p:ps), alFileSuffix = s })
-    | p == '/' && (p:ps) `isPrefixOf` absP = s `isSuffixOf` absP
-    | p /= '/' && (p:ps) `isPrefixOf` relP = s `isSuffixOf` relP
-    | otherwise                            = False
-
-
-
-data ArgumentSource = SParameter Int
-                    | SFile String Int
 
 
 
@@ -99,100 +86,147 @@ data Argument = AutocompAdd     Int    String
 
 
 
-parseArguments :: (EdConfig, EdState) -> [String] -> [String] -> (EdConfig, EdState)
-parseArguments (conf st) files args =
+configFile = do
+    optional comment
+    many $ configBlock <* optional comment
+
+comment = do
+    spaces'
+    char '#'
+    many $ noneOf newline
+    newline
+    optional comment
+
+configBlock = do
+    qualifier
+    newline
+    configOption `sepBy` newline
 
 
+qualifier = try $ exactQualifier <|> prefSufQualifier
+
+exactQualifier   = ExactName <$> many1 (noneOf "\n*:") <* char ':'
+
+prefSufQualifier = do
+    prf <- many1 (noneOf "\n*:")
+    char '*'
+    suf <- many1 (noneOf "\n*:")
+    char ':'
+    return $ PrefSuf prf suf
 
 
+configOption = foldl (\el ls -> ls <|> try el) fail
+    [ autocompAdd
+    , autocompAddSelf
+    , autocompOff
+    , displayDotsOn
+    , displayDotsOff
+    , displayInvBGOn
+    , displayInvBGOff
+    , editorIndSet
+    , editorJumpMAdd
+    , editorJumpMDel
+    , editorTabModeSpc
+    , editorTabModeTab
+    , editorTabModeAuto
+    , fileEncodingSet
+    , fileEncodingDef
+    , fileLineEndUnix
+    , fileLineEndWin
+    , fileLineEndDef
+    , generalHighlAdd
+    , generalHighlDel
+    , generalROOn
+    , generalROOff
+    , helpGeneral
+    , helpConfig
+    , helpKeybinds
+    , helpVersion
+    , langBracketAdd
+    , langBracketDel
+    , langCommBlkAdd
+    , langCommBlkDel
+    , langCommLineAdd
+    , langCommLineDel
+    , langEscapeSet
+    , langEscapeOff
+    , langKeywordAdd
+    , langKeywordDel
+    , langStrChrAdd
+    , langStrChrDel
+    , langStrMLAdd
+    , langStrMLDel
+    , langStrRegAdd
+    , langStrRegDel
+    , metaFailsafe
+    , metaInclude
+    , metaStateFile
+    , otherOpenCfGlob
+    , otherOpenCfLoc
+    , otherPurgeOn
+    , otherPurgeOff
+    , debugDumpEvOn
+    , debugDumpEvOff
+    ]
 
-parseFileLine :: String -> Maybe ArgumentLine
-parseFileLine src ln =
-    case ("*" `findInStr` ln, ":" `findInStr` ln) of
-         ((s:_), (c:_)) -> parseInstruction (drop (c + 1) ln)
-                       >>= \a -> ArgumentLine
-                                    { alPrefix =                take s ln
-                                    , alSuffix = drop (s + 1) $ take c ln
-                                    , alArg    = a
-                                    }
 
-         ([]   , []   ) -> parseInstruction ln
-                       >>= \a -> ArgumentLine
-                                    { alPrefix = ""
-                                    , alSuffix = ""
-                                    , alArg    = a
-                                    }
+autocompOff       = string "-A"   >> return AutocompOff
+displayDotsOn     = string "-db"  >> return DisplayDotsOn
+displayDotsOff    = string "-dB"  >> return DisplayDotsOff
+displayInvBGOn    = string "-dx"  >> return DisplayInvBGOn
+displayInvBGOff   = string "-dX"  >> return DisplayInvBGOff
+editorTabModeSpc  = string "-ets" >> return EditorTabModeSpc
+editorTabModeTab  = string "-ett" >> return EditorTabModeTab
+editorTabModeAuto = string "-eT"  >> return EditorTabModeAuto
+fileEncodingDef   = string "-fE"  >> return FileEncodingDef
+fileLineEndUnix   = string "-flu" >> return FileLineEndUnix
+fileLineEndWin    = string "-flw" >> return FileLineEndWin
+fileLineEndDef    = string "-fL"  >> return FileLineEndDef
+generalROOn       = string "-gr"  >> return GeneralROOn
+generalROOff      = string "-gR"  >> return GeneralROOff
+helpGeneral       = string "-h"   >> return HelpGeneral
+helpConfig        = string "-hc"  >> return HelpConfig
+helpKeybinds      = string "-hk"  >> return HelpKeybinds
+helpVersion       = string "-hv"  >> return HelpVersion
+langEscapeOff     = string "-lE"  >> return LangEscapeOff
+metaFailsafe      = string "-mf"  >> return MetaFailsafe
+metaStateFile     = string "-ms"  >> return MetaStateFile
+otherOpenCfGlob   = string "-ocg" >> return OtherOpenCfGlob
+otherOpenCfLoc    = string "-ocl" >> return OtherOpenCfLoc
+otherPurgeOn      = string "-op"  >> return OtherPurgeOn
+otherPurgeOff     = string "-oP"  >> return OtherPurgeOff
+debugDumpEvOn     = string "-ye"  >> return DebugDumpEvOn
+debugDumpEvOff    = string "-yE"  >> return DebugDumpEvOff
 
-         (_    , _    ) -> Nothing
+autocompAddSelf   = do { string "-as" ; spaces'; AutocompAddSelf <$> integer                          }
+editorIndSet      = do { string "-ei" ; spaces'; EditorIndSet    <$> integer                          }
+editorJumpMAdd    = do { string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                          }
+editorJumpMDel    = do { string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                          }
+fileEncodingSet   = do { string "-fe" ; spaces'; FileEncodingSet <$> word                             }
+generalHighlAdd   = do { string "-gh" ; spaces'; GeneralHighlAdd <$> word                             }
+generalHighlDel   = do { string "-gH" ; spaces'; GeneralHighlDel <$> word                             }
+langCommLineAdd   = do { string "-lcl"; spaces'; LangCommLineAdd <$> word                             }
+langCommLineDel   = do { string "-lcL"; spaces'; LangCommLineDel <$> word                             }
+langEscapeSet     = do { string "-le" ; spaces'; LangEscapeSet   <$> singleChar                       }
+langKeywordAdd    = do { string "-lk" ; spaces'; LangKeywordAdd  <$> word                             }
+langKeywordDel    = do { string "-lK" ; spaces'; LangKeywordDel  <$> word                             }
+metaInclude       = do { string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
+
+autocompAdd       = do { string "-ad" ; spaces'; n <- integer; spaces'; AutocompAdd    n <$> filePath }
+langBracketAdd    = do { string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
+langBracketDel    = do { string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
+langCommBlkAdd    = do { string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
+langCommBlkDel    = do { string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word     }
+langStrChrAdd     = do { string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word     }
+langStrChrDel     = do { string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word     }
+langStrMLAdd      = do { string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word     }
+langStrMLDel      = do { string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word     }
+langStrRegAdd     = do { string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
+langStrRegDel     = do { string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
 
 
-
-parseInstructions :: [String] -> [Either String Argument]
-parseInstructions []             = []
-parseInstructions ("-ad" :n:f:r) = case readMay n of
-                                    Nothing -> Left   "-ad"               : parseInstructions r
-                                    Just n' -> Right (AutocompAdd n' f  ) : parseInstructions r
-
-parseInstructions ("-as" :n  :r) = case readMay n of
-                                    Nothing -> Left   "-as"               : parseInstructions r
-                                    Just n' -> Right (AutocompAddSelf n') : parseInstructions r
-
-parseInstructions ("-A"      :r) =             Right  AutocompOff         : parseInstructions r
-parseInstructions ("-db"     :r) =             Right  DisplayDotsOn       : parseInstructions r
-parseInstructions ("-dB"     :r) =             Right  DisplayDotsOff      : parseInstructions r
-parseInstructions ("-dx"     :r) =             Right  DisplayInvBGOn      : parseInstructions r
-parseInstructions ("-dX"     :r) =             Right  DisplayInvBGOff     : parseInstructions r
-parseInstructions ("-ei" :n  :r) = case readMay n of
-                                    Nothing -> Left   "-ei"               : parseInstructions r
-                                    Just n' -> Right (EditorIndSet n'   ) : parseInstructions r
-
-parseInstructions ("-ej" :n  :r) = case readMay n of
-                                    Nothing -> Left   "-ej"               : parseInstructions r
-                                    Just n' -> Right (EditorJumpMAdd n' ) : parseInstructions r
-
-parseInstructions ("-eJ" :n  :r) = case readMay n of
-                                    Nothing -> Left   "-eJ"               : parseInstructions r
-                                    Just n' -> Right (EditorJumpMDel n' ) : parseInstructions r
-
-parseInstructions ("-ets"    :r) =             Right  EditorTabModeSpc    : parseInstructions r
-parseInstructions ("-ett"    :r) =             Right  EditorTabModeTab    : parseInstructions r
-parseInstructions ("-eT"     :r) =             Right  EditorTabModeAuto
-parseInstructions ("-fe" :s  :r) =             Right (FileEncodingSet s ) : parseInstructions r
-parseInstructions ("-fE"     :r) =             Right  FileEncodingDef     : parseInstructions r
-parseInstructions ("-flu"    :r) =             Right  FileLineEndUnix     : parseInstructions r
-parseInstructions ("-flw"    :r) =             Right  FileLineEndWin      : parseInstructions r
-parseInstructions ("-fL"     :r) =             Right  FileLineEndDef      : parseInstructions r
-parseInstructions ("-gh" :s  :r) =             Right (GeneralHighlAdd s ) : parseInstructions r
-parseInstructions ("-gH" :s  :r) =             Right (GeneralHighlDel s ) : parseInstructions r
-parseInstructions ("-gr"     :r) =             Right  GeneralROOn         : parseInstructions r
-parseInstructions ("-gR"     :r) =             Right  GeneralROOff        : parseInstructions r
-parseInstructions ("-h"      :r) =             Right  HelpGeneral         : parseInstructions r
-parseInstructions ("-hc"     :r) =             Right  HelpConfig          : parseInstructions r
-parseInstructions ("-hk"     :r) =             Right  HelpKeybinds        : parseInstructions r
-parseInstructions ("-V"      :r) =             Right  HelpVersion         : parseInstructions r
-parseInstructions ("-lb" :s:e:r) =             Right (LangBracketAdd s e) : parseInstructions r
-parseInstructions ("-lB" :s:e:r) =             Right (LangBracketDel s e) : parseInstructions r
-parseInstructions ("-lcb":s:e:r) =             Right (LangCommBlkAdd s e) : parseInstructions r
-parseInstructions ("-lcB":s:e:r) =             Right (LangCommBlkDel s e) : parseInstructions r
-parseInstructions ("-lcl":s  :r) =             Right (LangCommLineAdd s ) : parseInstructions r
-parseInstructions ("-lcL":s  :r) =             Right (LangCommLineDel s ) : parseInstructions r
-parseInstructions ("-le" :s  :r) =             Right (LangEscapeSet   s ) : parseInstructions r
-parseInstructions ("-lE"     :r) =             Right  LangEscapeOff       : parseInstructions r
-parseInstructions ("-lk" :s  :r) =             Right (LangKeywordAdd s  ) : parseInstructions r
-parseInstructions ("-lK" :s  :r) =             Right (LangKeywordDel s  ) : parseInstructions r
-parseInstructions ("-lsc":s:e:r) =             Right (LangStrChrAdd  s e) : parseInstructions r
-parseInstructions ("-lsC":s:e:r) =             Right (LangStrChrDel  s e) : parseInstructions r
-parseInstructions ("-lsm":s:e:r) =             Right (LangStrMLAdd   s e) : parseInstructions r
-parseInstructions ("-lsM":s:e:r) =             Right (LangStrMLDel   s e) : parseInstructions r
-parseInstructions ("-lsr":s:e:r) =             Right (LangStrRegAdd  s e) : parseInstructions r
-parseInstructions ("-lsR":s:e:r) =             Right (LangStrRegDel  s e) : parseInstructions r
-parseInstructions ("-mf"     :r) =             Right  MetaFailsafe        : parseInstructions r
-parseInstructions ("-mi" :s  :r) =             Right (MetaInclude    s  ) : parseInstructions r
-parseInstructions ("-ms"     :r) =             Right  MetaStateFile       : parseInstructions r
-parseInstructions ("-ocg"    :r) =             Right  OtherOpenCfGlob     : parseInstructions r
-parseInstructions ("-ocl"    :r) =             Right  OtherOpenCfLoc      : parseInstructions r
-parseInstructions ("-op"     :r) =             Right  OtherPurgeOn        : parseInstructions r
-parseInstructions ("-oP"     :r) =             Right  OtherPurgeOff       : parseInstructions r
-parseInstructions ("-ye"     :r) =             Right  DebugDumpEvOn       : parseInstructions r
-parseInstructions ("-yE"     :r) =             Right  DebugDumpEvOff      : parseInstructions r
-parseInstructions (s         :r) =             Left   s                   : parseInstructions r
+singleChar = noneOf " \t\n"
+word       = many1 singleChar
+spaces'    = many1 $ oneOf " \t"
+integer    = read <$> many1 digit
+filePath   = undefined
