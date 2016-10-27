@@ -418,6 +418,14 @@ usageHelp = renderText 80
     , "  -yE             Debug: disable event dumping."
     , ""
     , "                  Event dumping will show every event in the status bar."
+    , ""
+    , "  -ys <level>     Set accepted release stability. All versions with a lower"
+    , "                  value than supplied will not start. Possible values are:"
+    , ""
+    , "                      Prototype  Proof of concept."
+    , "                      WIP        Some features missing, but usable."
+    , "                      RC         Feature-complete, but still missing some QA."
+    , "                      Release    Default, full-blown release."
     ]
 
 

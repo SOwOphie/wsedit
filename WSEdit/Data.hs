@@ -6,6 +6,8 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
+    , Stability (..)
+    , stability
     , FmtParserState (..)
     , BracketStack
     , RangeCacheElem
@@ -58,7 +60,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.0"
+version = "1.2.0.1"
 
 -- | Upstream URL.
 upstream :: String
@@ -68,6 +70,16 @@ upstream = "https://github.com/SirBoonami/wsedit"
 licenseVersion :: String
 licenseVersion = "1.1"
 
+-- | Version stability
+data Stability = Prototype
+               | WIP
+               | RC
+               | Release
+    deriving (Eq, Ord, Read, Show)
+
+-- | Current release stability
+stability :: Stability
+stability = Prototype
 
 
 

@@ -105,7 +105,7 @@ dictAdd f = do
 dictAddRec :: WSEdit ()
 dictAddRec = do
     standby $ "Rebuilding dictionary...\n\n"
-           ++ "Revisit your -d settings if this takes forever."
+           ++ "Revisit your -a* settings if this takes too long."
 
     s <- get
 

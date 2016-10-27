@@ -54,7 +54,7 @@ import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
                          , MaybeDefault (Default, KeepCurrent,SetTo)
                          )
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
-import System.Directory  (doesFileExist)
+import System.Directory  (doesFileExist, getHomeDirectory)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
 import System.IO         ( IOMode (ReadMode)
@@ -239,14 +239,17 @@ chunkWords n s  =
 --   crashes on weird I/O race conditions. Use for debugging purposes only.
 dump :: (Show a) => String -> a -> a
 dump s x = x
-     `seq` unsafePerformIO (appendFile "dmp" $ s
-                                            ++ ":\n"
-                                            ++ unlines
-                                                ( map ("\t"++)
-                                                $ lines
-                                                $ ppShow x
-                                                )
-                                            ++ "\n\n"
+     `seq` unsafePerformIO (do
+                                h <- getHomeDirectory
+                                appendFile (h ++ "/dmp")
+                                    $ s
+                                   ++ ":\n"
+                                   ++ unlines
+                                        ( map ("\t"++)
+                                        $ lines
+                                        $ ppShow x
+                                        )
+                                   ++ "\n\n"
                            )
      `seq` x
 

@@ -17,7 +17,7 @@ import Data.List                     ( delete, intercalate, isPrefixOf
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
-import Safe                          (lastMay)
+import Safe                          (lastMay, maximumDef)
 import System.Directory              ( doesDirectoryExist, getHomeDirectory
                                      , listDirectory
                                      )
@@ -49,12 +49,14 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                , searchTerms
                                                )
                                      , PathInfo (absPath, relPath)
+                                     , Stability (Release)
                                      , brightTheme, pathInfo, runWSEdit
+                                     , stability, upstream
                                      )
 import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
                                      , versionHelp
                                      )
-import WSEdit.Util                   (mayReadFile)
+import WSEdit.Util                   (mayReadFile, dump)
 
 
 
@@ -81,6 +83,7 @@ data Argument = AutocompAdd     Int    String
 
               | DebugDumpEvOn
               | DebugDumpEvOff
+              | DebugStability  Stability
 
               | DisplayDotsOn
               | DisplayDotsOff
@@ -143,6 +146,20 @@ data Argument = AutocompAdd     Int    String
 
 
 
+-- | Some options provide files to match syntax against, this is where this
+--   information is recorded.
+providedFile :: Argument -> Maybe FilePath
+providedFile  HelpGeneral        = Just ""
+providedFile  HelpConfig         = Just ""
+providedFile  HelpKeybinds       = Just ""
+providedFile  HelpVersion        = Just ""
+providedFile  OtherOpenCfLoc     = Just ".local.wsconf"
+providedFile  OtherOpenCfGlob    = Just "/home/user/.config/wsedit.wsconf"
+providedFile (SpecialSetFile  s) = Just s
+providedFile  _                  = Nothing
+
+
+
 
 
 -- | Takes initial config/state, reads in all necessary arguments and files,
@@ -171,29 +188,53 @@ parseArguments (c, s) = do
             return (c, s)
 
          Right a ->
-            let targetFName = lastMay
+            let
+                targetFName = lastMay
                             $ catMaybes
-                            $ map (\case { SpecialSetFile f -> Just f
-                                         ; _ -> Nothing
-                                         }
-                                  )
-                              a
-            in case targetFName of
-                    Nothing -> runWSEdit (c, s) (quitComplain "No file selected, exiting now (see -h).")
-                            >> return (c, s)
+                            $ map providedFile a
+            in
+                case targetFName of
+                     Nothing -> runWSEdit (c, s) (quitComplain "No file selected, exiting now (see -h).")
+                             >> return (c, s)
 
-                    Just f  -> do
-                        f' <- pathInfo f
-                        selArgs <- selectArgs [f'] $ parsedSucc
+                     Just f  -> do
+                        finf <- mapM pathInfo
+                             $ f : catMaybes (map (\case
+                                                        MetaInclude n -> Just n
+                                                        _             -> Nothing
+                                                  )
+                                                  a
+                                             )
 
-                        let allArgs = selArgs ++ a
+
+                        selArgs <- selectArgs finf parsedSucc
+
+                        let
+                            allArgs = selArgs ++ a
+                            selStab = maximumDef Release
+                                    $ catMaybes
+                                    $ map (\case
+                                                DebugStability x -> Just x
+                                                _                -> Nothing
+                                          )
+                                    $ allArgs
 
                         when ((not $ null parseErrors) && MetaFailsafe `notElem` allArgs)
                             $ runWSEdit (c, s)
                             $ quitComplain
                             $ "Parse error(s) occured:\n" ++ unlines (map show parseErrors)
 
-                        foldM applyArg (c, s) allArgs
+                        when (stability < selStab)
+                             $ runWSEdit (c, s)
+                             $ quitComplain
+                             $ "This release is not stable enough for your preferences:\n\n"
+                            ++ "    " ++ show stability ++ " < " ++ show selStab ++ "\n\n"
+                            ++ "Getting the latest stable release from the \"Releases\" section\n"
+                            ++ "on " ++ upstream ++ " is highly recommended,\n"
+                            ++ "but you can also continue using this unstable version by passing\n"
+                            ++ "-ys " ++ show stability ++ " or adding it to a config file."
+
+                        foldM applyArg (c, s) $ dump "allArgs" allArgs
 
     where
         confDir :: String -> String
@@ -338,6 +379,7 @@ applyArg (c, s)  HelpVersion          = runWSEdit (c, s) (quitComplain   version
 
 applyArg (c, s) (MetaInclude     _  ) = return (c, s)
 applyArg (c, s)  MetaFailsafe         = return (c, s)
+applyArg (c, s) (DebugStability  _  ) = return (c, s)
 
 applyArg (c, s)  OtherOpenCfLoc       =                            return (c, s { fname =               ".local.wsconf" } )
 applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s { fname = p ++ "/.config/wsedit.wsconf" } )
@@ -358,7 +400,7 @@ applyArg (c, s)  MetaStateFile        = return (c, s)
 -- Boring parsec gibberish incoming... --
 
 configCmd :: Parser [Argument]
-configCmd =  configOption `sepBy` spaces'
+configCmd =  (configOption `sepBy` spaces' <* eof)
          <?> "Call parameters"
 
 configFile :: Parser [ArgBlock]
@@ -481,6 +523,7 @@ configOption = (choice $ map try
     , otherPurgeOff
     , debugDumpEvOn
     , debugDumpEvOff
+    , debugStability
     , specialSetPos
     , specialSetFile
     ]) <?> "Config option"
@@ -527,6 +570,7 @@ langEscapeSet     = do { string "-le" ; spaces'; LangEscapeSet   <$> singleChar 
 langKeywordAdd    = do { string "-lk" ; spaces'; LangKeywordAdd  <$> word                             }
 langKeywordDel    = do { string "-lK" ; spaces'; LangKeywordDel  <$> word                             }
 metaInclude       = do { string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
+debugStability    = do { string "-ys" ; spaces'; DebugStability  <$> stab                             }
 
 autocompAdd       = do { string "-ad" ; spaces'; n <- integer; spaces'; AutocompAdd    n <$> filePath }
 langBracketAdd    = do { string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
@@ -540,8 +584,16 @@ langStrMLDel      = do { string "-lsM"; spaces'; s <- word   ; spaces'; LangStrM
 langStrRegAdd     = do { string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
 langStrRegDel     = do { string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
 
-specialSetFile    = SpecialSetFile <$> filePath
-specialSetPos     = SpecialSetPos  <$> integer
+specialSetPos     = SpecialSetPos  <$> try integer
+specialSetFile    = SpecialSetFile <$> try filePath
+
+
+stab :: Parser Stability
+stab  = read <$> (  try (string "Prototype")
+                <|> try (string "WIP"      )
+                <|> try (string "RC"       )
+                <|> try (string "Release"  )
+                 )
 
 
 singleChar = (noneOf " \t\n")      <?> "Single character"
@@ -550,6 +602,6 @@ spaces'    = (many1 $ oneOf " \t") <?> "Whitespace"
 integer    = read <$> many1 digit  <?> "Integer"
 filePath   = (concat <$> sequence
     [ option "" $ string "/"
-    , intercalate "/" <$> many (noneOf "\n/ ") `sepBy` char '/'
+    , intercalate "/" <$> many1 (noneOf "\n/ ") `sepBy` char '/'
     , option "" $ string "/"
     ]) <?> "File path"
