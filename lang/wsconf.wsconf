@@ -10,43 +10,63 @@
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
-wsconf: -ts
+*.wsconf: -ett
 #                                                                              #
 # Syntax highlighting                                                          #
-wsconf: -flc+#
+*.wsconf: -lcl #
 #                                                                              #
 # Keywords                                                                     #
-wsconf: -fk+-b
-wsconf: -fk+-B
-wsconf: -fk+-cg
-wsconf: -fk+-cl
-wsconf: -fk+-d+
-wsconf: -fk+-d~
-wsconf: -fk+-D
-wsconf: -fk+-fe
-wsconf: -fk+-fh
-wsconf: -fk+-fk
-wsconf: -fk+-flc
-wsconf: -fk+-fbc
-wsconf: -fk+-fms
-wsconf: -fk+-fcs
-wsconf: -fk+-fs
-wsconf: -fk+-fbr
-wsconf: -fk+-h
-wsconf: -fk+-hk
-wsconf: -fk+-i
-wsconf: -fk+-p
-wsconf: -fk+-P
-wsconf: -fk+-r
-wsconf: -fk+-R
-wsconf: -fk+-s
-wsconf: -fk+-ts
-wsconf: -fk+-tt
-wsconf: -fk+-T
-wsconf: -fk+-V
-wsconf: -fk+-x
-wsconf: -fk+-X
-wsconf: -fk+-y
-wsconf: -fk+-Y
+*.wsconf
+	-lk -ad
+	-lk -as
+	-lk -A
+	-lk -db
+	-lk -dB
+	-lk -dx
+	-lk -dX
+	-lk -ei
+	-lk -ej
+	-lk -eJ
+	-lk -ets
+	-lk -ett
+	-lk -eT
+	-lk -fe
+	-lk -fE
+	-lk -flu
+	-lk -flw
+	-lk -fL
+	-lk -gh
+	-lk -gH
+	-lk -gr
+	-lk -gR
+	-lk -h
+	-lk -hc
+	-lk -hk
+	-lk -hv
+	-lk -lb
+	-lk -lB
+	-lk -lcb
+	-lk -lcB
+	-lk -lcl
+	-lk -lcL
+	-lk -le
+	-lk -lE
+	-lk -lk
+	-lk -lK
+	-lk -lsc
+	-lk -lsC
+	-lk -lsm
+	-lk -lsM
+	-lk -lsr
+	-lk -lsR
+	-lk -mf
+	-lk -ms
+	-lk -mi
+	-lk -ocg
+	-lk -ocl
+	-lk -op
+	-lk -oP
+	-lk -ye
+	-lk -yE
 #                                                                              #
 ################################################################################

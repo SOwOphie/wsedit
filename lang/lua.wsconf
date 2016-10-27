@@ -10,45 +10,47 @@
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
-lua: -flc+--
-lua: -fbc+--[[_]]
-lua: -fbc+--[=[_]=]
-lua: -fbc+--[==[_]==]
-lua: -fbc+--[===[_]===]
-lua: -fbc+--[=====[_]====]
-lua: -fbc+--[======[_]=====]
-lua: -fbc+--[=======[_]======]
-lua: -fbc+--[========[_]=======]
-lua: -fbc+--[=========[_]========]
-lua: -fs+"_"
-lua: -fs+'_'
-lua: -fe+\
-lua: -fbr+(_)
-lua: -fbr+[_]
-lua: -fbr+{_}
+*.lua
+	-lcl --
+	-lcb --[[ ]]
+	-lcb --[=[ ]=]
+	-lcb --[==[ ]==]
+	-lcb --[===[ ]===]
+	-lcb --[=====[ ]====]
+	-lcb --[======[ ]=====]
+	-lcb --[=======[ ]======]
+	-lcb --[========[ ]=======]
+	-lcb --[=========[ ]========]
+	-lsr " "
+	-lsr ' '
+	-le \
+	-lb ( )
+	-lb [ ]
+	-lb { }
 #                                                                              #
 # Keywords                                                                     #
-lua: -fk+and
-lua: -fk+break
-lua: -fk+do
-lua: -fk+else
-lua: -fk+elseif
-lua: -fk+end
-lua: -fk+false
-lua: -fk+for
-lua: -fk+function
-lua: -fk+goto
-lua: -fk+if
-lua: -fk+in
-lua: -fk+local
-lua: -fk+nil
-lua: -fk+not
-lua: -fk+or
-lua: -fk+repeat
-lua: -fk+return
-lua: -fk+then
-lua: -fk+true
-lua: -fk+until
-lua: -fk+while
+*.lua
+	-lk and
+	-lk break
+	-lk do
+	-lk else
+	-lk elseif
+	-lk end
+	-lk false
+	-lk for
+	-lk function
+	-lk goto
+	-lk if
+	-lk in
+	-lk local
+	-lk nil
+	-lk not
+	-lk or
+	-lk repeat
+	-lk return
+	-lk then
+	-lk true
+	-lk until
+	-lk while
 #                                                                              #
 ################################################################################

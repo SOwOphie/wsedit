@@ -1,0 +1,13 @@
+Support for different path separators in parser
+Autocomplete: depth *, also use fancy new matching based on PathInfo
+Help broken (expects file name)
+"open config" broken (expects file name)
+Implement state files
+-mi appearently broken
+Review help (interactive-only commands) / .wsconf definition
+lua: long strings
+lua: --- highlights wrong
+copy/paste: occasionally wrong horizontal cursor position
+gentoo: finish concept
+wsed -ocl : no syntax highlighting o.0
+swap -db / -dB ?

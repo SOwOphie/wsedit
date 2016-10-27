@@ -10,316 +10,291 @@
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
-sh: -flc+#
-sh: -fms+'_'
-sh: -fms+"_"
-sh: -fs+`_`
-sh: -fe+\
-sh: -fbr+$(_)
-sh: -fbr+(_)
-sh: -fbr+${_}
-sh: -fbr+{_}
-sh: -fbr+[_]
+*.sh
+	-lcl #
+	-lsm ' '
+	-lsm " "
+	-lsr ` `
+	-le \
+	-lb ( )
+	-lb { }
+	-lb [ ]
 #                                                                              #
 # Keywords                                                                     #
-sh: -fk+alias
-sh: -fk+apropos
-sh: -fk+apt
-sh: -fk+apt-cache
-sh: -fk+apt-get
-sh: -fk+aptitude
-sh: -fk+aspell
-sh: -fk+awk
-
-sh: -fk+basename
-sh: -fk+bash
-sh: -fk+bc
-sh: -fk+bg
-sh: -fk+bind
-sh: -fk+break
-sh: -fk+builtin
-sh: -fk+bzip2
-
-sh: -fk+cal
-sh: -fk+case
-sh: -fk+cat
-sh: -fk+cd
-sh: -fk+cfdisk
-sh: -fk+chgrp
-sh: -fk+chmod
-sh: -fk+chown
-sh: -fk+chroot
-sh: -fk+chkconfig
-sh: -fk+cksum
-sh: -fk+clear
-sh: -fk+cmp
-sh: -fk+comm
-sh: -fk+command
-sh: -fk+continue
-sh: -fk+cp
-sh: -fk+cron
-sh: -fk+crontab
-sh: -fk+csplit
-sh: -fk+curl
-sh: -fk+cut
-
-sh: -fk+date
-sh: -fk+dc
-sh: -fk+dd
-sh: -fk+ddrescue
-sh: -fk+declare
-sh: -fk+df
-sh: -fk+diff
-sh: -fk+diff3
-sh: -fk+dig
-sh: -fk+dir
-sh: -fk+dircolors
-sh: -fk+dirname
-sh: -fk+dirs
-sh: -fk+dmesg
-sh: -fk+do
-sh: -fk+done
-sh: -fk+du
-
-sh: -fk+echo
-sh: -fk+egrep
-sh: -fk+eject
-sh: -fk+elif
-sh: -fk+else
-sh: -fk+elseif
-sh: -fk+enable
-sh: -fk+env
-sh: -fk+ethtool
-sh: -fk+eval
-sh: -fk+exec
-sh: -fk+exit
-sh: -fk+expect
-sh: -fk+expand
-sh: -fk+export
-sh: -fk+expr
-
-sh: -fk+false
-sh: -fk+fc
-sh: -fk+fdformat
-sh: -fk+fdisk
-sh: -fk+fg
-sh: -fk+fgrep
-sh: -fk+fi
-sh: -fk+file
-sh: -fk+find
-sh: -fk+fmt
-sh: -fk+fold
-sh: -fk+for
-sh: -fk+format
-sh: -fk+free
-sh: -fk+fsck
-sh: -fk+ftp
-sh: -fk+function
-sh: -fk+fuser
-
-sh: -fk+gawk
-sh: -fk+getopts
-sh: -fk+grep
-sh: -fk+groupadd
-sh: -fk+groupdel
-sh: -fk+groupmod
-sh: -fk+groups
-sh: -fk+gzip
-
-sh: -fk+hash
-sh: -fk+head
-sh: -fk+help
-sh: -fk+history
-sh: -fk+hostname
-sh: -fk+htop
-
-sh: -fk+iconv
-sh: -fk+id
-sh: -fk+if
-sh: -fk+ifconfig
-sh: -fk+ifdown
-sh: -fk+ifup
-sh: -fk+import
-sh: -fk+in
-sh: -fk+install
-sh: -fk+ip
-
-sh: -fk+jobs
-sh: -fk+join
-
-sh: -fk+kill
-sh: -fk+killall
-
-sh: -fk+less
-sh: -fk+let
-sh: -fk+link
-sh: -fk+ln
-sh: -fk+local
-sh: -fk+locate
-sh: -fk+logname
-sh: -fk+logout
-sh: -fk+look
-sh: -fk+lpc
-sh: -fk+lpr
-sh: -fk+lprint
-sh: -fk+lprintd
-sh: -fk+lprintq
-sh: -fk+lprm
-sh: -fk+ls
-sh: -fk+lsof
-
-sh: -fk+make
-sh: -fk+man
-sh: -fk+mkdir
-sh: -fk+mkfifo
-sh: -fk+mkisofs
-sh: -fk+mknod
-sh: -fk+more
-sh: -fk+most
-sh: -fk+mount
-sh: -fk+mtools
-sh: -fk+mtr
-sh: -fk+mv
-sh: -fk+mmv
-
-sh: -fk+nc
-sh: -fk+netstat
-sh: -fk+nice
-sh: -fk+nl
-sh: -fk+nohup
-sh: -fk+notify-send
-sh: -fk+nslookup
-
-sh: -fk+open
-sh: -fk+op
-
-sh: -fk+pacaur
-sh: -fk+pacman
-sh: -fk+passwd
-sh: -fk+paste
-sh: -fk+pathchk
-sh: -fk+ping
-sh: -fk+pkill
-sh: -fk+popd
-sh: -fk+pr
-sh: -fk+printcap
-sh: -fk+printenv
-sh: -fk+printf
-sh: -fk+ps
-sh: -fk+pushd
-sh: -fk+pv
-sh: -fk+pwd
-
-sh: -fk+quota
-sh: -fk+quotacheck
-
-sh: -fk+ram
-sh: -fk+rar
-sh: -fk+rcp
-sh: -fk+read
-sh: -fk+readarray
-sh: -fk+readonly
-sh: -fk+reboot
-sh: -fk+rename
-sh: -fk+renice
-sh: -fk+remsync
-sh: -fk+return
-sh: -fk+rev
-sh: -fk+rm
-sh: -fk+rmdir
-sh: -fk+rsync
-
-sh: -fk+screen
-sh: -fk+scp
-sh: -fk+sdiff
-sh: -fk+sed
-sh: -fk+select
-sh: -fk+seq
-sh: -fk+set
-sh: -fk+sftp
-sh: -fk+shift
-sh: -fk+shopt
-sh: -fk+shutdown
-sh: -fk+sleep
-sh: -fk+slocate
-sh: -fk+sort
-sh: -fk+source
-sh: -fk+split
-sh: -fk+ssh
-sh: -fk+stat
-sh: -fk+strace
-sh: -fk+su
-sh: -fk+sudo
-sh: -fk+sum
-sh: -fk+suspend
-sh: -fk+sync
-
-
-sh: -fk+tail
-sh: -fk+tar
-sh: -fk+tee
-sh: -fk+test
-sh: -fk+then
-sh: -fk+time
-sh: -fk+timeout
-sh: -fk+times
-sh: -fk+touch
-sh: -fk+top
-sh: -fk+tput
-sh: -fk+traceroute
-sh: -fk+trap
-sh: -fk+tr
-sh: -fk+true
-sh: -fk+tsort
-sh: -fk+tty
-sh: -fk+type
-
-sh: -fk+ulimit
-sh: -fk+umask
-sh: -fk+umount
-sh: -fk+unalias
-sh: -fk+uname
-sh: -fk+unexpand
-sh: -fk+uniq
-sh: -fk+units
-sh: -fk+unrar
-sh: -fk+unset
-sh: -fk+unshar
-sh: -fk+until
-sh: -fk+uptime
-sh: -fk+useradd
-sh: -fk+userdel
-sh: -fk+usermod
-sh: -fk+users
-sh: -fk+uuencode
-sh: -fk+uudecode
-
-sh: -fk+v
-sh: -fk+vdir
-sh: -fk+vi
-sh: -fk+vim
-sh: -fk+vmstat
-
-sh: -fk+wait
-sh: -fk+watch
-sh: -fk+wc
-sh: -fk+whereis
-sh: -fk+which
-sh: -fk+while
-sh: -fk+who
-sh: -fk+whoami
-sh: -fk+wget
-sh: -fk+wsed
-sh: -fk+wsedit
-sh: -fk+write
-
-sh: -fk+xargs
-sh: -fk+xdg-open
-sh: -fk+xz
-
-sh: -fk+yaourt
-sh: -fk+yes
-
-sh: -fk+zip
+*.sh
+	-lk alias
+	-lk apropos
+	-lk apt
+	-lk apt-cache
+	-lk apt-get
+	-lk aptitude
+	-lk aspell
+	-lk awk
+	-lk basename
+	-lk bash
+	-lk bc
+	-lk bg
+	-lk bind
+	-lk break
+	-lk builtin
+	-lk bzip2
+	-lk cal
+	-lk case
+	-lk cat
+	-lk cd
+	-lk cfdisk
+	-lk chgrp
+	-lk chmod
+	-lk chown
+	-lk chroot
+	-lk chkconfig
+	-lk cksum
+	-lk clear
+	-lk cmp
+	-lk comm
+	-lk command
+	-lk continue
+	-lk cp
+	-lk cron
+	-lk crontab
+	-lk csplit
+	-lk curl
+	-lk cut
+	-lk date
+	-lk dc
+	-lk dd
+	-lk ddrescue
+	-lk declare
+	-lk df
+	-lk diff
+	-lk diff3
+	-lk dig
+	-lk dir
+	-lk dircolors
+	-lk dirname
+	-lk dirs
+	-lk dmesg
+	-lk do
+	-lk done
+	-lk du
+	-lk echo
+	-lk egrep
+	-lk eject
+	-lk elif
+	-lk else
+	-lk elseif
+	-lk enable
+	-lk env
+	-lk ethtool
+	-lk esac
+	-lk eval
+	-lk exec
+	-lk exit
+	-lk expect
+	-lk expand
+	-lk export
+	-lk expr
+	-lk false
+	-lk fc
+	-lk fdformat
+	-lk fdisk
+	-lk fg
+	-lk fgrep
+	-lk fi
+	-lk file
+	-lk find
+	-lk fmt
+	-lk fold
+	-lk for
+	-lk format
+	-lk free
+	-lk fsck
+	-lk ftp
+	-lk function
+	-lk fuser
+	-lk gawk
+	-lk getopts
+	-lk grep
+	-lk groupadd
+	-lk groupdel
+	-lk groupmod
+	-lk groups
+	-lk gzip
+	-lk hash
+	-lk head
+	-lk help
+	-lk history
+	-lk hostname
+	-lk htop
+	-lk iconv
+	-lk id
+	-lk if
+	-lk ifconfig
+	-lk ifdown
+	-lk ifup
+	-lk import
+	-lk in
+	-lk install
+	-lk ip
+	-lk jobs
+	-lk join
+	-lk kill
+	-lk killall
+	-lk less
+	-lk let
+	-lk link
+	-lk ln
+	-lk local
+	-lk locate
+	-lk logname
+	-lk logout
+	-lk look
+	-lk lpc
+	-lk lpr
+	-lk lprint
+	-lk lprintd
+	-lk lprintq
+	-lk lprm
+	-lk ls
+	-lk lsof
+	-lk make
+	-lk man
+	-lk mkdir
+	-lk mkfifo
+	-lk mkisofs
+	-lk mknod
+	-lk more
+	-lk most
+	-lk mount
+	-lk mtools
+	-lk mtr
+	-lk mv
+	-lk mmv
+	-lk nc
+	-lk netstat
+	-lk nice
+	-lk nl
+	-lk nohup
+	-lk notify-send
+	-lk nslookup
+	-lk open
+	-lk op
+	-lk pacaur
+	-lk pacman
+	-lk passwd
+	-lk paste
+	-lk pathchk
+	-lk ping
+	-lk pkill
+	-lk popd
+	-lk pr
+	-lk printcap
+	-lk printenv
+	-lk printf
+	-lk ps
+	-lk pushd
+	-lk pv
+	-lk pwd
+	-lk quota
+	-lk quotacheck
+	-lk ram
+	-lk rar
+	-lk rcp
+	-lk read
+	-lk readarray
+	-lk readonly
+	-lk reboot
+	-lk rename
+	-lk renice
+	-lk remsync
+	-lk return
+	-lk rev
+	-lk rm
+	-lk rmdir
+	-lk rsync
+	-lk screen
+	-lk scp
+	-lk sdiff
+	-lk sed
+	-lk select
+	-lk seq
+	-lk set
+	-lk sftp
+	-lk shift
+	-lk shopt
+	-lk shutdown
+	-lk sleep
+	-lk slocate
+	-lk sort
+	-lk source
+	-lk split
+	-lk ssh
+	-lk stat
+	-lk strace
+	-lk su
+	-lk sudo
+	-lk sum
+	-lk suspend
+	-lk sync
+	-lk tail
+	-lk tar
+	-lk tee
+	-lk test
+	-lk then
+	-lk time
+	-lk timeout
+	-lk times
+	-lk touch
+	-lk top
+	-lk tput
+	-lk traceroute
+	-lk trap
+	-lk tr
+	-lk true
+	-lk tsort
+	-lk tty
+	-lk type
+	-lk ulimit
+	-lk umask
+	-lk umount
+	-lk unalias
+	-lk uname
+	-lk unexpand
+	-lk uniq
+	-lk units
+	-lk unrar
+	-lk unset
+	-lk unshar
+	-lk until
+	-lk uptime
+	-lk useradd
+	-lk userdel
+	-lk usermod
+	-lk users
+	-lk uuencode
+	-lk uudecode
+	-lk v
+	-lk vdir
+	-lk vi
+	-lk vim
+	-lk vmstat
+	-lk wait
+	-lk watch
+	-lk wc
+	-lk whereis
+	-lk which
+	-lk while
+	-lk who
+	-lk whoami
+	-lk wget
+	-lk wsed
+	-lk wsedit
+	-lk write
+	-lk xargs
+	-lk xdg-open
+	-lk xz
+	-lk yaourt
+	-lk yes
+	-lk zip
 #                                                                              #
 ################################################################################

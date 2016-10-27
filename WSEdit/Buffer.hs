@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module WSEdit.Buffer

@@ -18,15 +18,18 @@ module WSEdit.Data
     , EdDesign (..)
     , brightTheme
     , WSEdit
+    , runWSEdit
     , Keymap
     , HighlightMode (..)
+    , PathInfo (..)
+    , pathInfo
     ) where
 
 
-import Control.Monad.RWS.Strict (RWST)
+import Control.Monad.RWS.Strict (RWST, runRWST)
 import Data.Default             (Default (def))
 import Graphics.Vty             ( Attr
-                                , Event (..)
+                                , Event ()
                                 , Vty ()
                                 , black, blue, bold, brightBlack, brightGreen
                                 , brightMagenta, brightRed, brightWhite
@@ -34,6 +37,9 @@ import Graphics.Vty             ( Attr
                                 , green, magenta, red, reverseVideo, underline
                                 , white, withBackColor, withForeColor, withStyle
                                 , yellow
+                                )
+import System.Directory         ( canonicalizePath
+                                , makeRelativeToCurrentDirectory
                                 )
 import System.IO                (NewlineMode, universalNewlineMode)
 
@@ -52,7 +58,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.1.1.0"
+version = "1.2.0.0"
 
 -- | Upstream URL.
 upstream :: String
@@ -575,6 +581,10 @@ brightTheme = EdDesign
 -- | Editor monad. Reads an 'EdConfig', writes nothing, alters an 'EdState'.
 type WSEdit = RWST EdConfig () EdState IO
 
+-- | Convenience shortcut to run 'WSEdit' actions in 'IO'.
+runWSEdit :: (EdConfig, EdState) -> WSEdit a -> IO a
+runWSEdit (c, s) a = runRWST a c s >>= \(r, _, _) -> return r
+
 
 
 -- | Map of events to actions (and their descriptions). 'Nothing's are used to
@@ -593,3 +603,23 @@ data HighlightMode = HNone
                    | HSelected
                    | HString
     deriving (Eq, Read, Show)
+
+
+
+-- | Useful format for file paths.
+data PathInfo = PathInfo
+    { absPath :: FilePath
+    , relPath :: FilePath
+    }
+    deriving (Eq, Read, Show)
+
+-- | Takes a path and creates a 'PathInfo'.
+pathInfo :: FilePath -> IO PathInfo
+pathInfo path = do
+    a <- canonicalizePath path
+    r <- makeRelativeToCurrentDirectory path
+
+    return PathInfo
+        { absPath = a
+        , relPath = r
+        }

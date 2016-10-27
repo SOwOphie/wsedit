@@ -2,33 +2,20 @@
 #                                                                              #
 #  ####################                                  ####################  #
 #  ####################                                  ####################  #
-#  ## Draw logo here ##      WSConf Template Files       ##### And here #####  #
+#  ## Draw logo here ##      Gentoo Extensions           ##### And here #####  #
 #  ####################                                  ####################  #
 #  ####################                                  ####################  #
 #                                                                              #
-# by <your name here> (<your email here>)                                      #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
-#                                                                              #
-# Indentation settings                                                         #
-*.wsed-template
-	-ei 8
-	-ett
-#                                                                              #
-# Syntax highlighting                                                          #
-*.wsed-template
-	-lcl //
-	-lcb /* */
-	-lsr " "
-	-le \
-	-lb ( )
 #                                                                              #
 # Keywords                                                                     #
 *.wsed-template
-	-lk keyword1
-	-lk keyword2
-	-lk keyword3
+	-lk emerge
+	-lk equery
+	-lk eix
 #                                                                              #
 # Common synonyms                                                              #
-*.wsed-pattern: -mi file.wsed-template
+/etc/portage/make.conf: -mi make.sh
 #                                                                              #
 ################################################################################

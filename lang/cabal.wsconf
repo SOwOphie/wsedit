@@ -10,82 +10,76 @@
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
-cabal: -flc+--
+*.cabal: -lcl --
 #                                                                              #
 # Keywords                                                                     #
-cabal: -fk+name
-cabal: -fk+version
-cabal: -fk+cabal-version
-cabal: -fk+build-type
-cabal: -fk+license
-cabal: -fk+license-file
-cabal: -fk+copyright
-cabal: -fk+author
-cabal: -fk+maintainer
-cabal: -fk+stability
-cabal: -fk+homepage
-cabal: -fk+bug-reports
-cabal: -fk+package-url
-cabal: -fk+synopsis
-cabal: -fk+description
-cabal: -fk+category
-cabal: -fk+tested-with
-cabal: -fk+data-files
-cabal: -fk+data-dir
-cabal: -fk+extra-source-files
-cabal: -fk+extra-doc-files
-cabal: -fk+extra-tmp-files
-
-cabal: -fk+build-depends
-cabal: -fk+other-modules
-cabal: -fk+hs-source-dirs
-cabal: -fk+default-language
-cabal: -fk+extensions
-cabal: -fk+build-tools
-cabal: -fk+buildable
-cabal: -fk+ghc-options
-cabal: -fk+ghc-prof-options
-cabal: -fk+ghc-shared-options
-cabal: -fk+includes
-cabal: -fk+install-includes
-cabal: -fk+include-dirs
-cabal: -fk+c-sources
-cabal: -fk+js-sources
-cabal: -fk+extra-libraries
-cabal: -fk+extra-ghci-libraries
-cabal: -fk+extra-lib-dirs
-cabal: -fk+cc-options
-cabal: -fk+cpp-options
-cabal: -fk+ld-options
-cabal: -fk+frameworks
-
-cabal: -fk+library
-cabal: -fk+exposed-modules
-cabal: -fk+exposed
-cabal: -fk+reexported-modules
-
-cabal: -fk+executable
-cabal: -fk+main-is
-
-cabal: -fk+test-suite
-cabal: -fk+type
-cabal: -fk+test-module
-
-cabal: -fk+flag
-cabal: -fk+description
-cabal: -fk+default
-cabal: -fk+manual
-cabal: -fk+os
-cabal: -fk+arch
-cabal: -fk+impl
-cabal: -fk+true
-cabal: -fk+false
-
-cabal: -fk+source-repository
-cabal: -fk+location
-cabal: -fk+module
-cabal: -fk+branch
-cabal: -fk+tag
-cabal: -fk+subdir
+*.cabal
+	-lk arch
+	-lk author
+	-lk branch
+	-lk bug-reports
+	-lk buildable
+	-lk build-depends
+	-lk build-tools
+	-lk build-type
+	-lk cabal-version
+	-lk category
+	-lk cc-options
+	-lk copyright
+	-lk cpp-options
+	-lk c-sources
+	-lk data-files
+	-lk data-dir
+	-lk default
+	-lk default-language
+	-lk description
+	-lk executable
+	-lk exposed
+	-lk exposed-modules
+	-lk extensions
+	-lk extra-doc-files
+	-lk extra-ghci-libraries
+	-lk extra-lib-dirs
+	-lk extra-libraries
+	-lk extra-source-files
+	-lk extra-tmp-files
+	-lk false
+	-lk flag
+	-lk frameworks
+	-lk ghc-options
+	-lk ghc-prof-options
+	-lk ghc-shared-options
+	-lk homepage
+	-lk hs-source-dirs
+	-lk impl
+	-lk includes
+	-lk include-dirs
+	-lk install-includes
+	-lk js-sources
+	-lk ld-options
+	-lk library
+	-lk license
+	-lk license-file
+	-lk location
+	-lk main-is
+	-lk maintainer
+	-lk manual
+	-lk module
+	-lk name
+	-lk os
+	-lk other-modules
+	-lk package-url
+	-lk reexported-modules
+	-lk source-repository
+	-lk stability
+	-lk subdir
+	-lk synopsis
+	-lk tag
+	-lk tested-with
+	-lk test-module
+	-lk test-suite
+	-lk true
+	-lk type
+	-lk version
 #                                                                              #
 ################################################################################

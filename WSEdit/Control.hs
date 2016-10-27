@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
+{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 
 module WSEdit.Control (module C) where
 

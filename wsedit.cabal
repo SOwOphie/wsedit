@@ -1,5 +1,5 @@
 name:          wsedit
-version:       1.1.1.0
+version:       1.2.0.0
 synopsis:      A simple terminal source code editor.
 description:
 homepage:
@@ -17,6 +17,7 @@ library
 
   exposed-modules:
     WSEdit,
+    WSEdit.Arguments,
     WSEdit.Buffer,
     WSEdit.Control,
     WSEdit.Control.Autocomplete,
@@ -36,25 +37,29 @@ library
     WSEdit.WordTree
 
   build-depends:
-    base             >= 4.7   && < 5,
-    bytestring       >= 0.10  && < 1,
-    charsetdetect-ae >= 1.0   && < 2,
-    data-default     >= 0.5.3 && < 1,
-    directory        >= 1.2.6 && < 2,
-    hashable         >= 1.2.4 && < 2,
-    Hclip            >= 3     && < 5,
-    mtl              >= 2.2.1 && < 3,
-    pretty-show      >= 1.6.9 && < 2,
-    safe             >= 0.3.9 && < 1,
-    process          >= 1.2.3 && < 2,
-    strict           >= 0.3.2 && < 1,
-    transformers     >= 0.4.2 && < 1,
-    vty              >= 5.6   && < 6
+    base             >= 4.7    && < 5,
+    bytestring       >= 0.10   && < 1,
+    charsetdetect-ae >= 1.0    && < 2,
+    data-default     >= 0.5.3  && < 1,
+    directory        >= 1.2.6  && < 2,
+    filepath         >= 1.4.1  && < 2,
+    hashable         >= 1.2.4  && < 2,
+    Hclip            >= 3      && < 5,
+    mtl              >= 2.2.1  && < 3,
+    pretty-show      >= 1.6.9  && < 2,
+    safe             >= 0.3.9  && < 1,
+    parsec           >= 3.1.11 && < 4,
+    process          >= 1.2.3  && < 2,
+    strict           >= 0.3.2  && < 1,
+    transformers     >= 0.4.2  && < 1,
+    vty              >= 5.6    && < 6
 
   ghc-options:
-    -threaded
     -Wall
     -Werror
+    -fwarn-incomplete-uni-patterns
+    -fwarn-missing-import-lists
+    -fwarn-tabs
     -O2
 
 executable wsedit
