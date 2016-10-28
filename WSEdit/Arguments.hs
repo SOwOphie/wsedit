@@ -169,19 +169,27 @@ providedFile  _                  = Nothing
 --   mandates it (e.g. help requested, parse error, ...).
 parseArguments :: (EdConfig, EdState) -> IO (EdConfig, EdState)
 parseArguments (c, s) = do
+
+    -- read arguments and files
     args  <- getArgs
     files <- readConfigFiles
 
+    -- parse them
     let
         parsedFiles = map (\(p, x) ->  parse configFile (absPath p) x) files
         parsedArgs  = parse configCmd "command line" $ unwords args
 
-        parsedSucc  = concat $ rights $ parsedFiles
+        -- list of successfully parsed options from files only (!)
+        parsedSuccF = concat $ rights $ parsedFiles
+
+        -- list of all parse errors, regardless of source
         parseErrors = lefts parsedFiles
                    ++ lefts [parsedArgs]
 
+    -- errors in command line arguments?
     case parsedArgs of
          Left  e -> do
+            -- Yes? Complain, quit.
             runWSEdit (c, s)
                   $ quitComplain
                   $ "Command line argument parse error:\n" ++ show e
@@ -189,16 +197,27 @@ parseArguments (c, s) = do
             return (c, s)
 
          Right a ->
+            -- No? => a contains all parsed cmd arguments
             let
+                -- Figure out the initial file to match against
                 targetFName = lastMay
                             $ catMaybes
                             $ map providedFile a
             in
                 case targetFName of
+                     -- No file? Complain, quit.
                      Nothing -> runWSEdit (c, s) (quitComplain "No file selected, exiting now (see -h).")
                              >> return (c, s)
 
+                     -- File found. Note that this may not be the actual file
+                     -- name that we're opening later, just something closely
+                     -- resembling it. See 'providedFile' for more info.
                      Just f  -> do
+
+                        -- Assemble all the file names to match against. This
+                        -- includes the file we just obtained as well as all
+                        -- names provided by -mi given in command line
+                        -- parameters.
                         finf <- mapM pathInfo
                              $ f : catMaybes (map (\case
                                                         MetaInclude n -> Just n
@@ -208,10 +227,16 @@ parseArguments (c, s) = do
                                              )
 
 
-                        selArgs <- selectArgs finf parsedSucc
+                        -- Apply recursive algorithm to select all active
+                        -- arguments from files.
+                        selArgs <- selectArgs finf parsedSuccF
 
                         let
+                            -- All active arguments
                             allArgs = selArgs ++ a
+
+                            -- Selected release stability: the smallest value
+                            -- given, or 'Release' if omitted.
                             selStab = maximumDef Release
                                     $ catMaybes
                                     $ map (\case
@@ -220,11 +245,14 @@ parseArguments (c, s) = do
                                           )
                                     $ allArgs
 
+                        -- Report parse errors and abort if no -mf is active.
                         when ((not $ null parseErrors) && MetaFailsafe `notElem` allArgs)
                             $ runWSEdit (c, s)
                             $ quitComplain
                             $ "Parse error(s) occured:\n" ++ unlines (map show parseErrors)
 
+                        -- Abort if the release is not as stable as the user
+                        -- wants it to be.
                         when (stability < selStab)
                              $ runWSEdit (c, s)
                              $ quitComplain
@@ -235,19 +263,24 @@ parseArguments (c, s) = do
                             ++ "but you can also continue using this unstable version by passing\n"
                             ++ "-ys " ++ show stability ++ " or adding it to a config file."
 
+                        -- Apply arguments to config/state pair.
                         foldM applyArg (c, s) $ dump "allArgs" allArgs
 
     where
+        -- | User home directory -> wsedit config directory
         confDir :: String -> String
         confDir = (++ "/.config/wsedit/")
 
+        -- | User home directory -> global wsedit config file
         globC :: String -> String
         globC = (++ "/.config/wsedit.wsconf")
 
+        -- | local wsedit config file
         locC :: String
         locC = ".local.wsconf"
 
 
+        -- | Read in all config files.
         readConfigFiles :: IO [(PathInfo, String)]
         readConfigFiles = do
             h      <- getHomeDirectory
@@ -401,14 +434,17 @@ applyArg (c, s)  MetaStateFile        = return (c, s)
 
 configCmd :: Parser [Argument]
 configCmd = fmap concat
-          $ sequence
-          $ intersperse' (optional spaces' >> return [])
-          $ intersperse' (configOption `sepBy` spaces')
-          $ map (\x -> option [] (x >>= return . return))
-          [ specialSetFile
-          , specialSetVPos
-          , specialSetHPos
-          ]
+          $  sequence
+          $ ( intersperse' (optional spaces' >> return [])
+            $ intersperse' (configOption `sepBy` spaces')
+            $ map (\x -> option [] (x >>= return . return))
+              [ specialSetFile
+              , specialSetVPos
+              , specialSetHPos
+              ]
+            )
+         ++ [eof >> return []]
+
     where
         intersperse' :: a -> [a] -> [a]
         intersperse' el [] = [el]
