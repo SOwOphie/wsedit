@@ -30,8 +30,8 @@ import System.IO                     ( Newline (CRLF, LF)
 import Text.ParserCombinators.Parsec ( Parser
                                      , char, choice, digit, eof, many, many1
                                      , newline, noneOf, oneOf, option, optional
-                                     , parse, sepBy, sepEndBy, spaces, string
-                                     , try
+                                     , parse, sepBy, sepEndBy, sepEndBy1, spaces
+                                     , string, try
                                      , (<|>), (<?>)
                                      )
 
@@ -652,6 +652,5 @@ integer    = read <$> try (many1 digit         ) <?> "integer"
 
 filePath   = try (concat <$> sequence
     [ option "" $ string "/"
-    , intercalate "/" <$> many1 (noneOf "\n/ ") `sepBy` char '/'
-    , option "" $ string "/"
+    , intercalate "/" <$> many1 (noneOf "\n/ ") `sepEndBy1` char '/'
     ]) <?> "file path"
