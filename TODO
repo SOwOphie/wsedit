@@ -6,6 +6,5 @@ lua: long strings
 lua: --- highlights wrong
 copy/paste: occasionally wrong horizontal cursor position
 gentoo: finish concept
-wsed -ocl : no syntax highlighting o.0
 swap -db / -dB ?
 thread blocked indefinitely on mvar on empty file name

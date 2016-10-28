@@ -12,8 +12,8 @@ module WSEdit.Arguments
 import Control.Monad                 (foldM, when)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, intercalate, isPrefixOf
-                                     , isSuffixOf, nub
+import Data.List                     ( delete, intercalate, intersperse
+                                     , isPrefixOf, isSuffixOf, nub
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
@@ -56,7 +56,7 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
 import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
                                      , versionHelp
                                      )
-import WSEdit.Util                   (mayReadFile, dump)
+import WSEdit.Util                   (mayReadFile, withFst, withSnd, dump)
 
 
 
@@ -140,7 +140,8 @@ data Argument = AutocompAdd     Int    String
               | OtherPurgeOff
 
               | SpecialSetFile  String
-              | SpecialSetPos   Int
+              | SpecialSetVPos  Int
+              | SpecialSetHPos  Int
 
     deriving (Eq, Read, Show)
 
@@ -385,9 +386,8 @@ applyArg (c, s)  OtherOpenCfLoc       =                            return (c, s 
 applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s { fname = p ++ "/.config/wsedit.wsconf" } )
 
 applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
-applyArg (c, s) (SpecialSetPos   n  ) = case loadPos s of
-                                             (1, x) -> return (c, s { loadPos = (n, x) })
-                                             (x, _) -> return (c, s { loadPos = (x, n) })
+applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
+applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
 
 -- placeholder
@@ -400,24 +400,36 @@ applyArg (c, s)  MetaStateFile        = return (c, s)
 -- Boring parsec gibberish incoming... --
 
 configCmd :: Parser [Argument]
-configCmd =  (configOption `sepBy` spaces' <* eof)
-         <?> "Call parameters"
+configCmd = fmap concat
+          $ sequence
+          $ intersperse' (optional spaces' >> return [])
+          $ intersperse' (configOption `sepBy` spaces')
+          $ map (\x -> option [] (x >>= return . return))
+          [ specialSetFile
+          , specialSetVPos
+          , specialSetHPos
+          ]
+    where
+        intersperse' :: a -> [a] -> [a]
+        intersperse' el [] = [el]
+        intersperse' el l  = el : intersperse el l ++ [el]
+
+
 
 configFile :: Parser [ArgBlock]
 configFile =  (fmap catMaybes (many1 configElem <* eof))
           <|> (spaces >> eof >> return [])
-          <?> "Config file"
+          <?> "config file"
 
 
 configElem :: Parser (Maybe ArgBlock)
-configElem =  try (fmap Just configStAlone      )
-          <|> try (fmap Just configBlock        )
-          <|> try (commentLine >> return Nothing)
+configElem =  (fmap Just configStAlone      )
+          <|> (fmap Just configBlock        )
+          <|> (commentLine >> return Nothing)
 
 configStAlone :: Parser ArgBlock
 configStAlone = (do
-    q   <- qualifier
-    char ':'
+    q <- try $ qualifier <* char ':'
     spaces'
     arg <- configOption
     many1 newline
@@ -426,11 +438,12 @@ configStAlone = (do
         { abMatch = q
         , abArg   = [arg]
         }
-    ) <?> "Standalone config instruction"
+    ) <?> "standalone config instruction"
 
 configBlock :: Parser ArgBlock
 configBlock = (do
-    q <- qualifier
+    q <- try qualifier
+
     many1 newline
     args <- (spaces' >> configOption) `sepEndBy` newline
     many newline
@@ -439,39 +452,40 @@ configBlock = (do
         { abMatch = q
         , abArg   = args
         }
-    ) <?> "Config instruction block"
+    ) <?> "config instruction block"
 
 
 commentLine :: Parser String
 commentLine = (do
-    optional spaces'
-    char '#'
+    try $ do
+        optional spaces'
+        char '#'
+
     s <- many $ noneOf "\n"
     many1 newline
     return s
-    ) <?> "Comment"
+    ) <?> "comment"
 
 
 qualifier :: Parser ABMatch
-qualifier =  try   exactQualifier
-         <|> try prefSufQualifier
-         <?> "File qualifier"
-
-exactQualifier :: Parser ABMatch
-exactQualifier =  (ExactName <$> many1 (noneOf "\n*:"))
-              <?> "Exact match file qualifier"
+qualifier =  prefSufQualifier
+         <|> exactQualifier
+         <?> "file qualifier"
 
 prefSufQualifier :: Parser ABMatch
 prefSufQualifier = (do
-    prf <- many (noneOf "\n*:")
-    char '*'
+    prf <- try $ many (noneOf "\n*:") <* char '*'
     PrefSuf prf <$> many (noneOf "\n*:")
-    ) <?> "Prefix/suffix match file qualifier"
+    ) <?> "prefix/suffix match file qualifier"
+
+exactQualifier :: Parser ABMatch
+exactQualifier =  (ExactName <$> try (many1 $ noneOf "\n*:"))
+              <?> "exact match file qualifier"
 
 
 
 configOption :: Parser Argument
-configOption = (choice $ map try
+configOption = (choice
     [ autocompAdd
     , autocompAddSelf
     , autocompOff
@@ -524,68 +538,67 @@ configOption = (choice $ map try
     , debugDumpEvOn
     , debugDumpEvOff
     , debugStability
-    , specialSetPos
-    , specialSetFile
-    ]) <?> "Config option"
+    ]) <?> "config option"
 
 
-autocompOff       = string "-A"   >> return AutocompOff
-displayDotsOn     = string "-db"  >> return DisplayDotsOn
-displayDotsOff    = string "-dB"  >> return DisplayDotsOff
-displayInvBGOn    = string "-dx"  >> return DisplayInvBGOn
-displayInvBGOff   = string "-dX"  >> return DisplayInvBGOff
-editorTabModeSpc  = string "-ets" >> return EditorTabModeSpc
-editorTabModeTab  = string "-ett" >> return EditorTabModeTab
-editorTabModeAuto = string "-eT"  >> return EditorTabModeAuto
-fileEncodingDef   = string "-fE"  >> return FileEncodingDef
-fileLineEndUnix   = string "-flu" >> return FileLineEndUnix
-fileLineEndWin    = string "-flw" >> return FileLineEndWin
-fileLineEndDef    = string "-fL"  >> return FileLineEndDef
-generalROOn       = string "-gr"  >> return GeneralROOn
-generalROOff      = string "-gR"  >> return GeneralROOff
-helpGeneral       = string "-h"   >> return HelpGeneral
-helpConfig        = string "-hc"  >> return HelpConfig
-helpKeybinds      = string "-hk"  >> return HelpKeybinds
-helpVersion       = string "-hv"  >> return HelpVersion
-langEscapeOff     = string "-lE"  >> return LangEscapeOff
-metaFailsafe      = string "-mf"  >> return MetaFailsafe
-metaStateFile     = string "-ms"  >> return MetaStateFile
-otherOpenCfGlob   = string "-ocg" >> return OtherOpenCfGlob
-otherOpenCfLoc    = string "-ocl" >> return OtherOpenCfLoc
-otherPurgeOn      = string "-op"  >> return OtherPurgeOn
-otherPurgeOff     = string "-oP"  >> return OtherPurgeOff
-debugDumpEvOn     = string "-ye"  >> return DebugDumpEvOn
-debugDumpEvOff    = string "-yE"  >> return DebugDumpEvOff
+autocompOff       = try (string "-A"  ) >> return AutocompOff
+displayDotsOn     = try (string "-db" ) >> return DisplayDotsOn
+displayDotsOff    = try (string "-dB" ) >> return DisplayDotsOff
+displayInvBGOn    = try (string "-dx" ) >> return DisplayInvBGOn
+displayInvBGOff   = try (string "-dX" ) >> return DisplayInvBGOff
+editorTabModeSpc  = try (string "-ets") >> return EditorTabModeSpc
+editorTabModeTab  = try (string "-ett") >> return EditorTabModeTab
+editorTabModeAuto = try (string "-eT" ) >> return EditorTabModeAuto
+fileEncodingDef   = try (string "-fE" ) >> return FileEncodingDef
+fileLineEndUnix   = try (string "-flu") >> return FileLineEndUnix
+fileLineEndWin    = try (string "-flw") >> return FileLineEndWin
+fileLineEndDef    = try (string "-fL" ) >> return FileLineEndDef
+generalROOn       = try (string "-gr" ) >> return GeneralROOn
+generalROOff      = try (string "-gR" ) >> return GeneralROOff
+helpGeneral       = try (string "-h"  ) >> return HelpGeneral
+helpConfig        = try (string "-hc" ) >> return HelpConfig
+helpKeybinds      = try (string "-hk" ) >> return HelpKeybinds
+helpVersion       = try (string "-hv" ) >> return HelpVersion
+langEscapeOff     = try (string "-lE" ) >> return LangEscapeOff
+metaFailsafe      = try (string "-mf" ) >> return MetaFailsafe
+metaStateFile     = try (string "-ms" ) >> return MetaStateFile
+otherOpenCfGlob   = try (string "-ocg") >> return OtherOpenCfGlob
+otherOpenCfLoc    = try (string "-ocl") >> return OtherOpenCfLoc
+otherPurgeOn      = try (string "-op" ) >> return OtherPurgeOn
+otherPurgeOff     = try (string "-oP" ) >> return OtherPurgeOff
+debugDumpEvOn     = try (string "-ye" ) >> return DebugDumpEvOn
+debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 
-autocompAddSelf   = do { string "-as" ; spaces'; AutocompAddSelf <$> integer                          }
-editorIndSet      = do { string "-ei" ; spaces'; EditorIndSet    <$> integer                          }
-editorJumpMAdd    = do { string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                          }
-editorJumpMDel    = do { string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                          }
-fileEncodingSet   = do { string "-fe" ; spaces'; FileEncodingSet <$> word                             }
-generalHighlAdd   = do { string "-gh" ; spaces'; GeneralHighlAdd <$> word                             }
-generalHighlDel   = do { string "-gH" ; spaces'; GeneralHighlDel <$> word                             }
-langCommLineAdd   = do { string "-lcl"; spaces'; LangCommLineAdd <$> word                             }
-langCommLineDel   = do { string "-lcL"; spaces'; LangCommLineDel <$> word                             }
-langEscapeSet     = do { string "-le" ; spaces'; LangEscapeSet   <$> singleChar                       }
-langKeywordAdd    = do { string "-lk" ; spaces'; LangKeywordAdd  <$> word                             }
-langKeywordDel    = do { string "-lK" ; spaces'; LangKeywordDel  <$> word                             }
-metaInclude       = do { string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
-debugStability    = do { string "-ys" ; spaces'; DebugStability  <$> stab                             }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> integer                          }
+editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                          }
+editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                          }
+editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                          }
+fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                             }
+generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                             }
+generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                             }
+langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                             }
+langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                             }
+langEscapeSet     = do { try $ string "-le" ; spaces'; LangEscapeSet   <$> singleChar                       }
+langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                             }
+langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                             }
+metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
+debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                             }
 
-autocompAdd       = do { string "-ad" ; spaces'; n <- integer; spaces'; AutocompAdd    n <$> filePath }
-langBracketAdd    = do { string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
-langBracketDel    = do { string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
-langCommBlkAdd    = do { string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
-langCommBlkDel    = do { string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word     }
-langStrChrAdd     = do { string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word     }
-langStrChrDel     = do { string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word     }
-langStrMLAdd      = do { string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word     }
-langStrMLDel      = do { string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word     }
-langStrRegAdd     = do { string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
-langStrRegDel     = do { string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
+autocompAdd       = do { try $ string "-ad" ; spaces'; n <- integer; spaces'; AutocompAdd    n <$> filePath }
+langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
+langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
+langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
+langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word     }
+langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word     }
+langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word     }
+langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word     }
+langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word     }
+langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
+langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
 
-specialSetPos     = SpecialSetPos  <$> try integer
-specialSetFile    = SpecialSetFile <$> try filePath
+specialSetFile    = SpecialSetFile <$> filePath
+specialSetVPos    = SpecialSetVPos <$> integer
+specialSetHPos    = SpecialSetHPos <$> integer
 
 
 stab :: Parser Stability
@@ -596,12 +609,13 @@ stab  = read <$> (  try (string "Prototype")
                  )
 
 
-singleChar = (noneOf " \t\n")      <?> "Single character"
-word       = many1 singleChar      <?> "Word"
-spaces'    = (many1 $ oneOf " \t") <?> "Whitespace"
-integer    = read <$> many1 digit  <?> "Integer"
-filePath   = (concat <$> sequence
+singleChar =          try (      noneOf " \t\n") <?> "single character"
+word       =          try (many1 singleChar    ) <?> "word"
+spaces'    =          try (many1 $ oneOf " \t" ) <?> "whitespace"
+integer    = read <$> try (many1 digit         ) <?> "integer"
+
+filePath   = try (concat <$> sequence
     [ option "" $ string "/"
     , intercalate "/" <$> many1 (noneOf "\n/ ") `sepBy` char '/'
     , option "" $ string "/"
-    ]) <?> "File path"
+    ]) <?> "file path"
