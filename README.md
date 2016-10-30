@@ -1,6 +1,8 @@
 # Wyvernscale Source Code Editor (wsedit)
 
-Build Status: [![forthebadge](http://forthebadge.com/images/badges/fuck-it-ship-it.svg)](http://forthebadge.com)
+Build Status:
+
+[![forthebadge](http://forthebadge.com/images/badges/fuck-it-ship-it.svg)](http://forthebadge.com)
 
 ## Introduction
 
