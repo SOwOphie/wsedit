@@ -1,0 +1,34 @@
+################################################################################
+#                                                                              #
+#  ####################                                  ####################  #
+#  ####################                                  ####################  #
+#  ## Draw logo here ##      WSConf Template Files       ##### And here #####  #
+#  ####################                                  ####################  #
+#  ####################                                  ####################  #
+#                                                                              #
+# by <your name here> (<your email here>)                                      #
+################################################################################
+#                                                                              #
+# Indentation settings                                                         #
+*.wsed-template
+	-ei 8
+	-ett
+#                                                                              #
+# Syntax highlighting                                                          #
+*.wsed-template
+	-lcl //
+	-lcb /* */
+	-lsr " "
+	-le \
+	-lb ( )
+#                                                                              #
+# Keywords                                                                     #
+*.wsed-template
+	-lk keyword1
+	-lk keyword2
+	-lk keyword3
+#                                                                              #
+# Common synonyms                                                              #
+*.wsed-pattern: -mi file.wsed-template
+#                                                                              #
+################################################################################
