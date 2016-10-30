@@ -1,5 +1,4 @@
 Support for different path separators in parser
-Autocomplete: depth *, also use fancy new matching based on PathInfo
 Implement state files
 Review help (interactive-only commands) / .wsconf definition
 lua: long strings

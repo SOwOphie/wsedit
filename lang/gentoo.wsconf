@@ -1,19 +1,39 @@
 ################################################################################
 #                                                                              #
-#  ####################                                  ####################  #
-#  ####################                                  ####################  #
-#  ## Draw logo here ##      Gentoo Extensions           ##### And here #####  #
-#  ####################                                  ####################  #
-#  ####################                                  ####################  #
+#   ####                                                               ####    #
+#  ### ###                                                            ### ###  #
+#    ####                    Gentoo Extensions                          ####   #
+#   ###                                                                ###     #
+#  ##                                                                 ##       #
 #                                                                              #
 # by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
 # Keywords                                                                     #
 *.wsed-template
-	-lk emerge
-	-lk equery
+	-lk dispatch-conf
+	-lk eclean
+	-lk eclean-dist
+	-lk eclean-pkg
 	-lk eix
+	-lk eix-diff
+	-lk eix-header
+	-lk eix-installed
+	-lk eix-layman
+	-lk eix-remote
+	-lk eix-sync
+	-lk eix-update
+	-lk emaint
+	-lk emerge
+	-lk emerge-webrsync
+	-lk emirrordist
+	-lk env-update
+	-lk epkginfo
+	-lk equery
+	-lk eselect
+	-lk eshowpkg
+	-lk etc-update
+	-lk euse
 #                                                                              #
 # Common synonyms                                                              #
 /etc/portage/make.conf: -mi make.sh

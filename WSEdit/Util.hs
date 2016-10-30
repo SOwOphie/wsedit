@@ -3,11 +3,7 @@
            #-}
 
 module WSEdit.Util
-    ( Tri (..)
-    , maybe2TriError
-    , maybe2TriEmpty
-    , tri2Maybe
-    , withPair
+    ( withPair
     , withFst
     , withSnd
     , withPairM
@@ -72,53 +68,6 @@ import qualified Data.ByteString.Lazy as S
 
 fqn :: String -> String
 fqn = ("WSEdit.Util." ++)
-
-
-
-
-
--- | Monad with two different failure states.
-data Tri a = TJust a
-           | TEmpty
-           | TError
-    deriving
-        ( Eq
-        , Functor
-        , Read
-        , Show
-        )
-
-instance Applicative Tri where
-    pure  = TJust
-
-    (<*>) TError    _         = TError
-    (<*>) _         TError    = TError
-    (<*>) TEmpty    _         = TEmpty
-    (<*>) _         TEmpty    = TEmpty
-    (<*>) (TJust f) (TJust a) = TJust $ f a
-
-instance Monad Tri where
-    (>>=) TError    _ = TError
-    (>>=) TEmpty    _ = TEmpty
-    (>>=) (TJust a) f = f a
-
-
-
--- | Converts 'Maybe' to 'Tri', translating 'Nothing' to 'TError'.
-maybe2TriError :: Maybe a -> Tri a
-maybe2TriError Nothing  = TError
-maybe2TriError (Just a) = TJust a
-
--- | Converts 'Maybe' to 'Tri', translating 'Nothing' to 'TEmpty'.
-maybe2TriEmpty :: Maybe a -> Tri a
-maybe2TriEmpty Nothing  = TEmpty
-maybe2TriEmpty (Just a) = TJust a
-
--- | Converts 'Tri' to 'Maybe'.
-tri2Maybe :: Tri a -> Maybe a
-tri2Maybe TEmpty    = Nothing
-tri2Maybe TError    = Nothing
-tri2Maybe (TJust a) = Just a
 
 
 

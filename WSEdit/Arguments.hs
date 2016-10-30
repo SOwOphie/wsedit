@@ -12,8 +12,8 @@ module WSEdit.Arguments
 import Control.Monad                 (foldM, when)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, intercalate, intersperse
-                                     , isPrefixOf, isSuffixOf, nub
+import Data.List                     ( delete, intercalate, isPrefixOf
+                                     , isSuffixOf, nub
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
@@ -28,12 +28,13 @@ import System.IO                     ( Newline (CRLF, LF)
                                      , universalNewlineMode
                                      )
 import Text.ParserCombinators.Parsec ( Parser
-                                     , char, choice, digit, eof, many, many1
-                                     , newline, noneOf, oneOf, option, optional
-                                     , parse, sepBy, sepEndBy, sepEndBy1, spaces
-                                     , string, try
+                                     , char, choice, digit, endBy, eof, many
+                                     , many1, newline, noneOf, oneOf, option
+                                     , optional, parse, sepBy, sepEndBy
+                                     , sepEndBy1, spaces, string, try
                                      , (<|>), (<?>)
                                      )
+import Text.Show.Pretty              (ppShow)
 
 import WSEdit.Control.Global         (quitComplain)
 import WSEdit.Data                   ( EdConfig ( blockComment, brackets
@@ -56,7 +57,7 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
 import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
                                      , versionHelp
                                      )
-import WSEdit.Util                   (mayReadFile, withFst, withSnd, dump)
+import WSEdit.Util                   (mayReadFile, withFst, withSnd)
 
 
 
@@ -77,10 +78,11 @@ data ArgBlock = ArgBlock
 
 
 -- | Argument type.
-data Argument = AutocompAdd     Int    String
-              | AutocompAddSelf Int
+data Argument = AutocompAdd     (Maybe Int) String
+              | AutocompAddSelf (Maybe Int)
               | AutocompOff
 
+              | DebugDumpArgs
               | DebugDumpEvOn
               | DebugDumpEvOff
               | DebugStability  Stability
@@ -206,7 +208,11 @@ parseArguments (c, s) = do
             in
                 case targetFName of
                      -- No file? Complain, quit.
-                     Nothing -> runWSEdit (c, s) (quitComplain "No file selected, exiting now (see -h).")
+                     Nothing -> runWSEdit (c, s)
+                                          ( quitComplain
+                                            "No file selected, exiting now (see -h)."
+                                          )
+
                              >> return (c, s)
 
                      -- File found. Note that this may not be the actual file
@@ -246,10 +252,14 @@ parseArguments (c, s) = do
                                     $ allArgs
 
                         -- Report parse errors and abort if no -mf is active.
-                        when ((not $ null parseErrors) && MetaFailsafe `notElem` allArgs)
-                            $ runWSEdit (c, s)
-                            $ quitComplain
-                            $ "Parse error(s) occured:\n" ++ unlines (map show parseErrors)
+                        when ( (not $ null parseErrors)
+                            && MetaFailsafe `notElem` allArgs
+                             )
+                             $ runWSEdit (c, s)
+                             $ quitComplain
+                             $ "Parse error(s) occured:\n"
+                            ++ unlines (map show parseErrors)
+                            ++ "Tip: Use -mf to ignore all files containing errors and fix them."
 
                         -- Abort if the release is not as stable as the user
                         -- wants it to be.
@@ -263,8 +273,15 @@ parseArguments (c, s) = do
                             ++ "but you can also continue using this unstable version by passing\n"
                             ++ "-ys " ++ show stability ++ " or adding it to a config file."
 
+                        -- Dump arguments if desired
+                        when (DebugDumpArgs `elem` allArgs) $ do
+                            h <- getHomeDirectory
+                            appendFile (h ++ "/wsedit-arg-dump")
+                                $ "\n\n"
+                               ++ ppShow allArgs
+
                         -- Apply arguments to config/state pair.
-                        foldM applyArg (c, s) $ dump "allArgs" allArgs
+                        foldM applyArg (c, s) allArgs
 
     where
         -- | User home directory -> wsedit config directory
@@ -351,9 +368,9 @@ appliesTo files (ArgBlock { abMatch = m }) =
 
 -- | Applies an argument to a config/state pair.
 applyArg :: (EdConfig, EdState) -> Argument -> IO (EdConfig, EdState)
-applyArg (c, s) (AutocompAdd     n f) = return (c, s { buildDict   = (Just f , Just n) : buildDict s })
-applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, Just n) : buildDict s })
-applyArg (c, s)  AutocompOff          = return (c, s { buildDict   = []                              })
+applyArg (c, s) (AutocompAdd     n f) = return (c, s { buildDict   = (Just f , n) : buildDict s })
+applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, n) : buildDict s })
+applyArg (c, s)  AutocompOff          = return (c, s { buildDict   = []                         })
 
 applyArg (c, s)  EditorTabModeSpc     = return (c, s { replaceTabs = True
                                                      , detectTabs  = False
@@ -411,12 +428,13 @@ applyArg (c, s)  HelpConfig           = runWSEdit (c, s) (quitComplain      conf
 applyArg (c, s)  HelpKeybinds         = runWSEdit (c, s) (quitComplain $  keymapHelp $ keymap c) >> return (c, s)
 applyArg (c, s)  HelpVersion          = runWSEdit (c, s) (quitComplain   versionHelp           ) >> return (c, s)
 
+applyArg (c, s)  DebugDumpArgs        = return (c, s)
+applyArg (c, s) (DebugStability  _  ) = return (c, s)
 applyArg (c, s) (MetaInclude     _  ) = return (c, s)
 applyArg (c, s)  MetaFailsafe         = return (c, s)
-applyArg (c, s) (DebugStability  _  ) = return (c, s)
 
-applyArg (c, s)  OtherOpenCfLoc       =                            return (c, s { fname =               ".local.wsconf" } )
-applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s { fname = p ++ "/.config/wsedit.wsconf" } )
+applyArg (c, s)  OtherOpenCfLoc       =                            return (c, s { fname =               ".local.wsconf" })
+applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s { fname = p ++ "/.config/wsedit.wsconf" })
 
 applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
@@ -433,22 +451,19 @@ applyArg (c, s)  MetaStateFile        = return (c, s)
 -- Boring parsec gibberish incoming... --
 
 configCmd :: Parser [Argument]
-configCmd = fmap concat
-          $  sequence
-          $ ( intersperse' (optional spaces' >> return [])
-            $ intersperse' (configOption `sepBy` spaces')
-            $ map (\x -> option [] (x >>= return . return))
-              [ specialSetFile
-              , specialSetVPos
-              , specialSetHPos
+configCmd = ( fmap concat
+              $ try
+              $ sequence
+              [ option [] $       configOption `endBy` spaces'
+              ,                              fmap return (specialSetFile)
+              , option [] $ try $ spaces' >> fmap return (specialSetVPos)
+              , option [] $ try $ spaces' >> fmap return (specialSetHPos)
+              , option [] $ try $ spaces' >> configOption `sepBy` spaces'
+              ,                              eof >> return []
               ]
+            ) <|> (
+              configOption `sepBy` spaces' <* eof
             )
-         ++ [eof >> return []]
-
-    where
-        intersperse' :: a -> [a] -> [a]
-        intersperse' el [] = [el]
-        intersperse' el l  = el : intersperse el l ++ [el]
 
 
 
@@ -544,10 +559,10 @@ configOption = (choice
     , generalHighlDel
     , generalROOn
     , generalROOff
-    , helpGeneral
     , helpConfig
     , helpKeybinds
     , helpVersion
+    , helpGeneral
     , langBracketAdd
     , langBracketDel
     , langCommBlkAdd
@@ -571,6 +586,7 @@ configOption = (choice
     , otherOpenCfLoc
     , otherPurgeOn
     , otherPurgeOff
+    , debugDumpArgs
     , debugDumpEvOn
     , debugDumpEvOff
     , debugStability
@@ -602,10 +618,11 @@ otherOpenCfGlob   = try (string "-ocg") >> return OtherOpenCfGlob
 otherOpenCfLoc    = try (string "-ocl") >> return OtherOpenCfLoc
 otherPurgeOn      = try (string "-op" ) >> return OtherPurgeOn
 otherPurgeOff     = try (string "-oP" ) >> return OtherPurgeOff
+debugDumpArgs     = try (string "-yc" ) >> return DebugDumpArgs
 debugDumpEvOn     = try (string "-ye" ) >> return DebugDumpEvOn
 debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 
-autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> integer                          }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                          }
 editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                          }
 editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                          }
 editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                          }
@@ -620,7 +637,7 @@ langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word 
 metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
 debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                             }
 
-autocompAdd       = do { try $ string "-ad" ; spaces'; n <- integer; spaces'; AutocompAdd    n <$> filePath }
+autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> filePath }
 langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
 langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
 langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
@@ -649,6 +666,9 @@ singleChar =          try (      noneOf " \t\n") <?> "single character"
 word       =          try (many1 singleChar    ) <?> "word"
 spaces'    =          try (many1 $ oneOf " \t" ) <?> "whitespace"
 integer    = read <$> try (many1 digit         ) <?> "integer"
+
+wildInt    =  try (char '*' >> return Nothing)
+          <|> fmap Just integer
 
 filePath   = try (concat <$> sequence
     [ option "" $ string "/"

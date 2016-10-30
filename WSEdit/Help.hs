@@ -81,6 +81,7 @@ renderText nCols = unlinesPlus . map (renderLine nCols)
 
 
 
+-- | Generates help text describing the given keymap.
 keymapHelp :: Keymap -> String
 keymapHelp km =
     let
@@ -133,6 +134,8 @@ keymapHelp km =
 
 
 --                                                                        margin (87) |
+
+-- | Help string detailing persistent configuration.
 confHelp :: String
 confHelp = renderText 80
     [ "Persistent Configuration"
@@ -178,21 +181,23 @@ confHelp = renderText 80
     , "counts as part of the statement, and not as a comment."
     , ""
     , ""
-    , "Some examples to start giving you ideas:"
+    , "Some more examples to start giving you ideas:"
     , ""
     , "*.hs: -lk import"
     , ""
-    , "*/.bashrc: -mi file.sh"
-    , ""
     , "/etc/portage/make.conf*: -mi file.sh"
     , ""
-    , "*.hs: -ad 0 *.hs"
-    , "*.hs: -ad * data/*.hs"
+    , "*.hs"
+    , "    -ad 0 *.hs"
+    , "    -ad * data/*.hs"
     ]
 
 
 
 --                                                                        margin (87) |
+
+-- | Help text describing all available command line options. Caution, this one
+--   is about 250 lines long.
 usageHelp :: String
 usageHelp = renderText 80
     [ "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]"
@@ -429,10 +434,17 @@ usageHelp = renderText 80
     , ""
     , "-*- Development and Debugging Options (-y*) -*-"
     , ""
-    , "  -ye             Debug: enable event dumping."
-    , "  -yE             Debug: disable event dumping."
+    , "  -yc             This will dump all active config options to"
+    , "                  ${HOME}/wsedit-arg-dump ."
+    , ""
+    , ""
+    , ""
+    , "  -ye             Enable event dumping."
+    , "  -yE             Disable event dumping."
     , ""
     , "                  Event dumping will show every event in the status bar."
+    , ""
+    , ""
     , ""
     , "  -ys <level>     Set accepted release stability. All versions with a lower"
     , "                  value than supplied will not start. Possible values are:"
@@ -446,6 +458,8 @@ usageHelp = renderText 80
 
 
 --                                                                        margin (87) |
+
+-- | Version and disclaimer help text.
 versionHelp :: String
 versionHelp = renderText 80
     [ "Wyvernscale Source Code Editor (wsedit) Version " ++ version

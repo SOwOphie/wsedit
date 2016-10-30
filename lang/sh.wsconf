@@ -179,8 +179,6 @@
 	-lk nslookup
 	-lk open
 	-lk op
-	-lk pacaur
-	-lk pacman
 	-lk passwd
 	-lk paste
 	-lk pathchk
@@ -293,7 +291,6 @@
 	-lk xargs
 	-lk xdg-open
 	-lk xz
-	-lk yaourt
 	-lk yes
 	-lk zip
 #                                                                              #
