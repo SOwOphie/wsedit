@@ -18,9 +18,9 @@
 	-lcl --
 	-lcb {- -}
 	-lsc ' '
-	-lsm " "
+	-lsm \" \"
 	-lsr ` `
-	-le \
+	-le \\
 	-lb ( )
 	-lb [ ]
 	-lb { }

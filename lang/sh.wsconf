@@ -13,7 +13,7 @@
 *.sh
 	-lcl #
 	-lsm ' '
-	-lsm " "
+	-lsm \" \"
 	-lsr ` `
 	-le \
 	-lb ( )

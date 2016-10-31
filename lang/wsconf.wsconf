@@ -13,7 +13,10 @@
 *.wsconf: -ett
 #                                                                              #
 # Syntax highlighting                                                          #
-*.wsconf: -lcl #
+*.wsconf
+	-lcl #
+	-le \\
+	-lsr \" \"
 #                                                                              #
 # Keywords                                                                     #
 *.wsconf

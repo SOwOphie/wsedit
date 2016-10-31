@@ -18,8 +18,8 @@
 *.wsed-template
 	-lcl //
 	-lcb /* */
-	-lsr " "
-	-le \
+	-lsr \" \"
+	-le \\
 	-lb ( )
 #                                                                              #
 # Keywords                                                                     #

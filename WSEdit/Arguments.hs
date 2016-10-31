@@ -12,8 +12,7 @@ module WSEdit.Arguments
 import Control.Monad                 (foldM, when)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, intercalate, isPrefixOf
-                                     , isSuffixOf, nub
+import Data.List                     ( delete, isPrefixOf, isSuffixOf, nub
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
@@ -28,10 +27,10 @@ import System.IO                     ( Newline (CRLF, LF)
                                      , universalNewlineMode
                                      )
 import Text.ParserCombinators.Parsec ( Parser
-                                     , char, choice, digit, endBy, eof, many
-                                     , many1, newline, noneOf, oneOf, option
-                                     , optional, parse, sepBy, sepEndBy
-                                     , sepEndBy1, spaces, string, try
+                                     , anyChar, char, choice, digit, endBy, eof
+                                     , many, many1, newline, noneOf, oneOf
+                                     , option, optional, parse, sepBy, sepEndBy
+                                     , spaces, string, try
                                      , (<|>), (<?>)
                                      )
 import Text.Show.Pretty              (ppShow)
@@ -179,7 +178,8 @@ parseArguments (c, s) = do
     -- parse them
     let
         parsedFiles = map (\(p, x) ->  parse configFile (absPath p) x) files
-        parsedArgs  = parse configCmd "command line" $ unwords args
+        parsedArgs  = parse configCmd "command line"
+                    $ fancyUnwords args
 
         -- list of successfully parsed options from files only (!)
         parsedSuccF = concat $ rights $ parsedFiles
@@ -325,6 +325,18 @@ parseArguments (c, s) = do
             piLoc  <- pathInfo    locC
 
             return $ confFiles ++ [(piGlob, glob), (piLoc, loc)]
+
+
+        -- | Unwords, escaping quotes, spaces and backslashes.
+        fancyUnwords :: [String] -> String
+        fancyUnwords = unwords . map esc
+
+        esc :: String -> String
+        esc []        = ""
+        esc ('\\':xs) = "\\\\" ++ esc xs
+        esc (' ' :xs) = "\\ "  ++ esc xs
+        esc ('"' :xs) = "\\\"" ++ esc xs
+        esc (x   :xs) = [x]    ++ esc xs
 
 
 
@@ -622,34 +634,34 @@ debugDumpArgs     = try (string "-yc" ) >> return DebugDumpArgs
 debugDumpEvOn     = try (string "-ye" ) >> return DebugDumpEvOn
 debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 
-autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                          }
-editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                          }
-editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                          }
-editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                          }
-fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                             }
-generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                             }
-generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                             }
-langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                             }
-langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                             }
-langEscapeSet     = do { try $ string "-le" ; spaces'; LangEscapeSet   <$> singleChar                       }
-langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                             }
-langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                             }
-metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> filePath                         }
-debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                             }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                      }
+editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                      }
+editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                      }
+editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                      }
+fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                         }
+generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                         }
+generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                         }
+langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                         }
+langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                         }
+langEscapeSet     = do { try $ string "-le" ; spaces'; LangEscapeSet   <$> singleChar                   }
+langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                         }
+langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                         }
+metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                         }
+debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                         }
 
-autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> filePath }
-langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
-langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
-langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
-langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word     }
-langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word     }
-langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word     }
-langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word     }
-langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word     }
-langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
-langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
+autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> word }
+langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word }
+langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word }
+langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word }
+langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word }
+langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word }
+langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word }
+langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word }
+langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word }
+langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word }
+langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word }
 
-specialSetFile    = SpecialSetFile <$> filePath
+specialSetFile    = SpecialSetFile <$> word
 specialSetVPos    = SpecialSetVPos <$> integer
 specialSetHPos    = SpecialSetHPos <$> integer
 
@@ -662,15 +674,18 @@ stab  = read <$> (  try (string "Prototype")
                  )
 
 
-singleChar =          try (      noneOf " \t\n") <?> "single character"
-word       =          try (many1 singleChar    ) <?> "word"
-spaces'    =          try (many1 $ oneOf " \t" ) <?> "whitespace"
-integer    = read <$> try (many1 digit         ) <?> "integer"
+singleChar = escChar <|> simpleChar <?> "single character"
+escChar    = try (char '\\') >> anyChar
+simpleChar = noneOf " \\\t\n\""
+
+
+spaces'    =          try (many1 $ oneOf " \t"  ) <?> "whitespace"
+integer    = read <$> try (many1 digit          ) <?> "integer"
 
 wildInt    =  try (char '*' >> return Nothing)
           <|> fmap Just integer
 
-filePath   = try (concat <$> sequence
-    [ option "" $ string "/"
-    , intercalate "/" <$> many1 (noneOf "\n/ ") `sepEndBy1` char '/'
-    ]) <?> "file path"
+
+word       = escWord <|> simpleWord <?> "word"
+simpleWord = many1 singleChar
+escWord    = try (char '"') >> many1 (singleChar) <* char '"'
