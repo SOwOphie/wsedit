@@ -5,8 +5,9 @@ module WSEdit.Renderer
 
 import Control.Monad            (foldM)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
+import Data.Char                (toLower)
 import Data.Ix                  (inRange)
-import Data.List                (nubBy, sort, sortOn, (\\))
+import Data.List                (nubBy, sort, sortOn)
 import Data.Maybe               (fromMaybe)
 import Data.Ord                 (Down (Down))
 import Safe                     (headDef)
@@ -95,14 +96,6 @@ tkLn (_, str) = do
     c <- ask
     s <- get
 
-    let
-        esc  = map (+1)
-             $ fromMaybe []
-             $ fmap ((`findInStr` str) . return)
-             $ escape c
-
-        esc' = esc \\ map (+1) esc
-
     return $ sort
            $ nubBy overlap
            $ sortOn (\(n, x) -> Down (length x, n))
@@ -111,11 +104,12 @@ tkLn (_, str) = do
           ++ token  str (unpack $ brackets     c)
           ++ token  str (         searchTerms  s)
           ++ tokenI str (         keywords     c)
-          ++ filter ((`notElem` esc') . (subtract 1) . fst)
-             ( token  str (unpack $ strDelim     c)
-            ++ token  str (unpack $ mStrDelim    c)
-            ++ token  str (unpack $ chrDelim     c)
-             )
+          ++ token  str (unpack $ strDelim     c)
+          ++ token  str (unpack $ mStrDelim    c)
+          ++ token  str (unpack $ chrDelim     c)
+          ++ case escape c of
+                  Nothing -> []
+                  Just e  -> token str [[e]]
 
     where
         token :: String -> [String] -> [(Int, String)]
@@ -151,6 +145,51 @@ rebuildFmt _ = fullRebuild
             -> [(Int, String)]                  -- ^ Tokens in the line
             -> (RangeCacheElem, BracketCacheElem)
 
+        -- Multi-line strings
+        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, e):(n3, _):xs)
+            -- Skip next token on escape char if it follows directly
+            | n2 + 1 == n3 && Just e == fmap return (escape c)
+                = fsm (c, s) lNo (PMLString n1 str  , st) xs
+
+        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, x)        :xs)
+            -- Closing the string
+            | str == x
+                = withFst (withFst (((n1, n2 + length x - 1), HString ):))
+                $ fsm (c, s) lNo (PNothing          , st) xs
+            -- Otherwise: just random garbage inside a string, carry on.
+            | otherwise
+                = fsm (c, s) lNo (PMLString n1 str, st) xs
+
+        -- Regular strings
+        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, e):(n3, _):xs)
+            -- Skip next token on escape char if it follows directly
+            | n2 + 1 == n3 && Just e == fmap return (escape c)
+                = fsm (c, s) lNo (PLnString n1 str  , st) xs
+
+        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, x)        :xs)
+            -- Closing the string
+            | str == x
+                = withFst (withFst (((n1, n2 + length x - 1), HString ):))
+                $ fsm (c, s) lNo (PNothing        , st) xs
+            -- Otherwise: just random garbage inside a string, carry on.
+            | otherwise
+                = fsm (c, s) lNo (PLnString n1 str, st) xs
+
+        -- Character strings
+        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, e):(n3, _):xs)
+            -- Skip next token on escape char
+            | n2 + 1 == n3 && Just e == fmap return (escape c)
+                = fsm (c, s) lNo (PChString n1 str l, st) xs
+
+        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, x)        :xs)
+            -- Closing the string
+            | n2 <= l && str == x
+                = withFst (withFst (((n1, n2 + length x - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+            -- Otherwise: just random garbage inside a string, carry on.
+            | otherwise
+                = fsm (c, s) lNo (PChString n1 str l, st) xs
+
         -- If the line ends in a state that should transfer to the next one, facilitate that.
         fsm _      _   (PMLString n1 str  , st         ) []             = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
         fsm _      _   (PBComment n1 str  , st         ) []             = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
@@ -159,27 +198,10 @@ rebuildFmt _ = fullRebuild
         -- Otherwise, set the parser to the empty state for the next line.
         fsm _      _   (_                 , st         ) []             = (([]                          , PNothing       ), ([], st))
 
-        -- Close character strings
-        fsm (c, s) lNo (PChString n1 str l, st         ) (_:(n2, x):xs)
-            | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
-
-        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, x):xs)
-            | n2 <= l && str == x = withFst (withFst (((n1, n2 + length x - 1), HString):)) $ fsm (c, s) lNo (PNothing, st)          xs
-            | otherwise           =                                                           fsm (c, s) lNo (PNothing, st) ((n2, x):xs)
-
         -- Highlight search terms regardless of current parser state, no magic here
         fsm (c, s) lNo st                                ((n , x):xs)
-            | x `elem` searchTerms s = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
-
-        -- Close regular strings
-        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, x):xs)
-            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
-            | otherwise =                                                            fsm (c, s) lNo (PLnString n1 str, st) xs
-
-        -- Close multi-line strings
-        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, x):xs)
-            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HString ):)) $ fsm (c, s) lNo (PNothing        , st) xs
-            | otherwise =                                                            fsm (c, s) lNo (PMLString n1 str, st) xs
+            | map toLower x `elem` map (map toLower) (searchTerms s)
+                = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
 
         -- Close block comments
         fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
@@ -205,9 +227,7 @@ rebuildFmt _ = fullRebuild
             | Just cl <- x `lookup` chrDelim     c = fsm (c, s) lNo (PChString n1 cl $ n1 + length x + 2,                   st) xs
             |            x `elem`   keywords     c = withFst (withFst (((n1, n1 + length x - 1), HKeyword):))
                                                    $ fsm (c, s) lNo (PNothing                           ,                   st) xs
-
-            | otherwise                            = withFst (withFst (((n1, n1 + length x - 1), HError  ):))
-                                                   $ fsm (c, s) lNo (PNothing                           ,                   st) xs
+            | otherwise                            = fsm (c, s) lNo (PNothing                           ,                   st) xs
 
 
         ln :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)

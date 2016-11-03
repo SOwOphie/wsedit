@@ -84,13 +84,15 @@ stability = WIP
 
 
 
-data FmtParserState = PNothing
-                    | PChString Int String Int
-                    | PLnString Int String
-                    | PMLString Int String
-                    | PBComment Int String
+-- | Format token parser state.
+data FmtParserState = PNothing                  -- ^ Default state, nothing going on
+                    | PChString Int String Int  -- ^ Inside character string: start pos, closing string, max length
+                    | PLnString Int String      -- ^ Inside line string: start pos, closing string
+                    | PMLString Int String      -- ^ Inside multi-line string: start pos, closing string
+                    | PBComment Int String      -- ^ Inside block comment: start pos, closing string
     deriving (Eq, Read, Show)
 
+-- | Stack of currently opened brackets. 2d position, closing string.
 type BracketStack = [((Int, Int), String)]
 
 
