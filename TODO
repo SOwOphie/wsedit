@@ -1,4 +1,3 @@
-Support for different path separators in parser
 Implement state files
 Review help (interactive-only commands) / .wsconf definition
 lua: long strings

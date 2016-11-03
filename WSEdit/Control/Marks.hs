@@ -6,7 +6,6 @@ module WSEdit.Control.Marks
 
 
 import Control.Monad.RWS.Strict (get, modify)
-import Data.Char                (toLower)
 
 import WSEdit.Control.Base      (moveCursor, refuseOnReadOnly)
 import WSEdit.Data              ( EdState (edLines, searchTerms)
@@ -38,13 +37,11 @@ forwardToMark = refuseOnReadOnly $ do
         l = edLines s
         t = searchTerms s
 
-    case concatMap ( flip findInStr (map toLower $ snd $ B.pos l)
-                   . map toLower
-                   ) t of
-        _  | fst (B.pos l)      -> return ()
-        [] | B.sufLength l == 0 -> return ()
-        []                      -> forwardToMark
-        (x:_)                   -> moveCursor 0 x
+    case concatMap (flip findInStr (snd $ B.pos l)) t of
+         _  | fst (B.pos l)      -> return ()
+         [] | B.sufLength l == 0 -> return ()
+         []                      -> forwardToMark
+         (x:_)                   -> moveCursor 0 x
 
 
 
@@ -58,10 +55,8 @@ backwardsToMark = refuseOnReadOnly $ do
         l = edLines s
         t = searchTerms s
 
-    case concatMap ( flip findInStr (map toLower $ snd $ B.pos l)
-                   . map toLower
-                   ) t of
-        _  | fst (B.pos l)       -> return ()
-        [] | B.prefLength l == 0 -> return ()
-        []                       -> backwardsToMark
-        (x:_)                    -> moveCursor 0 x
+    case concatMap (flip findInStr (snd $ B.pos l)) t of
+         _  | fst (B.pos l)       -> return ()
+         [] | B.prefLength l == 0 -> return ()
+         []                       -> backwardsToMark
+         (x:_)                    -> moveCursor 0 x

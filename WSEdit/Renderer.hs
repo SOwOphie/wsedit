@@ -5,7 +5,6 @@ module WSEdit.Renderer
 
 import Control.Monad            (foldM)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.Char                (toLower)
 import Data.Ix                  (inRange)
 import Data.List                (nubBy, sort, sortOn)
 import Data.Maybe               (fromMaybe)
@@ -98,7 +97,7 @@ tkLn (_, str) = do
 
     return $ sort
            $ nubBy overlap
-           $ sortOn (\(n, x) -> Down (length x, n))
+           $ sortOn (\(n, x) -> (Down (length x), n))
            $ token  str (         lineComment  c)
           ++ token  str (unpack $ blockComment c)
           ++ token  str (unpack $ brackets     c)
@@ -144,6 +143,11 @@ rebuildFmt _ = fullRebuild
             -> (FmtParserState, BracketStack)   -- ^ State of the FSM leaving the previous line
             -> [(Int, String)]                  -- ^ Tokens in the line
             -> (RangeCacheElem, BracketCacheElem)
+
+        -- Highlight search terms regardless of current parser state
+        fsm (c, s) lNo st                                ((n , x):xs)
+            | x `elem` searchTerms s
+                = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
 
         -- Multi-line strings
         fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, e):(n3, _):xs)
@@ -197,11 +201,6 @@ rebuildFmt _ = fullRebuild
         fsm _      _   (PLnString n1 _    , st         ) []             = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
         -- Otherwise, set the parser to the empty state for the next line.
         fsm _      _   (_                 , st         ) []             = (([]                          , PNothing       ), ([], st))
-
-        -- Highlight search terms regardless of current parser state, no magic here
-        fsm (c, s) lNo st                                ((n , x):xs)
-            | map toLower x `elem` map (map toLower) (searchTerms s)
-                = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
 
         -- Close block comments
         fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
