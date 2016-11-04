@@ -6,7 +6,7 @@ module WSEdit where
 import Control.Exception        (SomeException, try)
 import Control.Monad            (when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify)
+import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
 import Data.Default             (def)
 import Data.Maybe               (catMaybes)
 import Graphics.Vty             ( Event (EvKey, EvResize)
@@ -23,8 +23,8 @@ import WSEdit.Control           ( bail, deleteSelection, insert
 import WSEdit.Data              ( EdConfig ( dumpEvents, encoding, keymap
                                            , vtyObj
                                            )
-                                , EdState ( changed, continue, fname, lastEvent
-                                          , status
+                                , EdState ( changed, continue, exitMsg, fname
+                                          , lastEvent, status
                                           )
                                 , WSEdit
                                 , mkDefConfig, runWSEdit
@@ -64,16 +64,20 @@ start = do
                     runWSEdit (conf', st) $ quitComplain
                                           $ "-e: Encoding not available: " ++ e
 
-    runWSEdit (conf', st) $ exec True
+    (_, st', _) <- runRWST (exec True) conf' st
 
     -- Shutdown vty
     shutdown v
+
+    case exitMsg st' of
+         Nothing -> return ()
+         Just  m -> putStrLn m
 
     where
         -- | Possibly loads the file specified in `fname`, then runs the editor.
         exec :: Bool -> WSEdit ()
         exec b = do
-            when b $ catchEditor load $ \e ->
+            when b $ catchEditor (load True) $ \e ->
                 quitComplain $ "An I/O error occured while loading:\n\n"
                             ++ show e
 

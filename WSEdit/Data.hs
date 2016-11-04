@@ -169,6 +169,9 @@ data EdState = EdState
     , continue     :: Bool
         -- ^ Whether the main loop should continue past this iteration.
 
+    , exitMsg      :: Maybe String
+        -- ^ Optional message to print after exiting using @continue = False@.
+
     , status       :: String
         -- ^ Status string displayed at the bottom.
 
@@ -230,6 +233,7 @@ instance Default EdState where
         , scrollOffset = (0, 0)
 
         , continue     = True
+        , exitMsg      = Nothing
         , status       = ""
         , lastEvent    = Nothing
 
@@ -273,6 +277,9 @@ data EdConfig = EdConfig
 
     , dumpEvents   :: Bool
         -- ^ Whether or not to dump every received event to the status line.
+
+    , wriCheck     :: Bool
+        -- ^ Whether to perform the write-read identity check on save.
 
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
@@ -323,6 +330,7 @@ mkDefConfig v k = EdConfig
                 , tabWidth     = 4
                 , drawBg       = True
                 , dumpEvents   = False
+                , wriCheck     = True
                 , purgeOnClose = False
                 , initJMarks   = []
                 , newlineMode  = universalNewlineMode

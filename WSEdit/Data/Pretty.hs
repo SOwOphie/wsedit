@@ -17,7 +17,7 @@ import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, brackets, chrDelim
                                     , escape, histSize, initJMarks, keymap
                                     , keywords, lineComment, mStrDelim
                                     , newlineMode, purgeOnClose, strDelim
-                                    , tabWidth, vtyObj
+                                    , tabWidth, vtyObj, wriCheck
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dBrMod
                                     , dCharStyles, dColChar, dColNoFormat
@@ -42,6 +42,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pTabWidth     :: Int
     , pDrawBg       :: Bool
     , pDumpEvents   :: Bool
+    , pWriCheck     :: Bool
     , pPurgeOnClose :: Bool
     , pInitJMarks   :: [Int]
     , pNewlineMode  :: NewlineMode
@@ -67,6 +68,7 @@ prettyEdConfig c = PrettyEdConfig
     , pTabWidth     =                  tabWidth     c
     , pDrawBg       =                  drawBg       c
     , pDumpEvents   =                  dumpEvents   c
+    , pWriCheck     =                  wriCheck     c
     , pPurgeOnClose =                  purgeOnClose c
     , pInitJMarks   =                  initJMarks   c
     , pNewlineMode  =                  newlineMode  c
@@ -91,6 +93,7 @@ unPrettyEdConfig v k p = EdConfig
     , tabWidth     = pTabWidth                    p
     , drawBg       = pDrawBg                      p
     , dumpEvents   = pDumpEvents                  p
+    , wriCheck     = pWriCheck                    p
     , purgeOnClose = pPurgeOnClose                p
     , initJMarks   = pInitJMarks                  p
     , newlineMode  = pNewlineMode                 p

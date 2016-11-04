@@ -42,7 +42,7 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                 , initJMarks, keymap, keywords
                                                 , lineComment, mStrDelim
                                                 , newlineMode, purgeOnClose
-                                                , strDelim, tabWidth
+                                                , strDelim, tabWidth, wriCheck
                                                 )
                                      , EdState ( buildDict, detectTabs, fname
                                                , loadPos, readOnly, replaceTabs
@@ -84,6 +84,8 @@ data Argument = AutocompAdd     (Maybe Int) String
               | DebugDumpArgs
               | DebugDumpEvOn
               | DebugDumpEvOff
+              | DebugWRIOff
+              | DebugWRIOn
               | DebugStability  Stability
 
               | DisplayDotsOn
@@ -403,6 +405,8 @@ applyArg (c, s)  GeneralROOff         = return (c, s { readOnly    = False      
 
 applyArg (c, s)  DebugDumpEvOn        = return (c { dumpEvents   = True                                    }, s)
 applyArg (c, s)  DebugDumpEvOff       = return (c { dumpEvents   = False                                   }, s)
+applyArg (c, s)  DebugWRIOff          = return (c { wriCheck     = False                                   }, s)
+applyArg (c, s)  DebugWRIOn           = return (c { wriCheck     = True                                    }, s)
 applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = False                                   }, s)
 applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = True                                    }, s)
 applyArg (c, s)  DisplayInvBGOn       = return (c { edDesign     = brightTheme                             }, s)
@@ -601,6 +605,8 @@ configOption = (choice
     , debugDumpArgs
     , debugDumpEvOn
     , debugDumpEvOff
+    , debugWriOff
+    , debugWriOn
     , debugStability
     ]) <?> "config option"
 
@@ -633,6 +639,8 @@ otherPurgeOff     = try (string "-oP" ) >> return OtherPurgeOff
 debugDumpArgs     = try (string "-yc" ) >> return DebugDumpArgs
 debugDumpEvOn     = try (string "-ye" ) >> return DebugDumpEvOn
 debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
+debugWriOff       = try (string "-yi" ) >> return DebugWRIOff
+debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
 autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                      }
 editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                      }
