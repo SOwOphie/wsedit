@@ -160,14 +160,16 @@ rebuildFmt _ = fullRebuild
                 $ fsm (c, s) lNo st xs
 
         {- --------------------------------------------------------------------*
-        |  Multi-line strings                                                  |
+        |  Skip next token on escape if it follows directly                    |
         *-------------------------------------------------------------------- -}
 
-        fsm (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
+        fsm (c, s) lNo st ((n1, e):(n2, _):xs)
+            | n1 + 1 == n2 && Just e == fmap return (escape c)
+                = fsm (c, s) lNo st xs
 
-            -- Skip next token on escape char if it follows directly
-            | n2 + 1 == n3 && Just e == fmap return (escape c)
-                = fsm (c, s) lNo (PMLString n1 str, st) xs
+        {- --------------------------------------------------------------------*
+        |  Multi-line strings                                                  |
+        *-------------------------------------------------------------------- -}
 
         fsm (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
 
@@ -183,12 +185,6 @@ rebuildFmt _ = fullRebuild
         {- --------------------------------------------------------------------*
         |  Regular strings                                                     |
         *-------------------------------------------------------------------- -}
-
-        fsm (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
-
-            -- Skip next token on escape char if it follows directly
-            | n2 + 1 == n3 && Just e == fmap return (escape c)
-                = fsm (c, s) lNo (PLnString n1 str  , st) xs
 
         fsm (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
 

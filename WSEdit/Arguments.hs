@@ -696,4 +696,4 @@ wildInt    =  try (char '*' >> return Nothing)
 
 word       = escWord <|> simpleWord <?> "word"
 simpleWord = many1 singleChar
-escWord    = try (char '"') >> many1 (singleChar) <* char '"'
+escWord    = try (char '"') >> many1 (noneOf "\"\n") <* char '"'

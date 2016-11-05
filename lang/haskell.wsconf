@@ -15,7 +15,7 @@
 #                                                                              #
 # Syntax highlighting                                                          #
 *.hs
-	-lcl --
+	-lcl "-- "
 	-lcb {- -}
 	-lsc ' '
 	-lsm \" \"
