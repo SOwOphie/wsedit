@@ -60,7 +60,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.8"
+version = "1.2.0.9"
 
 -- | Upstream URL.
 upstream :: String
@@ -327,7 +327,7 @@ mkDefConfig v k = EdConfig
                 , keymap       = k
                 , histSize     = 100
                 , tabWidth     = 4
-                , drawBg       = True
+                , drawBg       = False
                 , dumpEvents   = False
                 , wriCheck     = True
                 , purgeOnClose = False

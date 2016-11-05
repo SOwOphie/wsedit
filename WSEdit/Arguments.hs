@@ -407,8 +407,8 @@ applyArg (c, s)  DebugDumpEvOn        = return (c { dumpEvents   = True         
 applyArg (c, s)  DebugDumpEvOff       = return (c { dumpEvents   = False                                   }, s)
 applyArg (c, s)  DebugWRIOff          = return (c { wriCheck     = False                                   }, s)
 applyArg (c, s)  DebugWRIOn           = return (c { wriCheck     = True                                    }, s)
-applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = False                                   }, s)
-applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = True                                    }, s)
+applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = True                                    }, s)
+applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = False                                   }, s)
 applyArg (c, s)  DisplayInvBGOn       = return (c { edDesign     = brightTheme                             }, s)
 applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s) (EditorIndSet    n  ) = return (c { tabWidth     = n                                       }, s)
@@ -470,12 +470,12 @@ configCmd :: Parser [Argument]
 configCmd = ( fmap concat
               $ try
               $ sequence
-              [ option [] $       configOption `endBy` spaces'
-              ,                              fmap return (specialSetFile)
+              [ option [] $                 configOption `endBy` spaces'
+              ,                             fmap return (specialSetFile)
               , option [] $ try $ spaces' >> fmap return (specialSetVPos)
               , option [] $ try $ spaces' >> fmap return (specialSetHPos)
               , option [] $ try $ spaces' >> configOption `sepBy` spaces'
-              ,                              eof >> return []
+              ,                             eof >> return []
               ]
             ) <|> (
               configOption `sepBy` spaces' <* eof
