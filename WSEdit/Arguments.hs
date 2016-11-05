@@ -38,11 +38,12 @@ import Text.Show.Pretty              (ppShow)
 import WSEdit.Control.Global         (quitComplain)
 import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                 , chrDelim, drawBg, dumpEvents
-                                                , edDesign, encoding, escape
-                                                , initJMarks, keymap, keywords
-                                                , lineComment, mStrDelim
-                                                , newlineMode, purgeOnClose
-                                                , strDelim, tabWidth, wriCheck
+                                                , edDesign, encoding, escapeO
+                                                , escapeS, initJMarks, keymap
+                                                , keywords, lineComment
+                                                , mStrDelim, newlineMode
+                                                , purgeOnClose, strDelim
+                                                , tabWidth, wriCheck
                                                 )
                                      , EdState ( buildDict, detectTabs, fname
                                                , loadPos, readOnly, replaceTabs
@@ -122,8 +123,10 @@ data Argument = AutocompAdd     (Maybe Int) String
               | LangCommLineDel String
               | LangCommBlkAdd  String String
               | LangCommBlkDel  String String
-              | LangEscapeSet   Char
-              | LangEscapeOff
+              | LangEscOSet     Char
+              | LangEscOOff
+              | LangEscSSet     Char
+              | LangEscSOff
               | LangKeywordAdd  String
               | LangKeywordDel  String
               | LangStrChrAdd   String String
@@ -425,8 +428,10 @@ applyArg (c, s) (LangCommLineAdd a  ) = return (c { lineComment  = a      : dele
 applyArg (c, s) (LangCommLineDel a  ) = return (c { lineComment  =          delete a      (lineComment  c) }, s)
 applyArg (c, s) (LangCommBlkAdd  a b) = return (c { blockComment = (a, b) : delete (a, b) (blockComment c) }, s)
 applyArg (c, s) (LangCommBlkDel  a b) = return (c { blockComment =          delete (a, b) (blockComment c) }, s)
-applyArg (c, s) (LangEscapeSet   a  ) = return (c { escape       = Just a                                  }, s)
-applyArg (c, s)  LangEscapeOff        = return (c { escape       = Nothing                                 }, s)
+applyArg (c, s) (LangEscOSet     a  ) = return (c { escapeO      = Just a                                  }, s)
+applyArg (c, s)  LangEscOOff          = return (c { escapeO      = Nothing                                 }, s)
+applyArg (c, s) (LangEscSSet     a  ) = return (c { escapeS      = Just a                                  }, s)
+applyArg (c, s)  LangEscSOff          = return (c { escapeS      = Nothing                                 }, s)
 applyArg (c, s) (LangKeywordAdd  a  ) = return (c { keywords     = a      : delete a      (keywords     c) }, s)
 applyArg (c, s) (LangKeywordDel  a  ) = return (c { keywords     =          delete a      (keywords     c) }, s)
 applyArg (c, s) (LangStrChrAdd   a b) = return (c { chrDelim     = (a, b) : delete (a, b) (chrDelim     c) }, s)
@@ -585,8 +590,10 @@ configOption = (choice
     , langCommBlkDel
     , langCommLineAdd
     , langCommLineDel
-    , langEscapeSet
-    , langEscapeOff
+    , langEscOSet
+    , langEscOOff
+    , langEscSSet
+    , langEscSOff
     , langKeywordAdd
     , langKeywordDel
     , langStrChrAdd
@@ -629,7 +636,8 @@ helpGeneral       = try (string "-h"  ) >> return HelpGeneral
 helpConfig        = try (string "-hc" ) >> return HelpConfig
 helpKeybinds      = try (string "-hk" ) >> return HelpKeybinds
 helpVersion       = try (string "-hv" ) >> return HelpVersion
-langEscapeOff     = try (string "-lE" ) >> return LangEscapeOff
+langEscOOff       = try (string "-leO") >> return LangEscOOff
+langEscSOff       = try (string "-leS") >> return LangEscSOff
 metaFailsafe      = try (string "-mf" ) >> return MetaFailsafe
 metaStateFile     = try (string "-ms" ) >> return MetaStateFile
 otherOpenCfGlob   = try (string "-ocg") >> return OtherOpenCfGlob
@@ -651,7 +659,8 @@ generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word 
 generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                         }
 langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                         }
 langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                         }
-langEscapeSet     = do { try $ string "-le" ; spaces'; LangEscapeSet   <$> singleChar                   }
+langEscOSet       = do { try $ string "-leo"; spaces'; LangEscOSet   <$> singleChar                     }
+langEscSSet       = do { try $ string "-les"; spaces'; LangEscSSet   <$> singleChar                     }
 langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                         }
 langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                         }
 metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                         }

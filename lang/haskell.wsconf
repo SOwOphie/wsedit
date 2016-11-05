@@ -20,7 +20,7 @@
 	-lsc ' '
 	-lsm \" \"
 	-lsr ` `
-	-le \\
+	-les \\
 	-lb ( )
 	-lb [ ]
 	-lb { }

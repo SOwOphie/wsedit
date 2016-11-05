@@ -19,7 +19,7 @@
 	-lcl //
 	-lcb /* */
 	-lsr \" \"
-	-le \\
+	-les \\
 	-lb ( )
 #                                                                              #
 # Keywords                                                                     #

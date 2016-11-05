@@ -14,8 +14,8 @@ import System.IO         (NewlineMode)
 
 import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, brackets, chrDelim
                                     , drawBg, dumpEvents, edDesign, encoding
-                                    , escape, histSize, initJMarks, keymap
-                                    , keywords, lineComment, mStrDelim
+                                    , escapeO, escapeS, histSize, initJMarks
+                                    , keymap, keywords, lineComment, mStrDelim
                                     , newlineMode, purgeOnClose, strDelim
                                     , tabWidth, vtyObj, wriCheck
                                     )
@@ -53,7 +53,8 @@ data PrettyEdConfig = PrettyEdConfig
     , pMStrDelim    :: [(String, String)]
     , pChrDelim     :: [(String, String)]
     , pKeywords     :: [String]
-    , pEscape       :: Maybe Char
+    , pEscapeO      :: Maybe Char
+    , pEscapeS      :: Maybe Char
     , pBrackets     :: [(String, String)]
     }
     deriving (Eq, Read, Show)
@@ -79,7 +80,8 @@ prettyEdConfig c = PrettyEdConfig
     , pMStrDelim    =                  mStrDelim    c
     , pChrDelim     =                  chrDelim     c
     , pKeywords     =                  keywords     c
-    , pEscape       =                  escape       c
+    , pEscapeO      =                  escapeO      c
+    , pEscapeS      =                  escapeS      c
     , pBrackets     =                  brackets     c
     }
 
@@ -104,7 +106,8 @@ unPrettyEdConfig v k p = EdConfig
     , mStrDelim    = pMStrDelim                   p
     , chrDelim     = pChrDelim                    p
     , keywords     = pKeywords                    p
-    , escape       = pEscape                      p
+    , escapeO      = pEscapeO                     p
+    , escapeS      = pEscapeS                     p
     , brackets     = pBrackets                    p
     }
 

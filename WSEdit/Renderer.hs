@@ -15,8 +15,8 @@ import WSEdit.Data              ( BracketCache
                                 , BracketCacheElem
                                 , BracketStack
                                 , EdConfig ( brackets, chrDelim, blockComment
-                                           , escape, keywords, mStrDelim
-                                           , lineComment, strDelim
+                                           , escapeO, escapeS, keywords
+                                           , mStrDelim, lineComment, strDelim
                                            )
                                 , EdState ( bracketCache, edLines, fullRebdReq
                                           , rangeCache, scrollOffset
@@ -105,9 +105,8 @@ tkLn (_, str) = do
           ++ token  str (unpack $ strDelim     c)
           ++ token  str (unpack $ mStrDelim    c)
           ++ token  str (unpack $ chrDelim     c)
-          ++ case escape c of
-                  Nothing -> []
-                  Just e  -> token str [[e]]
+          ++ token  str (maybe [] (return . return) $ escapeO c)
+          ++ token  str (maybe [] (return . return) $ escapeS c)
 
     where
         token :: String -> [String] -> [(Int, String)]
@@ -164,12 +163,17 @@ rebuildFmt _ = fullRebuild
         *-------------------------------------------------------------------- -}
 
         fsm (c, s) lNo st ((n1, e):(n2, _):xs)
-            | n1 + 1 == n2 && Just e == fmap return (escape c)
+            | n1 + 1 == n2 && Just e == fmap return (escapeO c)
                 = fsm (c, s) lNo st xs
 
         {- --------------------------------------------------------------------*
         |  Multi-line strings                                                  |
         *-------------------------------------------------------------------- -}
+
+        -- Escape character
+        fsm (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
+            | n2 + 1 == n3 && Just e == fmap return (escapeS c)
+                = fsm (c, s) lNo (PMLString n1 str, st) xs
 
         fsm (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
 
@@ -185,6 +189,11 @@ rebuildFmt _ = fullRebuild
         {- --------------------------------------------------------------------*
         |  Regular strings                                                     |
         *-------------------------------------------------------------------- -}
+
+        -- Escape character
+        fsm (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
+            | n2 + 1 == n3 && Just e == fmap return (escapeS c)
+                = fsm (c, s) lNo (PLnString n1 str, st) xs
 
         fsm (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
 
@@ -207,7 +216,7 @@ rebuildFmt _ = fullRebuild
             | Just x4' <- x1 `lookup` chrDelim c
                     , x4 == x4'
                    && n4 == n1 + length x1 + 2
-                   && Just x2 == fmap return (escape c)
+                   && Just x2 == fmap return (escapeS c)
                 = withFst (withFst (((n1, n4 + length x4 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 
@@ -217,7 +226,7 @@ rebuildFmt _ = fullRebuild
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
                    && n3 == n1 + length x1 + 2
-                   && Just x2 == fmap return (escape c)
+                   && Just x2 == fmap return (escapeS c)
                 = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 
@@ -227,7 +236,7 @@ rebuildFmt _ = fullRebuild
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
                    && n3 == n1 + length x1 + 1
-                   && Just x2 /= fmap return (escape c)
+                   && Just x2 /= fmap return (escapeS c)
                 = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 
