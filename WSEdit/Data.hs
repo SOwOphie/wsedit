@@ -60,7 +60,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.6"
+version = "1.2.0.7"
 
 -- | Upstream URL.
 upstream :: String
@@ -86,7 +86,6 @@ stability = WIP
 
 -- | Format token parser state.
 data FmtParserState = PNothing                  -- ^ Default state, nothing going on
-                    | PChString Int String Int  -- ^ Inside character string: start pos, closing string, max length
                     | PLnString Int String      -- ^ Inside line string: start pos, closing string
                     | PMLString Int String      -- ^ Inside multi-line string: start pos, closing string
                     | PBComment Int String      -- ^ Inside block comment: start pos, closing string

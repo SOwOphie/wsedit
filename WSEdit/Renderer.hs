@@ -27,9 +27,8 @@ import WSEdit.Data              ( BracketCache
                                                 )
                                 , RangeCache
                                 , RangeCacheElem
-                                , FmtParserState ( PNothing, PChString
-                                                 , PBComment, PLnString
-                                                 , PMLString
+                                , FmtParserState ( PNothing, PBComment
+                                                 , PLnString, PMLString
                                                  )
                                 , WSEdit
                                 )
@@ -144,91 +143,188 @@ rebuildFmt _ = fullRebuild
             -> [(Int, String)]                  -- ^ Tokens in the line
             -> (RangeCacheElem, BracketCacheElem)
 
-        -- Highlight search terms regardless of current parser state
-        fsm (c, s) lNo st                                ((n , x):xs)
-            | x `elem` searchTerms s
-                = withFst (withFst (((n, n + length x - 1), HSearch):)) $ fsm (c, s) lNo st xs
+        {- ====================================================================#
+        ||                                                                    ||
+        ||  Ready? Go! \(^.^)/                                                ||
+        ||                                                                    ||
+        #==================================================================== -}
 
-        -- Multi-line strings
-        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, e):(n3, _):xs)
+
+        {- --------------------------------------------------------------------*
+        |  Highlight search terms regardless of current parser state           |
+        *-------------------------------------------------------------------- -}
+
+        fsm (c, s) lNo st ((n, x):xs)
+            | x `elem` searchTerms s
+                = withFst (withFst (((n, n + length x - 1), HSearch):))
+                $ fsm (c, s) lNo st xs
+
+        {- --------------------------------------------------------------------*
+        |  Multi-line strings                                                  |
+        *-------------------------------------------------------------------- -}
+
+        fsm (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
+
             -- Skip next token on escape char if it follows directly
             | n2 + 1 == n3 && Just e == fmap return (escape c)
-                = fsm (c, s) lNo (PMLString n1 str  , st) xs
+                = fsm (c, s) lNo (PMLString n1 str, st) xs
 
-        fsm (c, s) lNo (PMLString n1 str  , st         ) ((n2, x)        :xs)
+        fsm (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
+
             -- Closing the string
             | str == x
-                = withFst (withFst (((n1, n2 + length x - 1), HString ):))
-                $ fsm (c, s) lNo (PNothing          , st) xs
+                = withFst (withFst (((n1, n2 + length x - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+
             -- Otherwise: just random garbage inside a string, carry on.
             | otherwise
                 = fsm (c, s) lNo (PMLString n1 str, st) xs
 
-        -- Regular strings
-        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, e):(n3, _):xs)
+        {- --------------------------------------------------------------------*
+        |  Regular strings                                                     |
+        *-------------------------------------------------------------------- -}
+
+        fsm (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
+
             -- Skip next token on escape char if it follows directly
             | n2 + 1 == n3 && Just e == fmap return (escape c)
                 = fsm (c, s) lNo (PLnString n1 str  , st) xs
 
-        fsm (c, s) lNo (PLnString n1 str  , st         ) ((n2, x)        :xs)
+        fsm (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
+
             -- Closing the string
             | str == x
-                = withFst (withFst (((n1, n2 + length x - 1), HString ):))
-                $ fsm (c, s) lNo (PNothing        , st) xs
+                = withFst (withFst (((n1, n2 + length x - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+
             -- Otherwise: just random garbage inside a string, carry on.
             | otherwise
                 = fsm (c, s) lNo (PLnString n1 str, st) xs
 
-        -- Character strings
-        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, e):(n3, _):xs)
-            -- Skip next token on escape char
-            | n2 + 1 == n3 && Just e == fmap return (escape c)
-                = fsm (c, s) lNo (PChString n1 str l, st) xs
+        {- --------------------------------------------------------------------*
+        |  Character strings                                                   |
+        *-------------------------------------------------------------------- -}
 
-        fsm (c, s) lNo (PChString n1 str l, st         ) ((n2, x)        :xs)
-            -- Closing the string
-            | n2 <= l && str == x
-                = withFst (withFst (((n1, n2 + length x - 1), HString):))
+        -- (opening token):(escape token):(some token):(closing token):xs
+        -- Number of enclosed characters: 2
+        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):_:(n4, x4):xs)
+            | Just x4' <- x1 `lookup` chrDelim c
+                    , x4 == x4'
+                   && n4 == n1 + length x1 + 2
+                   && Just x2 == fmap return (escape c)
+                = withFst (withFst (((n1, n4 + length x4 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
-            -- Otherwise: just random garbage inside a string, carry on.
-            | otherwise
-                = fsm (c, s) lNo (PChString n1 str l, st) xs
 
-        -- If the line ends in a state that should transfer to the next one, facilitate that.
-        fsm _      _   (PMLString n1 str  , st         ) []             = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
-        fsm _      _   (PBComment n1 str  , st         ) []             = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
-        -- Single-line strings shouldn't, so mark the opening tag as an error and proceed with the next line.
-        fsm _      _   (PLnString n1 _    , st         ) []             = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
+        -- (opening token):(escape token):(closing token):xs
+        -- Number of enclosed characters: 2
+        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):(n3, x3):xs)
+            | Just x3' <- x1 `lookup` chrDelim c
+                    , x3 == x3'
+                   && n3 == n1 + length x1 + 2
+                   && Just x2 == fmap return (escape c)
+                = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+
+        -- (opening token):(some non-escape token):(closing token):xs
+        -- Number of enclosed characters: 1
+        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_,x2):(n3, x3):xs)
+            | Just x3' <- x1 `lookup` chrDelim c
+                    , x3 == x3'
+                   && n3 == n1 + length x1 + 1
+                   && Just x2 /= fmap return (escape c)
+                = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+
+        -- (opening token):(closing token):xs
+        -- Number of enclosed characters: 1
+        fsm (c, s) lNo (PNothing, st) ((n1, x1):(n2, x2):xs)
+            | Just x2' <- x1 `lookup` chrDelim c
+                    , x2 == x2'
+                   && n2 == n1 + length x1 + 1
+                = withFst (withFst (((n1, n2 + length x2 - 1), HString):))
+                $ fsm (c, s) lNo (PNothing, st) xs
+
+        {- --------------------------------------------------------------------*
+        |  End of line                                                         |
+        *-------------------------------------------------------------------- -}
+
+        -- If the line ends in a state that should transfer to the next one,
+        -- facilitate that.
+        fsm _      _   (PMLString n1 str  , st         ) []
+            = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
+
+        fsm _      _   (PBComment n1 str  , st         ) []
+            = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
+
+        -- Single-line strings shouldn't, so mark the opening tag as an error
+        -- and proceed with the next line.
+        fsm _      _   (PLnString n1 _    , st         ) []
+            = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
+
         -- Otherwise, set the parser to the empty state for the next line.
-        fsm _      _   (_                 , st         ) []             = (([]                          , PNothing       ), ([], st))
+        fsm _      _   (_                 , st         ) []
+            = (([]                          , PNothing       ), ([], st))
+
+        {- --------------------------------------------------------------------*
+        |  Closing varoius other constructs                                    |
+        *-------------------------------------------------------------------- -}
 
         -- Close block comments
         fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
-            | str == x  = withFst (withFst (((n1, n2 + length x - 1), HComment):)) $ fsm (c, s) lNo (PNothing        , st) xs
-            | otherwise =                                                            fsm (c, s) lNo (PBComment n1 str, st) xs
+            | str == x
+                = withFst (withFst (((n1, n2 + length x - 1), HComment):))
+                $ fsm (c, s) lNo (PNothing        , st) xs
+
+            | otherwise
+                = fsm (c, s) lNo (PBComment n1 str, st) xs
 
         -- Close brackets (only outside highlighted ranges)
         fsm (c, s) lNo (PNothing          , (p, str):bs) ((n1, x):xs)
-            | str == x                      = withSnd (withFst ((p, (lNo, n1)):)) $ fsm (c, s) lNo (PNothing, bs) xs
+            | str == x
+                = withSnd (withFst ((p, (lNo, n1)):))
+                $ fsm (c, s) lNo (PNothing, bs) xs
 
         -- Stray closing bracket? Tag it as an error!
         fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
-            | x `elem` map snd (brackets c) = withFst (withFst (((n1, n1 + length x - 1), HError):))
-                                            $ fsm (c, s) lNo (PNothing, st) xs
+            | x `elem` map snd (brackets c)
+                = withFst (withFst (((n1, n1 + length x - 1), HError):))
+                $ fsm (c, s) lNo (PNothing, st) xs
 
-        -- Open various ranges
+        {- --------------------------------------------------------------------*
+        |  Open various ranges                                                 |
+        *-------------------------------------------------------------------- -}
         fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
-            |            x `elem`   lineComment  c = (([((n1, maxBound), HComment)], PNothing), ([], st))
-            | Just cl <- x `lookup` brackets     c = fsm (c, s) lNo (PNothing                           , ((lNo, n1), cl) : st) xs
-            | Just cl <- x `lookup` blockComment c = fsm (c, s) lNo (PBComment n1 cl                    ,                   st) xs
-            | Just cl <- x `lookup` strDelim     c = fsm (c, s) lNo (PLnString n1 cl                    ,                   st) xs
-            | Just cl <- x `lookup` mStrDelim    c = fsm (c, s) lNo (PMLString n1 cl                    ,                   st) xs
-            | Just cl <- x `lookup` chrDelim     c = fsm (c, s) lNo (PChString n1 cl $ n1 + length x + 2,                   st) xs
-            |            x `elem`   keywords     c = withFst (withFst (((n1, n1 + length x - 1), HKeyword):))
-                                                   $ fsm (c, s) lNo (PNothing                           ,                   st) xs
-            | otherwise                            = fsm (c, s) lNo (PNothing                           ,                   st) xs
+
+            -- Line comment
+            |            x `elem`   lineComment  c
+                = (([((n1, maxBound), HComment)], PNothing), ([], st))
+
+            -- Bracket
+            | Just cl <- x `lookup` brackets     c
+                = fsm (c, s) lNo (PNothing       , ((lNo, n1), cl) : st) xs
+
+            -- Block comment
+            | Just cl <- x `lookup` blockComment c
+                = fsm (c, s) lNo (PBComment n1 cl,                   st) xs
+
+            -- Regular string
+            | Just cl <- x `lookup` strDelim     c
+                = fsm (c, s) lNo (PLnString n1 cl,                   st) xs
+
+            -- Multi-line string
+            | Just cl <- x `lookup` mStrDelim    c
+                = fsm (c, s) lNo (PMLString n1 cl,                   st) xs
+
+            -- Keyword
+            |            x `elem`   keywords     c
+                = withFst (withFst (((n1, n1 + length x - 1), HKeyword):))
+                $ fsm (c, s) lNo (PNothing       ,                   st) xs
+
+            | otherwise
+                = fsm (c, s) lNo (PNothing       ,                   st) xs
 
 
+        -- | Parse a single line
         ln :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)
         ln (rc, bc) (lNo, l) = do
             c <- ask
@@ -236,6 +332,7 @@ rebuildFmt _ = fullRebuild
             return $ withPair (:rc) (:bc) $ fsm (c,s) lNo (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
 
 
+        -- | Rebuild everything
         fullRebuild :: WSEdit ()
         fullRebuild = do
             s        <- get
