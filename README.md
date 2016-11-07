@@ -7,10 +7,9 @@ Build Status:
 ## Introduction
 
 `wsedit` is a clean, intuitive terminal-based editor with CUA keybinds. It is
-designed to get the job done in a simple, elegant and pragmatic manner. If you
-read the documentation once, go "huh, go figure." and only return once a month
-to look up that one option you never used before, `wsedit` has archieved its
-goal.
+designed to get the job done in a simple, elegant and pragmatic manner. If
+you've ever worked with a text editor and with a terminal, you already know
+how `wsedit` works, except some small quirks here and there maybe.
 
 
 ## Features
@@ -36,8 +35,8 @@ goal.
   Start the editor in read-only mode, or toggle it via keybind.
 
 * __Protects you data__: Special routines are in place to ensure your work
-  doesn't just vanish, should the editor crash. I sure with this wasn't
-  something to be proud of...
+  doesn't just vanish, should the editor crash. I sure wish this wasn't
+  something to be proud of.
 
 ## Platforms / Installation
 
@@ -67,17 +66,18 @@ need your help to test some things for me.
 #### "I know how to linux"
 
 1.  Install:
-  * [stack](http://docs.haskellstack.org/en/stable/README/)
-  * `ncurses` with unicode support
-  * `xclip` or `xsel`, optional
-2.  Grab the latest `wsedit` release off GitHub
+  * [stack](http://docs.haskellstack.org/en/stable/README/),
+  * `ncurses` with unicode support,
+  * `xclip` or `xsel`, optional, makes `wsedit` use the system clipboard.
+2.  Grab the latest `wsedit` release off GitHub.
 3.  Run `stack install`, the binary will be placed into `$HOME/.local/bin/`.
-4.  Copy all relevant definitions from `lang/` to `$HOME/.config/wsedit`. Just
+4.  Either add `$HOME/.local/bin/` to your `$PATH` or copy/link/symlink the
+    execuable where you actually want it.
+5.  Copy all relevant definitions from `lang/` to `$HOME/.config/wsedit`. Just
     copying everything is fine too.
-5.  Done! I recommend opening two terminals next to each other, running `wsedit`
+6.  Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
-    Most importantly: press `Ctrl-Q` to quit, or `Ctrl-Meta-Q` to quit
-    discarding all changes.
+    Most importantly: press `Ctrl-Q` to quit.
 
 #### "I'm new, please be gentle"
 
@@ -115,22 +115,22 @@ the `Troubleshooting` section further down below and see if it helps.
     Most importantly: press `Ctrl-Q` to quit, or `Ctrl-Alt-Q` to quit discarding
     all changes.
 
-## A small note on interface stability
-
-`wsedit`'s configuration interface is not stable as of 1.1.* . I intend to
-clean up the somewhat strange syntax for 1.2, and this will lead to changes in
-the syntax of config files. However, I do promise two things:
-
- * All syntax changes will be for the better, allowing for more expressive
-   configuration.
-
- * I will provide a `sed` script to update configs from release to release.
-
 
 ## Bugs / Crashes and how to report them properly
 
-There will be bugs. No doubt about that. I'm trying my best to keep their
-severity and frequency down, but I *will* miss some.
+`wsedit` is written with a focus on limiting bug severity and protecting your
+data in case of failure rather than limiting bug frequency. For now, I have
+completely ditched the concept of test suites in favour of some run-time sanity
+checks as well as sophisticated exception handlers, making data loss almost
+impossible to occur. I believe this approach is superior for two reasons:
+
+ * It makes much better use of my limited time.
+ * Even with test suites of absoulutel monstrous proportions you will never
+   catch all the bugs.
+
+However, this does not mean that `wsedit` is full of bugs. There will be some,
+but since I use `wsedit` for everything myself, you can rest assured that
+nothing critical will stay in the code for too long.
 
 Please submit every kind of weird behaviour you encounter as an
 [issue on GitHub](https://github.com/SirBoonami/wsedit/issues/new). If possible,
@@ -146,10 +146,7 @@ The editor main loop runs inside an exception handler that will do the following
 2. Dump the editor's configuration, state and some additional info to
    `${HOME}/CRASH-DUMP`. This file can be used to restart the editor in the last
    coherent state before it crashed.
-3. Shutdown `vty` + `ncurses` so your terminal doesn't get rekt.
-
-This means that even in the event of a crash, data loss is highly unlikely to
-occur.
+3. Safely shut down everything.
 
 The state dump is of great importance to fixing the bug. However, it contains
 all active configuration as well as the entire file you edited when the crash
@@ -164,16 +161,19 @@ situation, point the cursor at it if possible, then press Meta + ".".
 This will simulate a crash and create the above-mentioned files.
 
 
-## Known issues / Troubleshooting
+## Known issues / Troubleshooting / FAQ
 
 ### My cursor is invisible!
 
-Add `*: -db` to your global config file (`wsedit -ocg`).
+Deactivate the `-db` switch.
 
-### `wsedit` is slow on older machines
+### The language definitions won't work!
 
-  * Use `*: -db` to disable background rendering, which remedies this for the
-    most part.
+Make sure they're placed directly into `~/.config/wsedit/`, not in sub-folders.
+
+### `wsedit` is slow (on older machines)!
+
+  * Disable `-db` if it is active.
   * Performance is highly dependant on your terminal emulator. I can personally
     recommend `sakura` and `xterm`.
 
