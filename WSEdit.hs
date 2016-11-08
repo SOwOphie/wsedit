@@ -16,14 +16,13 @@ import Graphics.Vty             ( Event (EvKey, EvResize)
 import System.IO                (mkTextEncoding)
 
 import WSEdit.Arguments         (parseArguments)
-import WSEdit.Control           ( bail, deleteSelection, insert
-                                , listAutocomplete, load, quitComplain, save
-                                , standby
+import WSEdit.Control           ( bail, deleteSelection, emergencySave, insert
+                                , listAutocomplete, load, quitComplain, standby
                                 )
 import WSEdit.Data              ( EdConfig ( dumpEvents, encoding, keymap
                                            , vtyObj
                                            )
-                                , EdState ( changed, continue, exitMsg, fname
+                                , EdState ( changed, continue, exitMsg
                                           , lastEvent, status
                                           )
                                 , WSEdit
@@ -143,14 +142,14 @@ mainLoop = do
             b <- changed <$> get
             if b
                then do
-                    modify (\s -> s { fname = "CRASH-RESCUE" })
                     standby $ "An error occured: " ++ show e
                            ++ "\n\n"
                            ++ "Dumping unsaved changes..."
-                    save
+                    emergencySave
+
                     bail (Just comp) $ "An error occured: " ++ show e
                                     ++ "\n\n"
                                     ++ "All unsaved changes have been dumped to"
-                                    ++ " ./CRASH-RESCUE ."
+                                    ++ " $HOME/CRASH-RESCUE ."
 
                else bail (Just comp) $ "An error occured: " ++ show e

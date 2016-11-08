@@ -2,6 +2,7 @@
 
 module WSEdit.Control.Global
     ( simulateCrash
+    , emergencySave
     , bail
     , quitComplain
     , quit
@@ -23,8 +24,8 @@ import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Data.Maybe                  (fromMaybe, isJust)
 import Graphics.Vty                (Vty (shutdown))
 import Safe                        (fromJustNote, headDef)
-import System.Directory            ( doesFileExist, getHomeDirectory
-                                   , getPermissions
+import System.Directory            ( copyPermissions, doesFileExist
+                                   , getHomeDirectory, getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
                                    , renameFile, writable
                                    )
@@ -73,10 +74,20 @@ fqn = ("WSEdit.Control.Global." ++)
 
 
 
--- | Crashes the editor. Used for debugging. Mapped to Ctrl-Meta-C, test it if
---   you dare.
+-- | Crashes the editor. Used for debugging. Mapped to @Meta-.@, test it if you
+--   dare.
 simulateCrash :: WSEdit ()
 simulateCrash = error "Simulated crash."
+
+
+-- | Dump the current file state into @$HOME/CRASH-RESCUE@ unconditionally.
+emergencySave :: WSEdit ()
+emergencySave = do
+    h <- liftIO $ getHomeDirectory
+    s <- get
+    put s { fname = h ++ "/CRASH-RESCUE" }
+    save
+    put s
 
 
 -- | Shuts down vty gracefully, prints out an error message, creates a
@@ -85,16 +96,17 @@ simulateCrash = error "Simulated crash."
 --   the subsystem where the error occured.
 bail :: Maybe String -> String -> WSEdit ()
 bail mayComp s = do
-    c <- ask
+    c  <- ask
     st <- get
+    h  <- liftIO $ getHomeDirectory
 
     standby $ unlinesPlus
         [ s
         , ""
-        , "Writing state dump to ./CRASH-DUMP ..."
+        , "Writing state dump to $HOME/CRASH-DUMP ..."
         ]
 
-    liftIO $ writeFile "CRASH-DUMP"
+    liftIO $ writeFile (h ++ "/CRASH-DUMP")
            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
           ++ "Error message: " ++ (headDef "" $ lines s)
                 ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
@@ -104,7 +116,7 @@ bail mayComp s = do
           ++ indent (ppShow $ prettyEdConfig c)
           ++ "\n\nEditor state:\n"
           ++ indent ( ppShow
-                     $ mapPast (\h -> h { dict = empty })
+                     $ mapPast (\hs -> hs { dict = empty })
                      $ fromJustNote (fqn "bail")
                      $ chopHist 10
                      $ Just st
@@ -115,7 +127,7 @@ bail mayComp s = do
     liftIO $ do
         shutdown $ vtyObj c
         putStrLn s
-        putStrLn "A state dump is located at ./CRASH-DUMP ."
+        putStrLn "A state dump is located at $HOME/CRASH-DUMP ."
 
         exitFailure
 
@@ -209,7 +221,13 @@ save = refuseOnReadOnly $ do
                     else return True
 
             when b $ do
-                liftIO $ renameFile (fname s ++ ".atomic") (fname s)
+                liftIO $ do
+                    doesFileExist (fname s)
+                        >>= flip when ( copyPermissions (fname s)
+                                      $ fname s ++ ".atomic"
+                                      )
+
+                    renameFile (fname s ++ ".atomic") (fname s)
 
                 put s { changed = False }
 
@@ -249,14 +267,14 @@ save = refuseOnReadOnly $ do
                         liftIO $ runWSEdit ( c { encoding    = Nothing
                                                , newlineMode = universalNewlineMode
                                                }
-                                           , s { fname = "CRASH-RESCUE" }
+                                           , s
                                            )
-                               $ save
+                               $ emergencySave
 
                         let m = "The Write-Read identity check failed.\n\n"
                              ++ "Your saved file would have been corrupted and "
                              ++ "got reset to the last save, your changes have "
-                             ++ "been dumped to ./CRASH-RESCUE using your "
+                             ++ "been dumped to $HOME/CRASH-RESCUE using your "
                              ++ "system's native encoding.\n\n"
                              ++ "This isssue is probably due to the use of a "
                              ++ "non-standard text encoding. Encoding "
