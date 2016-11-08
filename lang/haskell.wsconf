@@ -15,12 +15,12 @@
 #                                                                              #
 # Syntax highlighting                                                          #
 *.hs
-	-lcl --
+	-lcl "-- "
 	-lcb {- -}
 	-lsc ' '
 	-lsm \" \"
 	-lsr ` `
-	-le \\
+	-les \\
 	-lb ( )
 	-lb [ ]
 	-lb { }

@@ -15,7 +15,8 @@
 # Syntax highlighting                                                          #
 *.wsconf
 	-lcl #
-	-le \\
+	-les \\
+	-leo \\
 	-lsr \" \"
 #                                                                              #
 # Keywords                                                                     #
@@ -52,8 +53,10 @@
 	-lk -lcB
 	-lk -lcl
 	-lk -lcL
-	-lk -le
-	-lk -lE
+	-lk -leo
+	-lk -leO
+	-lk -les
+	-lk -leS
 	-lk -lk
 	-lk -lK
 	-lk -lsc

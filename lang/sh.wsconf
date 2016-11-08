@@ -15,7 +15,8 @@
 	-lsm ' '
 	-lsm \" \"
 	-lsr ` `
-	-le \
+	-leo \\
+	-les \\
 	-lb ( )
 	-lb { }
 	-lb [ ]

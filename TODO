@@ -1,8 +1,6 @@
 Implement state files
 Review help (interactive-only commands) / .wsconf definition
 lua: long strings
-lua: --- highlights wrong
 copy/paste: occasionally wrong horizontal cursor position
 gentoo: finish concept
-swap -db / -dB ?
-(edLines s') <- Closing bracket ignored
+language definition readme is out of date

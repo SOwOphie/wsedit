@@ -60,7 +60,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.7"
+version = "1.2.0.10"
 
 -- | Upstream URL.
 upstream :: String
@@ -312,7 +312,10 @@ data EdConfig = EdConfig
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
 
-    , escape       :: Maybe Char
+    , escapeO      :: Maybe Char
+        -- ^ Escape character outside strings.
+
+    , escapeS      :: Maybe Char
         -- ^ Escape character for strings.
 
     , brackets     :: [(String, String)]
@@ -327,7 +330,7 @@ mkDefConfig v k = EdConfig
                 , keymap       = k
                 , histSize     = 100
                 , tabWidth     = 4
-                , drawBg       = True
+                , drawBg       = False
                 , dumpEvents   = False
                 , wriCheck     = True
                 , purgeOnClose = False
@@ -340,7 +343,8 @@ mkDefConfig v k = EdConfig
                 , mStrDelim    = []
                 , chrDelim     = []
                 , keywords     = []
-                , escape       = Nothing
+                , escapeO      = Nothing
+                , escapeS      = Nothing
                 , brackets     = []
               }
 
