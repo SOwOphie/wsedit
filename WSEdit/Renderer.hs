@@ -96,7 +96,7 @@ tkLn (_, str) = do
 
     return $ sort
            $ nubBy overlap
-           $ sortOn (\(n, x) -> (Down (length x), n))
+           $ sortOn (\(n, x) -> (n, Down (length x)))
            $ token  str (         lineComment  c)
           ++ token  str (unpack $ blockComment c)
           ++ token  str (unpack $ brackets     c)
