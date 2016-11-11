@@ -9,16 +9,16 @@ module WSEdit.Arguments
     ) where
 
 
-import Control.Monad                 (foldM, when)
+import Control.Monad                 (foldM, unless, when)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
 import Data.List                     ( delete, isPrefixOf, isSuffixOf, nub, null
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
-import Safe                          (lastMay, maximumDef, readNote)
-import System.Directory              ( doesDirectoryExist, getHomeDirectory
-                                     , listDirectory
+import Safe                          (lastMay, maximumDef, readMay)
+import System.Directory              ( doesDirectoryExist, doesFileExist
+                                     , getHomeDirectory, listDirectory
                                      )
 import System.Environment            (getArgs)
 import System.FilePath               (isRelative)
@@ -35,6 +35,7 @@ import Text.ParserCombinators.Parsec ( Parser
                                      )
 import Text.Show.Pretty              (ppShow)
 
+import WSEdit.Control.Base           (standby)
 import WSEdit.Control.Global         (quitComplain)
 import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                 , chrDelim, drawBg, dumpEvents
@@ -358,8 +359,15 @@ parseArguments (c, s) = do
 
         -- | Load the file inside `fname` as state file.
         loadSF :: (EdConfig, EdState) -> IO (EdConfig, EdState)
-        loadSF (cf, EdState { fname = f }) = do
-            -- TODO: exists check
+        loadSF (cf, st@EdState { fname = f }) = do
+            doesFileExist f >>= flip unless
+                (runWSEdit (cf, st) $ quitComplain
+                                    $ "File not found: "
+                                   ++ f
+                )
+
+            runWSEdit (cf, st) $ standby "Parsing state file, this may take a moment..."
+
             (_, sf) <- readEncFile f
 
             let t        = drop 1
@@ -370,13 +378,26 @@ parseArguments (c, s) = do
                 (tc, ts) = withSnd (drop 1 . dropWhile null)
                          $ span (not . null) t
 
-                -- TODO: parse failure?
-                c'       = unPrettyEdConfig (vtyObj cf)
-                                            (keymap cf)
-                         $ readNote "tc" $ unlinesPlus tc
-                s'       = readNote "ts" $ unlinesPlus ts
+                c'       = fmap ( unPrettyEdConfig (vtyObj cf)
+                                                  (keymap cf)
+                                )
+                         $ readMay $ unlinesPlus tc
+                s'       = readMay $ unlinesPlus ts
 
-            t `seq` return (c', s')
+            case (c', s') of
+                 (Nothing , _       ) -> do
+                    runWSEdit (cf, st) $ quitComplain
+                        "Resume editor from dump: Parse error in config section."
+
+                    return undefined
+
+                 (_       , Nothing ) -> do
+                    runWSEdit (cf, st) $ quitComplain
+                        "Resume editor from dump: Parse error in state section."
+
+                    return undefined
+
+                 (Just c'', Just s'') -> return (c'', s'')
 
 
 
