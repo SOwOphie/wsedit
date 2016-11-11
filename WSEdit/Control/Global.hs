@@ -17,7 +17,8 @@ module WSEdit.Control.Global
     ) where
 
 
-import Control.Exception           (SomeException, try)
+import Control.DeepSeq             (force)
+import Control.Exception           (SomeException, evaluate, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
@@ -312,14 +313,20 @@ load lS = alterState $ do
                       then liftIO $ readEncFile p'
                       else return (Just undefined, "")
 
-    let l = fromMaybe (B.singleton (False, ""))
-          $ B.fromList
-          $ map (withFst (`elem` initJMarks c))
-          $ zip [1..]
-          $ linesPlus txt
+    when lS $ standby "Rebuilding hashes..."
+
+    l <- liftIO
+       $ evaluate
+       $ force
+       $ B.toFirst
+       $ fromMaybe (B.singleton (False, ""))
+       $ B.fromList
+       $ map (withFst (`elem` initJMarks c))
+       $ zip [1..]
+       $ linesPlus txt
 
     put $ s
-        { edLines     = B.toFirst l
+        { edLines     = l
         , fname       = p'
         , cursorPos   = 1
         , readOnly    = not (isJust mEnc && w && not (readOnly s))

@@ -1,5 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveAnyClass
+           , DeriveGeneric
+           , StandaloneDeriving
+           #-}
 
 module WSEdit.Buffer
     ( Buffer
@@ -52,9 +55,11 @@ module WSEdit.Buffer
     ) where
 
 
-import Data.Hashable (Hashable, hash, hashWithSalt)
-import Data.Maybe    (fromMaybe)
-import Safe          (fromJustNote, headMay, headNote, lastMay, tailNote)
+import Control.DeepSeq (NFData)
+import Data.Hashable   (Hashable, hash, hashWithSalt)
+import Data.Maybe      (fromMaybe)
+import GHC.Generics    (Generic)
+import Safe            (fromJustNote, headMay, headNote, lastMay, tailNote)
 
 import Prelude hiding (last, length, map, mapM, mapM_)
 
@@ -116,6 +121,8 @@ data Buffer a = Buffer
     , sufLen  :: Int        -- ^ Amount of elements after the position
     }
     deriving ( Eq
+             , Generic
+             , NFData
              , Read
              , Show
              )
