@@ -12,11 +12,11 @@ module WSEdit.Arguments
 import Control.Monad                 (foldM, when)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, isPrefixOf, isSuffixOf, nub
+import Data.List                     ( delete, isPrefixOf, isSuffixOf, nub, null
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
-import Safe                          (lastMay, maximumDef)
+import Safe                          (lastMay, maximumDef, readNote)
 import System.Directory              ( doesDirectoryExist, getHomeDirectory
                                      , listDirectory
                                      )
@@ -43,21 +43,24 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                 , keywords, lineComment
                                                 , mStrDelim, newlineMode
                                                 , purgeOnClose, strDelim
-                                                , tabWidth, wriCheck
+                                                , tabWidth, vtyObj, wriCheck
                                                 )
-                                     , EdState ( buildDict, detectTabs, fname
-                                               , loadPos, readOnly, replaceTabs
-                                               , searchTerms
+                                     , EdState ( EdState, buildDict, detectTabs
+                                               , fname, loadPos, readOnly
+                                               , replaceTabs, searchTerms
                                                )
                                      , PathInfo (absPath, relPath)
                                      , Stability (Release)
                                      , brightTheme, pathInfo, runWSEdit
                                      , stability, upstream
                                      )
+import WSEdit.Data.Pretty            (unPrettyEdConfig)
 import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
                                      , versionHelp
                                      )
-import WSEdit.Util                   (mayReadFile, withFst, withSnd)
+import WSEdit.Util                   ( linesPlus, mayReadFile, readEncFile
+                                     , unlinesPlus, withFst, withSnd
+                                     )
 
 
 
@@ -170,10 +173,11 @@ providedFile  _                  = Nothing
 
 
 -- | Takes initial config/state, reads in all necessary arguments and files,
---   then returns the modified config/state pair. The function will terminate
---   the running program directly without returning in case one of the options
+--   then returns the modified config/state pair as well as whether the main
+--   function needs to call `load` itself. The function will terminate the
+--   running program directly without returning in case one of the options
 --   mandates it (e.g. help requested, parse error, ...).
-parseArguments :: (EdConfig, EdState) -> IO (EdConfig, EdState)
+parseArguments :: (EdConfig, EdState) -> IO ((EdConfig, EdState), Bool)
 parseArguments (c, s) = do
 
     -- read arguments and files
@@ -201,7 +205,7 @@ parseArguments (c, s) = do
                   $ quitComplain
                   $ "Command line argument parse error:\n" ++ show e
 
-            return (c, s)
+            return undefined
 
          Right a ->
             -- No? => a contains all parsed cmd arguments
@@ -218,7 +222,7 @@ parseArguments (c, s) = do
                                             "No file selected, exiting now (see -h)."
                                           )
 
-                             >> return (c, s)
+                             >> return undefined
 
                      -- File found. Note that this may not be the actual file
                      -- name that we're opening later, just something closely
@@ -286,7 +290,15 @@ parseArguments (c, s) = do
                                ++ ppShow allArgs
 
                         -- Apply arguments to config/state pair.
-                        foldM applyArg (c, s) allArgs
+                        (c', s') <- foldM applyArg (c, s) allArgs
+
+                        -- State file processing
+                        let sf = MetaStateFile `elem` allArgs
+                        (c'', s'') <- if sf
+                                         then loadSF (c', s')
+                                         else return (c', s')
+
+                        return ((c'', s''), not sf)
 
     where
         -- | User home directory -> wsedit config directory
@@ -342,6 +354,29 @@ parseArguments (c, s) = do
         esc (' ' :xs) = "\\ "  ++ esc xs
         esc ('"' :xs) = "\\\"" ++ esc xs
         esc (x   :xs) = [x]    ++ esc xs
+
+
+        -- | Load the file inside `fname` as state file.
+        loadSF :: (EdConfig, EdState) -> IO (EdConfig, EdState)
+        loadSF (cf, EdState { fname = f }) = do
+            -- TODO: exists check
+            (_, sf) <- readEncFile f
+
+            let t        = drop 1
+                         $ dropWhile null
+                         $ dropWhile (not. null)
+                         $ linesPlus sf
+
+                (tc, ts) = withSnd (drop 1 . dropWhile null)
+                         $ span (not . null) t
+
+                -- TODO: parse failure?
+                c'       = unPrettyEdConfig (vtyObj cf)
+                                            (keymap cf)
+                         $ readNote "tc" $ unlinesPlus tc
+                s'       = readNote "ts" $ unlinesPlus ts
+
+            t `seq` return (c', s')
 
 
 

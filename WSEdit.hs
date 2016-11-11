@@ -52,7 +52,7 @@ start = do
     -- create the configuration object
     let conf = mkDefConfig v defaultKM
 
-    (conf', st) <- parseArguments (conf, def)
+    ((conf', st), b) <- parseArguments (conf, def)
 
     case encoding conf' of
          Nothing -> return ()
@@ -61,9 +61,9 @@ start = do
                 Left ex -> do
                     const (return ()) (ex :: SomeException)
                     runWSEdit (conf', st) $ quitComplain
-                                          $ "-e: Encoding not available: " ++ e
+                                          $ "-fe: Encoding not available: " ++ e
 
-    (_, st', _) <- runRWST (exec True) conf' st
+    (_, st', _) <- runRWST (exec b) conf' st
 
     -- Shutdown vty
     shutdown v
@@ -76,12 +76,15 @@ start = do
         -- | Possibly loads the file specified in `fname`, then runs the editor.
         exec :: Bool -> WSEdit ()
         exec b = do
-            when b $ catchEditor (load True) $ \e ->
-                quitComplain $ "An I/O error occured while loading:\n\n"
-                            ++ show e
+            when b $ flip catchEditor
+                          (\e -> quitComplain $ "An I/O error occured while loading:\n\n"
+                              ++ show e
+                          )
+                   $ do
+                        load True
 
-            standby "Building initial rendering cache..."
-            rebuildAll Nothing
+                        standby "Building initial rendering cache..."
+                        rebuildAll Nothing
 
             mainLoop
             drawExitFrame
