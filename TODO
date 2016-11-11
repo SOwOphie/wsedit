@@ -1,5 +1,4 @@
-Implement state files
-Review help (interactive-only commands) / .wsconf definition
 copy/paste: occasionally wrong horizontal cursor position
 gentoo: finish concept
 language definition readme is out of date
+sed script 1.1 => 1.2
