@@ -184,9 +184,7 @@ This process is optimized by smart recalculation as follows:
     cache it writes, we can resume parsing tokens at the first changed line and
     stop as soon as we hit the lower edge of the screen. Also, since the cache
     is stored as a regular list in reverse order, the common tail of two steps
-    won't take up any additional space. (This optimization is only implemented
-    partially yet. Every recalculation will start from the first line for now.
-    The potential for optimization is there, but small for files <10000 lines.)
+    won't take up any additional space.
 
 For some operations it is necessary to ignore all existing caches (e.g. changes
 in search term highlighting). `EdState` contains the field `fullRebdReq :: Bool`

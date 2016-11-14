@@ -86,6 +86,7 @@ rebuildTk (Just h) = do
                            )
 
 
+
 -- | Token line processor. Turns a line of text into the corresponding cache
 --   entry. The 'Bool' is only there for convenience when folding over the
 --   'edLines' buffer and will be completely ignored.
@@ -131,9 +132,50 @@ tkLn (_, str) = do
 
 -- | Rebuilds the range cache from the token cache, therefore this should
 --   normally be called after 'rebuildTk'. A past state may be given to speed up
---   the process (not implemented yet, the parameter is ignored).
+--   the process.
 rebuildFmt :: Maybe EdState -> WSEdit ()
-rebuildFmt _ = fullRebuild
+rebuildFmt Nothing  = do
+    s        <- get
+    (rs, _ ) <- getViewportDimensions
+
+    (rc, bc) <- foldM rLn ([], [])
+              $ zip [1..]
+              $ B.sub 0 (rs + fst (scrollOffset s))
+              $ tokenCache s
+
+    put $ s { rangeCache   = rc
+            , bracketCache = bc
+            }
+
+rebuildFmt (Just h) = do
+    s       <- get
+    (rs, _) <- getViewportDimensions
+
+    let commonLen = B.currPos (tokenCache h)
+                  - fst (B.diffZone (tokenCache h) (tokenCache s))
+
+        rcHull    = drop (length (rangeCache   h) - commonLen) $ rangeCache   h
+        bcHull    = drop (length (bracketCache h) - commonLen) $ bracketCache h
+
+    (rc, bc) <- foldM rLn (rcHull, bcHull)
+              $ zip [commonLen + 1 ..]
+              $ B.sub (commonLen) (rs + fst (scrollOffset s))
+              $ tokenCache s
+
+    put $ s { rangeCache   = rc
+            , bracketCache = bc
+            }
+
+
+
+-- | Range line processor. Processes a single line of token buffer into
+--   corresponding ranges.
+rLn :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)
+rLn (rc, bc) (lNr, l) = do
+    c <- ask
+    s <- get
+    return $ withPair (:rc) (:bc)
+           $ fsm (c,s) lNr (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
 
     where
         fsm :: (EdConfig, EdState)              -- ^ Editor parameters
@@ -327,30 +369,6 @@ rebuildFmt _ = fullRebuild
 
             | otherwise
                 = fsm (c, s) lNo (PNothing       ,                   st) xs
-
-
-        -- | Parse a single line
-        ln :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)
-        ln (rc, bc) (lNo, l) = do
-            c <- ask
-            s <- get
-            return $ withPair (:rc) (:bc) $ fsm (c,s) lNo (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
-
-
-        -- | Rebuild everything
-        fullRebuild :: WSEdit ()
-        fullRebuild = do
-            s        <- get
-            (rs, _ ) <- getViewportDimensions
-
-            (rc, bc) <- foldM ln ([], [])
-                      $ zip [1..]
-                      $ B.sub 0 (rs + fst (scrollOffset s))
-                      $ tokenCache s
-
-            put $ s { rangeCache   = rc
-                    , bracketCache = bc
-                    }
 
 
 
