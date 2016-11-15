@@ -18,6 +18,9 @@ The file tree looks somewhat like this:
     Setup.hs
     stack.yaml
     WSEdit/
+        Arguments/
+            Data.hs
+            Parser.hs
         Arguments.hs
         Buffer.hs
         Control/
@@ -65,8 +68,12 @@ Now that we've covered all the boring boilerplate, let's get to the juicy part!
  * __WSEdit.hs__: Main file, gets called first. Contains the main loop and
    runtime error catching / disaster procedures.
 
-   * __WSEdit/Arguments.hs__: Handles arguments parsing as well as applying
-     them.
+   * __WSEdit/Arguments.hs__: Handles all the argument processing.
+
+     * __WSEdit/Arguments/Data.hs__: Contains some data types used for argument
+       processing.
+
+     * __WSEdit/Arguments/Parser.hs__: Evil module full of black parsec magic.
 
    * __WSEdit/Buffer.hs__: Declares the data structure used to store the edited
      file in an efficient way. Loosely based on

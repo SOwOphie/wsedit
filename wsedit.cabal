@@ -18,6 +18,8 @@ library
   exposed-modules:
     WSEdit,
     WSEdit.Arguments,
+    WSEdit.Arguments.Data,
+    WSEdit.Arguments.Parser,
     WSEdit.Buffer,
     WSEdit.Control,
     WSEdit.Control.Autocomplete,

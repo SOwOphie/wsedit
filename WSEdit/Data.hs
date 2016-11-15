@@ -25,6 +25,7 @@ module WSEdit.Data
     , HighlightMode (..)
     , PathInfo (..)
     , pathInfo
+    , FileMatch (..)
     ) where
 
 
@@ -648,3 +649,10 @@ pathInfo path = do
         { absPath = a
         , relPath = r
         }
+
+
+
+-- | Match type, whether to match the entire name or just prefix and suffix.
+data FileMatch = ExactName String
+               | PrefSuf   String String
+    deriving (Eq, Read, Show)
