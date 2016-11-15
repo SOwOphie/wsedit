@@ -10,49 +10,52 @@
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
-hs: -ts
+*.hs
+	-ets
 #                                                                              #
 # Syntax highlighting                                                          #
-hs: -flc+--
-hs: -fbc+{-_-}
-hs: -fcs+'_'
-hs: -fms+"_"
-hs: -fs+`_`
-hs: -fe+\
-hs: -fbr+(_)
-hs: -fbr+[_]
-hs: -fbr+{_}
+*.hs
+	-lcl "-- "
+	-lcb {- -}
+	-lsc ' '
+	-lsm \" \"
+	-lsr ` `
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
 #                                                                              #
 # Keywords                                                                     #
-hs: -fk+as
-hs: -fk+case
-hs: -fk+of
-hs: -fk+class
-hs: -fk+data
-hs: -fk+family
-hs: -fk+instance
-hs: -fk+default
-hs: -fk+deriving
-hs: -fk+do
-hs: -fk+forall
-hs: -fk+foreign
-hs: -fk+hiding
-hs: -fk+if
-hs: -fk+then
-hs: -fk+else
-hs: -fk+import
-hs: -fk+infix
-hs: -fk+infixl
-hs: -fk+infixr
-hs: -fk+instance
-hs: -fk+let
-hs: -fk+in
-hs: -fk+mdo
-hs: -fk+module
-hs: -fk+newtype
-hs: -fk+qualified
-hs: -fk+rec
-hs: -fk+type
-hs: -fk+where
+*.hs
+	-lk as
+	-lk case
+	-lk of
+	-lk class
+	-lk data
+	-lk family
+	-lk instance
+	-lk default
+	-lk deriving
+	-lk do
+	-lk forall
+	-lk foreign
+	-lk hiding
+	-lk if
+	-lk then
+	-lk else
+	-lk import
+	-lk infix
+	-lk infixl
+	-lk infixr
+	-lk instance
+	-lk let
+	-lk in
+	-lk mdo
+	-lk module
+	-lk newtype
+	-lk qualified
+	-lk rec
+	-lk type
+	-lk where
 #                                                                              #
 ################################################################################

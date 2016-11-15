@@ -361,7 +361,7 @@ makeFooter = do
                ++ "╩─"
                 )
           <-> (  string (dFrameFormat d)
-                (replicate lNoWidth ' ' ++ "  │ ")
+                (" " ++ show (B.length $ edLines s) ++ " │ ")
              <|> string (dFrameFormat d)
                 ( (if replaceTabs s
                       then "SPC "

@@ -1,0 +1,107 @@
+################################################################################
+#                                                                              #
+#   ####                                                               ####    #
+#  ### ###                                                            ### ###  #
+#    ####                    Gentoo Extensions                          ####   #
+#   ###                                                                ###     #
+#  ##                                                                 ##       #
+#                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
+################################################################################
+#                                                                              #
+# Shell tools                                                                  #
+*.sh
+	-lk dispatch-conf
+	-lk eclean
+	-lk eclean-dist
+	-lk eclean-kernel
+	-lk eclean-pkg
+	-lk egencache
+	-lk eix
+	-lk eix-diff
+	-lk eix-header
+	-lk eix-installed
+	-lk eix-layman
+	-lk eix-remote
+	-lk eix-sync
+	-lk eix-update
+	-lk emaint
+	-lk emerge
+	-lk emerge-webrsync
+	-lk emirrordist
+	-lk env-update
+	-lk epkginfo
+	-lk equery
+	-lk eselect
+	-lk eshowpkg
+	-lk etc-update
+	-lk euse
+#                                                                              #
+# Syntax highlighting for important files                                      #
+/etc/portage/make.conf: -mi make.sh
+/etc/portage/package.*: -lcl #
+
+*.ebuild
+	-mi ebuild.sh
+	-lk append-flags
+	-lk append-ldflags
+	-lk best_version
+	-lk cdrom_get_cds
+	-lk cdrom_load_next_cd
+	-lk check_KV
+	-lk check_license
+	-lk eapply
+	-lk eapply_user
+	-lk eautoreconf
+	-lk econf
+	-lk edos2unix
+	-lk eerror
+	-lk einfo
+	-lk einstall
+	-lk elog
+	-lk emake
+	-lk enewgroup
+	-lk enewuser
+	-lk epatch
+	-lk eqawarn
+	-lk ewarn
+	-lk filter-flags
+	-lk filter-ldflags
+	-lk fstack-flags
+	-lk gcc-fullversion
+	-lk gcc-major-version
+	-lk gcc-micro-version
+	-lk gcc-minor-version
+	-lk gcc-version
+	-lk gen_usr_ldscript
+	-lk get-flag
+	-lk has_version
+	-lk is-flag
+	-lk keepdir
+	-lk make_desktop_entry
+	-lk replace-cpu-flags
+	-lk replace-flags
+	-lk strip-flags
+	-lk strip-unsupported-flags
+	-lk strip-linguas
+	-lk tc-getAR
+	-lk tc-getAS
+	-lk tc-getCC
+	-lk tc-getCXX
+	-lk tc-getLD
+	-lk tc-getNM
+	-lk tc-getRANLIB
+	-lk tc-getF77
+	-lk tc-getGCJ
+	-lk tc-getBUILD_CC
+	-lk tc-is-cross-compiler
+	-lk unpack
+	-lk unpack_makeself
+	-lk unpack_pdv
+	-lk use
+	-lk use_enable
+	-lk use_with
+# might be missing some stuff
+
+#                                                                              #
+################################################################################

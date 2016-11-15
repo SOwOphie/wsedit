@@ -1,0 +1,1 @@
+sed -e 's/^\(.*\): -fk+\(.*\)$/\t-lk \2/' sh.wsconftest >sh.wsconf

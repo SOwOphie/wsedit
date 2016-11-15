@@ -2,6 +2,7 @@
 
 module WSEdit.Control.Global
     ( simulateCrash
+    , emergencySave
     , bail
     , quitComplain
     , quit
@@ -16,23 +17,25 @@ module WSEdit.Control.Global
     ) where
 
 
-import Control.Exception           (SomeException, try)
+import Control.DeepSeq             (force)
+import Control.Exception           (SomeException, evaluate, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
 import Data.Maybe                  (fromMaybe, isJust)
 import Graphics.Vty                (Vty (shutdown))
 import Safe                        (fromJustNote, headDef)
-import System.Directory            ( doesFileExist, getHomeDirectory
-                                   , getPermissions
+import System.Directory            ( copyPermissions, doesFileExist
+                                   , getHomeDirectory, getPermissions
                                    , makeRelativeToCurrentDirectory, removeFile
-                                   , writable
+                                   , renameFile, writable
                                    )
 import System.Exit                 (exitFailure)
 import System.IO                   ( IOMode (AppendMode, WriteMode)
                                    , NewlineMode
                                    , hPutStr, hSetEncoding, hSetNewlineMode
-                                   , mkTextEncoding, withFile
+                                   , mkTextEncoding, universalNewlineMode
+                                   , withFile
                                    )
 import Text.Show.Pretty            (ppShow)
 
@@ -42,15 +45,16 @@ import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    )
 import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
                                               , newlineMode, purgeOnClose
-                                              , vtyObj
+                                              , vtyObj, wriCheck
                                               )
                                    , EdState  ( changed, continue, cursorPos
-                                              , detectTabs, dict, edLines, fname
-                                              , lastEvent, loadPos, markPos
-                                              , overwrite, readOnly, replaceTabs
+                                              , detectTabs, dict, edLines
+                                              , exitMsg, fname, lastEvent
+                                              , loadPos, markPos, overwrite
+                                              , readOnly, replaceTabs
                                               )
                                    , WSEdit
-                                   , version
+                                   , runWSEdit, version
                                    )
 import WSEdit.Data.Algorithms      ( chopHist, mapPast, popHist, setStatus
                                    )
@@ -71,10 +75,20 @@ fqn = ("WSEdit.Control.Global." ++)
 
 
 
--- | Crashes the editor. Used for debugging. Mapped to Ctrl-Meta-C, test it if
---   you dare.
+-- | Crashes the editor. Used for debugging. Mapped to @Meta-.@, test it if you
+--   dare.
 simulateCrash :: WSEdit ()
 simulateCrash = error "Simulated crash."
+
+
+-- | Dump the current file state into @$HOME/CRASH-RESCUE@ unconditionally.
+emergencySave :: WSEdit ()
+emergencySave = do
+    h <- liftIO $ getHomeDirectory
+    s <- get
+    put s { fname = h ++ "/CRASH-RESCUE" }
+    save
+    put s
 
 
 -- | Shuts down vty gracefully, prints out an error message, creates a
@@ -83,16 +97,17 @@ simulateCrash = error "Simulated crash."
 --   the subsystem where the error occured.
 bail :: Maybe String -> String -> WSEdit ()
 bail mayComp s = do
-    c <- ask
+    c  <- ask
     st <- get
+    h  <- liftIO $ getHomeDirectory
 
     standby $ unlinesPlus
         [ s
         , ""
-        , "Writing state dump to ./CRASH-DUMP ..."
+        , "Writing state dump to $HOME/CRASH-DUMP ..."
         ]
 
-    liftIO $ writeFile "CRASH-DUMP"
+    liftIO $ writeFile (h ++ "/CRASH-DUMP")
            $ "WSEDIT " ++ version ++ " CRASH LOG\n"
           ++ "Error message: " ++ (headDef "" $ lines s)
                 ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
@@ -102,7 +117,7 @@ bail mayComp s = do
           ++ indent (ppShow $ prettyEdConfig c)
           ++ "\n\nEditor state:\n"
           ++ indent ( ppShow
-                     $ mapPast (\h -> h { dict = empty })
+                     $ mapPast (\hs -> hs { dict = empty })
                      $ fromJustNote (fqn "bail")
                      $ chopHist 10
                      $ Just st
@@ -113,7 +128,7 @@ bail mayComp s = do
     liftIO $ do
         shutdown $ vtyObj c
         putStrLn s
-        putStrLn "A state dump is located at ./CRASH-DUMP ."
+        putStrLn "A state dump is located at $HOME/CRASH-DUMP ."
 
         exitFailure
 
@@ -196,19 +211,32 @@ save = refuseOnReadOnly $ do
 
        else do
             c <- ask
-            liftIO $ writeF (fname s) (encoding c) (newlineMode c)
+            liftIO $ writeF (fname s ++ ".atomic") (encoding c) (newlineMode c)
                    $ unlinesPlus
                    $ map snd
                    $ B.toList
                    $ edLines s
 
-            put s { changed = False }
+            b <- if wriCheck c
+                    then doWriCheck
+                    else return True
 
-            setStatus $ "Saved "
-                     ++ show (B.length (edLines s))
-                     ++ " lines of "
-                     ++ fromMaybe "native" (encoding c)
-                     ++ " text."
+            when b $ do
+                liftIO $ do
+                    doesFileExist (fname s)
+                        >>= flip when ( copyPermissions (fname s)
+                                      $ fname s ++ ".atomic"
+                                      )
+
+                    renameFile (fname s ++ ".atomic") (fname s)
+
+                put s { changed = False }
+
+                setStatus $ "Saved "
+                         ++ show (B.length (edLines s))
+                         ++ " lines of "
+                         ++ fromMaybe "native" (encoding c)
+                         ++ " text."
 
     dictAddRec
 
@@ -224,12 +252,52 @@ save = refuseOnReadOnly $ do
             hSetNewlineMode h nl
             hPutStr h cont
 
+        doWriCheck :: WSEdit Bool
+        doWriCheck = fmap wriCheck ask >>= \case
+            False -> return True
+            True  -> do
+                s <- get
+                put $ s { fname = fname s ++ ".atomic" }
+                load False
+                s' <- get
+                put s
+                if (B.toList (edLines s) == B.toList (edLines s'))
+                   then return True
+                   else do
+                        c <- ask
+                        liftIO $ runWSEdit ( c { encoding    = Nothing
+                                               , newlineMode = universalNewlineMode
+                                               }
+                                           , s
+                                           )
+                               $ emergencySave
+
+                        let m = "The Write-Read identity check failed.\n\n"
+                             ++ "Your saved file would have been corrupted and "
+                             ++ "got reset to the last save, your changes have "
+                             ++ "been dumped to $HOME/CRASH-RESCUE using your "
+                             ++ "system's native encoding.\n\n"
+                             ++ "This isssue is probably due to the use of a "
+                             ++ "non-standard text encoding. Encoding "
+                             ++ "irregularities are a known issue, please try "
+                             ++ "using a different setting for the time being."
+
+                        modify (\s'' -> s'' { continue = False
+                                            , exitMsg  = Just m
+                                            }
+                               )
+
+                        liftIO $ removeFile (fname s ++ ".atomic")
+                        return False
+
 
 
 -- | Tries to load the text buffer from the file name in the editor state.
-load :: WSEdit ()
-load = alterState $ do
-    standby "Loading..."
+--   Pass 'True' to make it display a loading screen (pun not entirely
+--   unintended) and rebuild the dictionary or 'False' to make it a raw load.
+load :: Bool -> WSEdit ()
+load lS = alterState $ do
+    when lS $ standby "Loading..."
 
     p <- fname <$> get
     when (p == "") $ quitComplain "Will not load an empty filename."
@@ -245,14 +313,20 @@ load = alterState $ do
                       then liftIO $ readEncFile p'
                       else return (Just undefined, "")
 
-    let l = fromMaybe (B.singleton (False, ""))
-          $ B.fromList
-          $ map (withFst (`elem` initJMarks c))
-          $ zip [1..]
-          $ linesPlus txt
+    when lS $ standby "Rebuilding hashes..."
+
+    l <- liftIO
+       $ evaluate
+       $ force
+       $ B.toFirst
+       $ fromMaybe (B.singleton (False, ""))
+       $ B.fromList
+       $ map (withFst (`elem` initJMarks c))
+       $ zip [1..]
+       $ linesPlus txt
 
     put $ s
-        { edLines     = B.toFirst l
+        { edLines     = l
         , fname       = p'
         , cursorPos   = 1
         , readOnly    = not (isJust mEnc && w && not (readOnly s))
@@ -261,35 +335,36 @@ load = alterState $ do
                            else replaceTabs s
         }
 
-    setStatus $ case (b    , w    , mEnc) of
-                     (True , True , Just e ) -> "Loaded "
-                                             ++ show (length $ linesPlus txt)
-                                             ++ " lines of "
-                                             ++ e
-                                             ++ " text."
+    when lS $ setStatus
+            $ case (b    , w    , mEnc   ) of
+                   (True , True , Just e ) -> "Loaded "
+                                           ++ show (length $ linesPlus txt)
+                                           ++ " lines of "
+                                           ++ e
+                                           ++ " text."
 
-                     (True , False, Just e ) -> "Warning: "
-                                             ++ e
-                                             ++ " file not writable, "
-                                             ++ "opening in read-only mode ..."
+                   (True , False, Just e ) -> "Warning: "
+                                           ++ e
+                                           ++ " file not writable, "
+                                           ++ "opening in read-only mode ..."
 
-                     (True , _    , Nothing) -> "Warning: unknown character "
-                                             ++ "encoding, opening raw..."
+                   (True , _    , Nothing) -> "Warning: unknown character "
+                                           ++ "encoding, opening raw..."
 
-                     (False, True , _      ) -> "Warning: file "
-                                             ++ p'
-                                             ++ " not found, creating on "
-                                             ++ "save ..."
+                   (False, True , _      ) -> "Warning: file "
+                                           ++ p'
+                                           ++ " not found, creating on "
+                                           ++ "save ..."
 
-                     (False, False, _      ) -> "Warning: cannot create file "
-                                             ++ p'
-                                             ++ " , check permissions and disk "
-                                             ++ "state."
+                   (False, False, _      ) -> "Warning: cannot create file "
+                                           ++ p'
+                                           ++ " , check permissions and disk "
+                                           ++ "state."
 
     -- Move the cursor to where it should be placed.
     uncurry moveCursor $ withPair dec dec $ loadPos s
 
-    dictAddRec
+    when lS $ dictAddRec
 
     where
         dec :: Int -> Int

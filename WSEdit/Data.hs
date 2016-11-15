@@ -6,6 +6,8 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
+    , Stability (..)
+    , stability
     , FmtParserState (..)
     , BracketStack
     , RangeCacheElem
@@ -18,15 +20,19 @@ module WSEdit.Data
     , EdDesign (..)
     , brightTheme
     , WSEdit
+    , runWSEdit
     , Keymap
     , HighlightMode (..)
+    , PathInfo (..)
+    , pathInfo
+    , FileMatch (..)
     ) where
 
 
-import Control.Monad.RWS.Strict (RWST)
+import Control.Monad.RWS.Strict (RWST, runRWST)
 import Data.Default             (Default (def))
 import Graphics.Vty             ( Attr
-                                , Event (..)
+                                , Event ()
                                 , Vty ()
                                 , black, blue, bold, brightBlack, brightGreen
                                 , brightMagenta, brightRed, brightWhite
@@ -34,6 +40,9 @@ import Graphics.Vty             ( Attr
                                 , green, magenta, red, reverseVideo, underline
                                 , white, withBackColor, withForeColor, withStyle
                                 , yellow
+                                )
+import System.Directory         ( canonicalizePath
+                                , makeRelativeToCurrentDirectory
                                 )
 import System.IO                (NewlineMode, universalNewlineMode)
 
@@ -52,7 +61,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.1.1.0"
+version = "1.2.0.19"
 
 -- | Upstream URL.
 upstream :: String
@@ -60,19 +69,30 @@ upstream = "https://github.com/SirBoonami/wsedit"
 
 -- | License version number constant.
 licenseVersion :: String
-licenseVersion = "1.1"
+licenseVersion = "2.0"
+
+-- | Version stability
+data Stability = Prototype
+               | WIP
+               | RC
+               | Release
+    deriving (Eq, Ord, Read, Show)
+
+-- | Current release stability
+stability :: Stability
+stability = Release
 
 
 
 
-
-data FmtParserState = PNothing
-                    | PChString Int String Int
-                    | PLnString Int String
-                    | PMLString Int String
-                    | PBComment Int String
+-- | Format token parser state.
+data FmtParserState = PNothing                  -- ^ Default state, nothing going on
+                    | PLnString Int String      -- ^ Inside line string: start pos, closing string
+                    | PMLString Int String      -- ^ Inside multi-line string: start pos, closing string
+                    | PBComment Int String      -- ^ Inside block comment: start pos, closing string
     deriving (Eq, Read, Show)
 
+-- | Stack of currently opened brackets. 2d position, closing string.
 type BracketStack = [((Int, Int), String)]
 
 
@@ -149,6 +169,9 @@ data EdState = EdState
     , continue     :: Bool
         -- ^ Whether the main loop should continue past this iteration.
 
+    , exitMsg      :: Maybe String
+        -- ^ Optional message to print after exiting using @continue = False@.
+
     , status       :: String
         -- ^ Status string displayed at the bottom.
 
@@ -156,8 +179,8 @@ data EdState = EdState
         -- ^ Last recorded input event.
 
 
-    , buildDict    :: [(Maybe String, Maybe Int)]
-        -- ^ File suffix and indentation depth pairs for dictionary building.
+    , buildDict    :: [(Maybe FileMatch, Maybe Int)]
+        -- ^ File match and indentation depth pairs for dictionary building.
         --   'Nothing' stands for the current file or all depths.
 
     , canComplete  :: Bool
@@ -210,6 +233,7 @@ instance Default EdState where
         , scrollOffset = (0, 0)
 
         , continue     = True
+        , exitMsg      = Nothing
         , status       = ""
         , lastEvent    = Nothing
 
@@ -254,6 +278,9 @@ data EdConfig = EdConfig
     , dumpEvents   :: Bool
         -- ^ Whether or not to dump every received event to the status line.
 
+    , wriCheck     :: Bool
+        -- ^ Whether to perform the write-read identity check on save.
+
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
 
@@ -286,7 +313,10 @@ data EdConfig = EdConfig
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
 
-    , escape       :: Maybe Char
+    , escapeO      :: Maybe Char
+        -- ^ Escape character outside strings.
+
+    , escapeS      :: Maybe Char
         -- ^ Escape character for strings.
 
     , brackets     :: [(String, String)]
@@ -301,8 +331,9 @@ mkDefConfig v k = EdConfig
                 , keymap       = k
                 , histSize     = 100
                 , tabWidth     = 4
-                , drawBg       = True
+                , drawBg       = False
                 , dumpEvents   = False
+                , wriCheck     = True
                 , purgeOnClose = False
                 , initJMarks   = []
                 , newlineMode  = universalNewlineMode
@@ -313,7 +344,8 @@ mkDefConfig v k = EdConfig
                 , mStrDelim    = []
                 , chrDelim     = []
                 , keywords     = []
-                , escape       = Nothing
+                , escapeO      = Nothing
+                , escapeS      = Nothing
                 , brackets     = []
               }
 
@@ -575,6 +607,10 @@ brightTheme = EdDesign
 -- | Editor monad. Reads an 'EdConfig', writes nothing, alters an 'EdState'.
 type WSEdit = RWST EdConfig () EdState IO
 
+-- | Convenience shortcut to run 'WSEdit' actions in 'IO'.
+runWSEdit :: (EdConfig, EdState) -> WSEdit a -> IO a
+runWSEdit (c, s) a = runRWST a c s >>= \(r, _, _) -> return r
+
 
 
 -- | Map of events to actions (and their descriptions). 'Nothing's are used to
@@ -592,4 +628,31 @@ data HighlightMode = HNone
                    | HSearch
                    | HSelected
                    | HString
+    deriving (Eq, Read, Show)
+
+
+
+-- | Useful format for file paths.
+data PathInfo = PathInfo
+    { absPath :: FilePath
+    , relPath :: FilePath
+    }
+    deriving (Eq, Read, Show)
+
+-- | Takes a path and creates a 'PathInfo'.
+pathInfo :: FilePath -> IO PathInfo
+pathInfo path = do
+    a <- canonicalizePath path
+    r <- makeRelativeToCurrentDirectory path
+
+    return PathInfo
+        { absPath = a
+        , relPath = r
+        }
+
+
+
+-- | Match type, whether to match the entire name or just prefix and suffix.
+data FileMatch = ExactName String
+               | PrefSuf   String String
     deriving (Eq, Read, Show)

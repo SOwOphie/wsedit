@@ -18,6 +18,10 @@ The file tree looks somewhat like this:
     Setup.hs
     stack.yaml
     WSEdit/
+        Arguments/
+            Data.hs
+            Parser.hs
+        Arguments.hs
         Buffer.hs
         Control/
             Autocomplete.hs
@@ -61,22 +65,20 @@ Let's go through them one by one.
 
 Now that we've covered all the boring boilerplate, let's get to the juicy part!
 
- * __WSEdit.hs__: Main file, gets called first. Contains the whole
-   initialization process, options parsing, the main loop and runtime error
-   catching / disaster procedures.
+ * __WSEdit.hs__: Main file, gets called first. Contains the main loop and
+   runtime error catching / disaster procedures.
 
-   * __WSEdit/Data.hs__: Declares all data structures as well as their default
-     instances. Corresponds to the __Model__ part of the MVC design pattern.
+   * __WSEdit/Arguments.hs__: Handles all the argument processing.
 
-     * __WSEdit/Data/Algorithms.hs__: Contains some algorithms used to interface
-       with the structures declared in `WSEdit/Data.hs`.
+     * __WSEdit/Arguments/Data.hs__: Contains some data types used for argument
+       processing.
 
-     * __WSEdit/Data/Pretty.hs__: Declares reduced versions of some data
-       structures that can be `read` and `show`n as well as functions converting
-       between them and the real deal. Integral to the `CRASH-DUMP` mechanic.
+     * __WSEdit/Arguments/Parser.hs__: Evil module full of black parsec magic.
 
-   * __WSEdit/Keymaps.hs__: Declares the default keymap as a pairing of
-     _key combination_, _handler_ and _help text_.
+   * __WSEdit/Buffer.hs__: Declares the data structure used to store the edited
+     file in an efficient way. Loosely based on
+     [PointedList](http://hackage.haskell.org/package/pointedlist)s, but with
+     some additional features to improve efficiency for our use case.
 
    * __WSEdit/Control.hs__: Aggregator for its sub-modules, contains no actual
      code. These modules define the handler functions used mostly in
@@ -84,10 +86,10 @@ Now that we've covered all the boring boilerplate, let's get to the juicy part!
      building blocks for handler functions. Corresponds to the __Controller__
      part of the MVC design pattern.
 
+     * __WSEdit/Control/Autocomplete.hs__: Contains everything related to tab
+
      * __WSEdit/Control/Base.hs__: Some common actions, e.g. moving the cursor,
        creating an undo history entry, displaying a loading screen, ...
-
-     * __WSEdit/Control/Autocomplete.hs__: Contains everything related to tab
        completion.
 
      * __WSEdit/Control/Global.hs__: Some functions operating on a global scale,
@@ -101,6 +103,22 @@ Now that we've covered all the boring boilerplate, let's get to the juicy part!
      * __WSEdit/Control/Text.hs__: Text editing stuff like inserting a
        character, ...
 
+   * __WSEdit/Data.hs__: Declares all data structures as well as their default
+     instances. Corresponds to the __Model__ part of the MVC design pattern.
+
+     * __WSEdit/Data/Algorithms.hs__: Contains some algorithms used to interface
+       with the structures declared in `WSEdit/Data.hs`.
+
+     * __WSEdit/Data/Pretty.hs__: Declares reduced versions of some data
+       structures that can be `read` and `show`n as well as functions converting
+       between them and the real deal. Integral to the `CRASH-DUMP` mechanic.
+
+   * __WSEdit/Help.hs__: Contains help strings as well as some functions related
+     to formatting them.
+
+   * __WSEdit/Keymaps.hs__: Declares the default keymap as a pairing of
+     _key combination_, _handler_ and _help text_.
+
    * __WSEdit/Output.hs__: Everything related to producing a coherent image on
      the screen. Especially the main `draw` call and its subcomponents, but also
      some utility functions like getting display bounds, character widths, ...
@@ -110,16 +128,8 @@ Now that we've covered all the boring boilerplate, let's get to the juicy part!
      functions that rebuild the rendering caches. Since they're intended to be
      called in immediate succession, only one meta-function is exported.
 
-   * __WSEdit/Help.hs__: Contains help strings as well as some functions related
-     to formatting them.
-
-   * __WSEdit/Util.hs__: Unsorted collection of helper functions that are not
-     necessarily related to `wsedit`.
-
-   * __WSEdit/Buffer.hs__: Declares the data structure used to store the edited
-     file in an efficient way. Loosely based on
-     [PointedList](http://hackage.haskell.org/package/pointedlist)s, but with
-     some additional features to improve efficiency for our use case.
+   * __WSEdit/Util.hs__: Unsorted collection of generic helper functions that
+     are not necessarily related to `wsedit`s data model.
 
    * __WSEdit/WordTree.hs__: Implements the prefix tree used as the autocomplete
      dictionary.
@@ -181,9 +191,7 @@ This process is optimized by smart recalculation as follows:
     cache it writes, we can resume parsing tokens at the first changed line and
     stop as soon as we hit the lower edge of the screen. Also, since the cache
     is stored as a regular list in reverse order, the common tail of two steps
-    won't take up any additional space. (This optimization is only implemented
-    partially yet. Every recalculation will start from the first line for now.
-    The potential for optimization is there, but small for files <10000 lines.)
+    won't take up any additional space.
 
 For some operations it is necessary to ignore all existing caches (e.g. changes
 in search term highlighting). `EdState` contains the field `fullRebdReq :: Bool`

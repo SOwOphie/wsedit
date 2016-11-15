@@ -18,7 +18,7 @@ than 30 minutes.
 2. Fork the repository on [github](https://github.com/SirBoonami/wsedit), clone
    your fork to your local machine.
 
-3. Start with `template.wsconf`.
+3. Start with `template-lang.wsconf`.
 
 4. Create the header:
    * Try to draw some kind of ASCII-Art to represent the file type.
@@ -36,30 +36,11 @@ than 30 minutes.
    definitions explicitly state/encourage it** or if you want to spark a crusade
    (don't do that).
 
-6. Declare all syntax symbols:
-   * Use one line per definition.
-   * __Strings__: `-fs+a_b`, where `a` marks the beginning of a string, and `b`
-     its end (e.g. `-fs+"_"`). Use `-fms+a_b` for multi-line strings and
-     `-fsc+a_b` for strings that may only contain a single character.
-   * __Escape characters__: `-fe+c`, where `c` is the character used to mask
-     string delimiters inside a string.  Don't use this if the language uses
-     doubled delimiters instead of escape characters (e.g. in Basic, `""""` is a
-     string containing a single quote).
-   * __Line comments__: `-flc+xxx` where `xxx` is the string used to start a
-     comment (e.g. `-flc+//`)..
-   * __Block comments__: `-fbc+a_b` where everything from `a` to `b` is a
-     comment (e.g. `-fbc+/*_*/`).
-   * __Brackets__: `-fbr+a_b`, where ... you get the point (e.g. `-fbr+(_).`).
+6. Declare all syntax symbols as described in `wsedit -h`, __Language__ section.
 
-7. Find a list of all language keywords and list them down with `-fk+keyword`.
-   Again, use one line per definition.
+7. Test it!
 
-8. Make sure every non-comment line is correctly prefixed with `<ext>:`, where
-   `<ext>` stands for the file extension.
+8. Copy your new file to the `lang` subdirectory, commit and push it (make sure
+   not to change anything else) and create a pull request on github.
 
-9. Test it!
-
-10. Copy your new file to the `lang` subdirectory, commit and push it (make sure
-    not to change anything else) and create a pull request on github.
-
-11. Enjoy getting showered with praises =)
+9. Enjoy getting showered with praises =)

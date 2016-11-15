@@ -3,8 +3,4 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-- Hclip-3.0.0.3
-- directory-1.2.6.3
-- microlens-0.4.4.3
-- vty-5.7
-resolver: lts-5.14
+resolver: lts-7.3

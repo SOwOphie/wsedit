@@ -156,7 +156,9 @@ paste = alterBuffer $ do
                 }
 
             if length c > 1
-               then moveCursor 0 $ length (last c) - cursorPos s + 1
+               then moveCursor 0 (-65535)
+                 >> moveCursor 0 (length $ last c)
+
                else moveCursor 0 $ length c1
 
             setStatus $ "Pasted "

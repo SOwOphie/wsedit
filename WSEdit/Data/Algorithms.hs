@@ -21,12 +21,14 @@ module WSEdit.Data.Algorithms
     , getDisplayBounds
     , getCurrBracket
     , catchEditor
+    , fileMatch
     ) where
 
 
 import Control.Exception        (SomeException, evaluate, try)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put, runRWST)
+import Data.List                (isPrefixOf, isSuffixOf)
 import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Vty (outputIface)
@@ -35,15 +37,17 @@ import Graphics.Vty             ( Vty (outputIface)
 import Safe                     ( fromJustNote, headMay, headNote, initNote
                                 , lastNote, tailNote
                                 )
+import System.FilePath          (isRelative)
 
 import WSEdit.Util              (unlinesPlus, withSnd)
-
 import WSEdit.Data              ( WSEdit
                                 , EdConfig (histSize, vtyObj)
                                 , EdState ( bracketCache, changed, cursorPos
                                           , edLines, markPos, history
                                           , scrollOffset, status
                                           )
+                                , FileMatch (ExactName, PrefSuf)
+                                , PathInfo (absPath, relPath)
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -319,3 +323,23 @@ catchEditor a e = do
                         return (r, s')
     put s'
     return r
+
+
+
+
+
+-- | Returns whether the argument block's selector is satisfied by the given
+--   file.
+fileMatch :: FileMatch -> PathInfo -> Bool
+fileMatch match file =
+    case match of
+         ExactName s   -> if isRelative s
+                             then s == relPath file
+                             else s == absPath file
+
+         PrefSuf s1 s2 -> if isRelative s1
+                             then s1 `isPrefixOf` relPath file
+                               && s2 `isSuffixOf` relPath file
+
+                             else s1 `isPrefixOf` absPath file
+                               && s2 `isSuffixOf` absPath file

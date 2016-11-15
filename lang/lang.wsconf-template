@@ -10,18 +10,25 @@
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
-wsed-template: -i8 -tt
+*.ext
+	-ei 8
+	-ett
 #                                                                              #
 # Syntax highlighting                                                          #
-wsed-template: -flc+//
-wsed-template: -fbc+/*_*/
-wsed-template: -fs+"_"
-wsed-template: -fe+\
-wsed-template: -fbr+(_)
+*.ext
+	-lcl //
+	-lcb /* */
+	-lsr \" \"
+	-les \\
+	-lb ( )
 #                                                                              #
 # Keywords                                                                     #
-wsed-template: -fk+keyword1
-wsed-template: -fk+keyword2
-wsed-template: -fk+keyword3
+*.ext
+	-lk keyword1
+	-lk keyword2
+	-lk keyword3
+#                                                                              #
+# Common synonyms                                                              #
+*.wsed-pattern: -mi file.wsed-template
 #                                                                              #
 ################################################################################

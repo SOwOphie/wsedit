@@ -161,10 +161,12 @@ fetchCursor = refuseOnReadOnly $ do
 --   original contents of the status bar before returning.
 standby :: String -> WSEdit ()
 standby str = do
-    s <- get
+    s      <- get
+    (_, w) <- getViewportDimensions
 
     let
-        strLn = linesPlus str
+        strLn = forceBreakAt w
+              $ linesPlus str
 
     put $ s { edLines      = fromMaybe (B.singleton (False, ""))
                            $ B.fromList
@@ -177,3 +179,11 @@ standby str = do
             }
     draw
     put s
+
+    where
+        forceBreakAt :: Int -> [String] -> [String]
+        forceBreakAt n = concatMap (breakLine n)
+
+        breakLine :: Int -> String -> [String]
+        breakLine _ [] = []
+        breakLine l s  = take l s : breakLine l (drop l s)

@@ -1,4 +1,8 @@
-{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
+{-# LANGUAGE DeriveAnyClass
+           , DeriveGeneric
+           , StandaloneDeriving
+           #-}
 
 module WSEdit.Buffer
     ( Buffer
@@ -51,9 +55,11 @@ module WSEdit.Buffer
     ) where
 
 
-import Data.Hashable (Hashable, hash, hashWithSalt)
-import Data.Maybe    (fromMaybe)
-import Safe          (fromJustNote, headMay, headNote, lastMay, tailNote)
+import Control.DeepSeq (NFData)
+import Data.Hashable   (Hashable, hash, hashWithSalt)
+import Data.Maybe      (fromMaybe)
+import GHC.Generics    (Generic)
+import Safe            (fromJustNote, headMay, headNote, lastMay, tailNote)
 
 import Prelude hiding (last, length, map, mapM, mapM_)
 
@@ -115,6 +121,8 @@ data Buffer a = Buffer
     , sufLen  :: Int        -- ^ Amount of elements after the position
     }
     deriving ( Eq
+             , Generic
+             , NFData
              , Read
              , Show
              )
@@ -459,7 +467,7 @@ withNLeft n f b = b { prefix = P.map (f . snd) (take n $ prefix b)
 
 
 -- | Apply a function to the focused element.
-withCurr :: (Hashable a) => (a -> a) -> Buffer a -> Buffer a
+withCurr :: (a -> a) -> Buffer a -> Buffer a
 withCurr f b = b { curr = f $ curr b }
 
 

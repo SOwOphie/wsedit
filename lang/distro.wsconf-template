@@ -1,23 +1,22 @@
 ################################################################################
 #                                                                              #
-#  ##       #                                                    ##       #    #
-#   ##    #####                                                   ##    #####  #
-#    ##     #                TSV Files                             ##     #    #
-#     ##    # #                                                     ##    # #  #
-#      ##    #                                                       ##    #   #
+#   ####                                                               ####    #
+#  ### ###                                                            ### ###  #
+#    ####                    Gentoo Extensions                          ####   #
+#   ###                                                                ###     #
+#  ##                                                                 ##       #
 #                                                                              #
 # by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
 ################################################################################
 #                                                                              #
-# Indentation settings                                                         #
-*.tsv
-	-ei 16
-	-ett
+# Shell tools                                                                  #
+*.sh
+	-lk apt
+	-lk yum
+	-lk pacman
 #                                                                              #
-# Syntax highlighting                                                          #
-*.tsv
-	-lb ( )
-	-lb [ ]
-	-lb { }
+# Syntax highlighting for important files                                      #
+/some/shell/script: -mi script.sh
+
 #                                                                              #
 ################################################################################

@@ -1,3 +1,4 @@
-hs: -d+0.hs
-hs: -d+*WSEdit/Data.hs
-hs: -d~*
+*.hs
+	-ad 0 *.hs
+	-ad * WSEdit/Data.hs
+	-as *

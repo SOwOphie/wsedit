@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveFunctor
+           , LambdaCase
+           #-}
 
 module WSEdit.Util
     ( withPair
@@ -17,6 +19,7 @@ module WSEdit.Util
     , chunk
     , chunkWords
     , dump
+    , timed
     , mayReadFile
     , CharClass (..)
     , charClass
@@ -40,15 +43,17 @@ module WSEdit.Util
 
 
 
+import Control.DeepSeq   (NFData, force)
 import Codec.Text.Detect (detectEncodingName)
-import Control.Exception (SomeException, try)
+import Control.Exception (SomeException, evaluate, try)
 import Data.Char         (chr, isAlphaNum, isControl, isMark, isPrint)
 import Data.List         (inits, intercalate, intersect, tails)
+import Data.Time.Clock   (diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
 import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
                          , MaybeDefault (Default, KeepCurrent,SetTo)
                          )
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
-import System.Directory  (doesFileExist)
+import System.Directory  (doesFileExist, getHomeDirectory)
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
 import System.IO         ( IOMode (ReadMode)
@@ -185,17 +190,36 @@ chunkWords n s  =
 --   parameter to the file @dmp@ in the current working directory. Occasionally
 --   crashes on weird I/O race conditions. Use for debugging purposes only.
 dump :: (Show a) => String -> a -> a
-dump s x = x
-     `seq` unsafePerformIO (appendFile "dmp" $ s
-                                            ++ ":\n"
-                                            ++ unlines
-                                                ( map ("\t"++)
-                                                $ lines
-                                                $ ppShow x
-                                                )
-                                            ++ "\n\n"
-                           )
-     `seq` x
+dump s x = unsafePerformIO $ do
+    sh <- evaluate $ force $ ppShow x
+    h  <- getHomeDirectory
+
+    appendFile (h ++ "/dmp")
+        $ s
+       ++ ":\n"
+       ++ unlines (map ("\t"++) $ lines sh)
+       ++ "\n\n"
+
+    return x
+
+-- | Forces execution and `dump`s the elapsed time.
+timed :: (NFData a) => String -> a -> a
+timed s a = unsafePerformIO $ do
+    t1 <- getCurrentTime
+    a' <- evaluate $ force a
+    t2 <- getCurrentTime
+    h <- getHomeDirectory
+    appendFile (h ++ "/dmp")
+        $ s
+       ++ ": "
+       ++ show ( ( diffTimeToPicoseconds
+                 $ realToFrac
+                 $ diffUTCTime t2 t1)
+               `div` 1000000000
+               )
+       ++ "ms\n\n"
+
+    return a'
 
 
 
