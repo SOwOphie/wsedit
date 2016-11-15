@@ -60,7 +60,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.15"
+version = "1.2.0.16"
 
 -- | Upstream URL.
 upstream :: String
@@ -68,7 +68,7 @@ upstream = "https://github.com/SirBoonami/wsedit"
 
 -- | License version number constant.
 licenseVersion :: String
-licenseVersion = "1.1"
+licenseVersion = "2.0"
 
 -- | Version stability
 data Stability = Prototype
@@ -79,7 +79,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = WIP
+stability = RC
 
 
 

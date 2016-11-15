@@ -175,10 +175,12 @@ Make sure they're placed directly into `~/.config/wsedit/`, not in sub-folders.
 
   * Disable `-db` if it is active.
   * Performance is highly dependant on your terminal emulator. I can personally
-    recommend `sakura` and `xterm`.
+    recommend `sakura`, `xterm` and to a lesser degree also `rxvt-unicode` if
+    you really hate yourself.
 
 ### The build fails with some obscure error message
 
+  * Make sure all dependencies listed above are satisfied.
   * Try `stack clean`.
   * If that doesn't work, delete the `.stack-work` folder and try again.
 

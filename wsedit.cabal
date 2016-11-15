@@ -4,7 +4,7 @@ synopsis:      A simple terminal source code editor.
 description:
 homepage:
 license:       OtherLicense
-license-file:  LICENSE
+license-file:  LICENSE.md
 author:        Felix Hirn
 maintainer:    felix.hirn@wyvernscale.com
 copyright:     2016 Felix Hirn
