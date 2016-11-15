@@ -1,0 +1,143 @@
+################################################################################
+#                                                                              #
+#    ##      ##  ##                                          ##      ##  ##    #
+#   ##      ##    ##                                        ##      ##    ##   #
+#  ##      ##      ##        HTML Files                    ##      ##      ##  #
+#   ##    ##      ##                                        ##    ##      ##   #
+#    ##  ##      ##                                          ##  ##      ##    #
+#                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.html
+	-lcb <!-- -->
+	-lsm ' '
+	-lsm \" \"
+	-les \\
+#                                                                              #
+# Keywords                                                                     #
+*.html
+	-lk a
+	-lk abbr
+	-lk acronym
+	-lk address
+	-lk applet
+	-lk area
+	-lk article
+	-lk aside
+	-lk audio
+	-lk b
+	-lk base
+	-lk basefont
+	-lk bdi
+	-lk bdo
+	-lk big
+	-lk blockquote
+	-lk body
+	-lk br
+	-lk button
+	-lk canvas
+	-lk caption
+	-lk center
+	-lk cite
+	-lk code
+	-lk col
+	-lk colgroup
+	-lk datalist
+	-lk dd
+	-lk del
+	-lk details
+	-lk dfn
+	-lk dialog
+	-lk dir
+	-lk div
+	-lk dl
+	-lk dt
+	-lk em
+	-lk embed
+	-lk fieldset
+	-lk figcaption
+	-lk figure
+	-lk font
+	-lk footer
+	-lk form
+	-lk frame
+	-lk frameset
+	-lk h1
+	-lk h2
+	-lk h3
+	-lk h4
+	-lk h5
+	-lk h6
+	-lk head
+	-lk header
+	-lk hr
+	-lk html
+	-lk i
+	-lk iframe
+	-lk img
+	-lk input
+	-lk ins
+	-lk kbd
+	-lk keygen
+	-lk label
+	-lk legend
+	-lk li
+	-lk link
+	-lk main
+	-lk map
+	-lk mark
+	-lk menu
+	-lk menuitem
+	-lk meta
+	-lk meter
+	-lk nav
+	-lk noframes
+	-lk noscript
+	-lk object
+	-lk ol
+	-lk optgroup
+	-lk option
+	-lk output
+	-lk p
+	-lk param
+	-lk pre
+	-lk progress
+	-lk q
+	-lk rp
+	-lk rt
+	-lk ruby
+	-lk s
+	-lk samp
+	-lk script
+	-lk section
+	-lk select
+	-lk small
+	-lk source
+	-lk span
+	-lk strike
+	-lk strong
+	-lk style
+	-lk sub
+	-lk summary
+	-lk sup
+	-lk table
+	-lk tbody
+	-lk td
+	-lk textarea
+	-lk tfoot
+	-lk th
+	-lk thead
+	-lk time
+	-lk title
+	-lk tr
+	-lk track
+	-lk tt
+	-lk u
+	-lk ul
+	-lk var
+	-lk video
+	-lk wbr
+#                                                                              #
+################################################################################
