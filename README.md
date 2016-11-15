@@ -21,10 +21,10 @@ how `wsedit` works, except some small quirks here and there maybe.
   brackets and comments declared in your config files.  Default patterns for
   some languages are availabe for import in `lang/*.wsconf`, writing your own
   should take no longer than 30 minutes, including the submission of a pull
-  requrest on GitHub =).
+  request on GitHub =).
 
-* __Character class highlighting__: This will color your text by character class
-  (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...),
+* __Character class highlighting__: This will colour your text by character
+  class (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...),
   supplementing the already mentioned syntax highlighting quite nicely and
   provides a base-line readability boost if no highlighting rules have been set.
 
@@ -35,7 +35,7 @@ how `wsedit` works, except some small quirks here and there maybe.
   Start the editor in read-only mode, or toggle it via keybind.
 
 * __Protects you data__: Special routines are in place to ensure your work
-  doesn't just vanish, should the editor crash. I sure wish this wasn't
+  doesn't just vanish, should the editor crash. I sure wish having this wasn't
   something to be proud of.
 
 ## Platforms / Installation
@@ -102,7 +102,7 @@ the `Troubleshooting` section further down below and see if it helps.
 8.  Check whether `$HOME/.local/bin` is already part of your `$PATH` variable:
     if the command `echo "$HOME" | grep "$HOME/.local/bin"` has no output, add
     the line `PATH="${PATH}:${HOME}/.local/bin"` to the file `~/.bashrc`. This
-    file will be executed everytime you open a shell, so you either need to
+    file will be executed every time you open a shell, so you either need to
     re-open the terminal or run `source ~/.bashrc` to re-run it manually.
 9.  To get syntax highlighting, first create the folder `~/.config/wsedit` by
     running `mkdir -p ~/.config/wsedit`. Then take a look at the repository's
@@ -119,13 +119,13 @@ the `Troubleshooting` section further down below and see if it helps.
 ## Bugs / Crashes and how to report them properly
 
 `wsedit` is written with a focus on limiting bug severity and protecting your
-data in case of failure rather than limiting bug frequency. For now, I have
-completely ditched the concept of test suites in favour of some run-time sanity
-checks as well as sophisticated exception handlers, making data loss almost
-impossible to occur. I believe this approach is superior for two reasons:
+data in case of failure rather than on extensive test suites. For now, I have
+completely ditched the concept of automated testing in favour of some run-time
+sanity checks as well as sophisticated exception handlers, making data loss
+almost impossible to occur. I believe this approach is superior for two reasons:
 
  * It makes much better use of my limited time.
- * Even with test suites of absoulutel monstrous proportions you will never
+ * Even with test suites of absolutely monstrous proportions you will never
    catch all the bugs.
 
 However, this does not mean that `wsedit` is full of bugs. There will be some,
