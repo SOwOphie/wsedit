@@ -61,7 +61,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.17"
+version = "1.2.0.18"
 
 -- | Upstream URL.
 upstream :: String
@@ -179,8 +179,8 @@ data EdState = EdState
         -- ^ Last recorded input event.
 
 
-    , buildDict    :: [(Maybe String, Maybe Int)]
-        -- ^ File suffix and indentation depth pairs for dictionary building.
+    , buildDict    :: [(Maybe FileMatch, Maybe Int)]
+        -- ^ File match and indentation depth pairs for dictionary building.
         --   'Nothing' stands for the current file or all depths.
 
     , canComplete  :: Bool

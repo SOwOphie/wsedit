@@ -12,9 +12,11 @@ import Control.Monad            (forM_, unless, when)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
-import Data.List                (intercalate, isSuffixOf, stripPrefix)
+import Data.List                (intercalate, isPrefixOf, stripPrefix)
+import Safe                     (lastDef)
+import System.FilePath          (splitPath)
 import System.Directory         ( doesDirectoryExist, doesFileExist
-                                , listDirectory, makeAbsolute
+                                , listDirectory
                                 )
 
 import WSEdit.Control.Base      (alterBuffer, standby)
@@ -24,8 +26,10 @@ import WSEdit.Data              ( WSEdit
                                 , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
                                           )
+                                , PathInfo (absPath)
+                                , pathInfo
                                 )
-import WSEdit.Data.Algorithms   (setStatus)
+import WSEdit.Data.Algorithms   (fileMatch, setStatus)
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
                                 , linesPlus, longestCommonPrefix, readEncFile
                                 , unlinesPlus, wordsPlus
@@ -43,12 +47,15 @@ dictAdd f = do
     s <- get
     c <- ask
 
-    fAbs <- liftIO $ makeAbsolute f
-    tAbs <- liftIO $ makeAbsolute $ fname s
+    fI <- liftIO $ pathInfo   f
+    tI <- liftIO $ pathInfo $ fname s
 
     let
         depths = map snd
-               $ filter (\(x, _) -> maybe (fAbs == tAbs) (`isSuffixOf` f) x)
+               $ filter ( maybe (absPath fI == absPath tI)
+                                (flip fileMatch fI)
+                        . fst
+                        )
                $ buildDict s
 
     unless (null depths) $ do
@@ -116,21 +123,24 @@ dictAddRec = do
         -- | Processes the files inside the given directory. First parameter is
         --   the indentation depth to search at.
         dictAddRec' :: FilePath -> WSEdit ()
-        dictAddRec' p = do
+        dictAddRec' p =
+            let
+                el = lastDef "" (splitPath p)
+            in
+                unless ("." `isPrefixOf` el && length el > 1) $ do
+                    -- Retrieve the directory contents.
+                    l <- liftIO $ listDirectory p
 
-            -- Retrieve the directory contents.
-            l <- liftIO $ listDirectory p
+                    forM_ l $ \p' -> do
+                        -- Full file name
+                        let f = p ++ "/" ++ p'
 
-            forM_ l $ \p' -> do
-                -- Full file name
-                let f = p ++ "/" ++ p'
-
-                isFile <- liftIO $ doesFileExist f
-                if isFile
-                   then dictAdd f
-                   else do
-                        isDir <- liftIO $ doesDirectoryExist f
-                        when isDir $ dictAddRec' f
+                        isFile <- liftIO $ doesFileExist f
+                        if isFile
+                           then dictAdd f
+                           else do
+                                isDir <- liftIO $ doesDirectoryExist f
+                                when isDir $ dictAddRec' f
 
 
 

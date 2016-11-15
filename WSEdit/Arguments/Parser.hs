@@ -28,6 +28,7 @@ import WSEdit.Data                   ( FileMatch (ExactName, PrefSuf)
 
 
 
+-- | Parses all command-line arguments.
 configCmd :: Parser [Argument]
 configCmd = ( fmap concat
               $ try
@@ -45,6 +46,7 @@ configCmd = ( fmap concat
 
 
 
+-- | Parses an entire config file.
 configFile :: Parser [ArgBlock]
 configFile =  (fmap catMaybes (many1 configElem <* eof))
           <|> (spaces >> eof >> return [])
@@ -207,33 +209,33 @@ debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 debugWriOff       = try (string "-yi" ) >> return DebugWRIOff
 debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
-autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                      }
-editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                      }
-editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                      }
-editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                      }
-fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                         }
-generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                         }
-generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                         }
-langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                         }
-langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                         }
-langEscOSet       = do { try $ string "-leo"; spaces'; LangEscOSet   <$> singleChar                     }
-langEscSSet       = do { try $ string "-les"; spaces'; LangEscSSet   <$> singleChar                     }
-langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                         }
-langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                         }
-metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                         }
-debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                         }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                           }
+editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                           }
+editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                           }
+editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                           }
+fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                              }
+generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                              }
+generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                              }
+langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                              }
+langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                              }
+langEscOSet       = do { try $ string "-leo"; spaces'; LangEscOSet     <$> singleChar                        }
+langEscSSet       = do { try $ string "-les"; spaces'; LangEscSSet     <$> singleChar                        }
+langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                              }
+langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                              }
+metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                              }
+debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                              }
 
-autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> word }
-langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word }
-langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word }
-langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word }
-langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word }
-langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word }
-langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word }
-langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word }
-langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word }
-langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word }
-langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word }
+autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> qualifier }
+langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word      }
+langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word      }
+langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word      }
+langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word      }
+langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word      }
+langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word      }
+langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word      }
+langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word      }
+langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word      }
+langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word      }
 
 specialSetFile    = SpecialSetFile <$> word
 specialSetVPos    = SpecialSetVPos <$> integer

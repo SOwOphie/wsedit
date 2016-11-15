@@ -20,7 +20,7 @@ data ArgBlock = ArgBlock
 
 
 -- | Argument type.
-data Argument = AutocompAdd     (Maybe Int) String
+data Argument = AutocompAdd     (Maybe Int) FileMatch
               | AutocompAddSelf (Maybe Int)
               | AutocompOff
 

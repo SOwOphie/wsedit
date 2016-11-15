@@ -400,6 +400,7 @@ applyArg (c, s)  DebugDumpArgs        = return (c, s)
 applyArg (c, s) (DebugStability  _  ) = return (c, s)
 applyArg (c, s) (MetaInclude     _  ) = return (c, s)
 applyArg (c, s)  MetaFailsafe         = return (c, s)
+applyArg (c, s)  MetaStateFile        = return (c, s)
 
 applyArg (c, s)  OtherOpenCfLoc       =                            return (c, s { fname =               ".local.wsconf" })
 applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s { fname = p ++ "/.config/wsedit.wsconf" })
@@ -408,6 +409,3 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
-
--- placeholder
-applyArg (c, s)  MetaStateFile        = return (c, s)
