@@ -10,7 +10,7 @@
 ################################################################################
 #                                                                              #
 # Shell tools                                                                  #
-*.wsed-template
+*.sh
 	-lk dispatch-conf
 	-lk eclean
 	-lk eclean-dist
@@ -37,7 +37,7 @@
 	-lk etc-update
 	-lk euse
 #                                                                              #
-# Important files                                                              #
+# Syntax highlighting for important files                                      #
 /etc/portage/make.conf: -mi make.sh
 /etc/portage/package.*: -lcl #
 

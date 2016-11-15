@@ -19,7 +19,7 @@ import Graphics.Vty       ( Button (BLeft, BMiddle, BRight)
                           )
 import Safe               (lastDef, maximumNote)
 
-import WSEdit.Data        (Keymap, licenseVersion, upstream, version)
+import WSEdit.Data        (Keymap, licenseVersion, stability, upstream, version)
 import WSEdit.Data.Pretty (prettyKeymap)
 import WSEdit.Util        ( chunkWords, padRight, rotateR, unlinesPlus, withFst
                           , withN, withSnd
@@ -58,9 +58,9 @@ renderText nCols = unlinesPlus . map (renderLine nCols)
                        | otherwise    =
                         let
                             sp     = spl s
-                            maxPad = 2 * sum ( map fst
-                                             $ filter ((== 1) . fst) sp
-                                             )
+                            maxPad = sum ( map fst
+                                         $ filter ((== 1) . fst) sp
+                                         )
 
                             lenPrm = map fst
                                    $ sortOn (Down . snd . snd)
@@ -476,9 +476,9 @@ usageHelp = renderText 80
 -- | Version and disclaimer help text.
 versionHelp :: String
 versionHelp = renderText 80
-    [ "Wyvernscale Source Code Editor (wsedit) Version " ++ version
+    [ "Wyvernscale Source Code Editor (wsedit) Version " ++ version ++ " (" ++ show stability ++ ")"
     , ""
-    , "Licensed under the Wyvernscale Source Code License Version " ++ licenseVersion
+    , "Licensed under the Wyvernscale Source Code License Version " ++ licenseVersion ++ "."
     , ""
     , "Upsteam URL: " ++ upstream
     , ""

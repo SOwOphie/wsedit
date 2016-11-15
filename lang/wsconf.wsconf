@@ -78,4 +78,6 @@
 	-lk -yI
 	-lk -ys
 #                                                                              #
+# Common synonyms                                                              #
+*.wsconf-template: -mi file.wsconf
 ################################################################################

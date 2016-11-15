@@ -10,12 +10,12 @@
 ################################################################################
 #                                                                              #
 # Indentation settings                                                         #
-*.wsed-template
+*.ext
 	-ei 8
 	-ett
 #                                                                              #
 # Syntax highlighting                                                          #
-*.wsed-template
+*.ext
 	-lcl //
 	-lcb /* */
 	-lsr \" \"
@@ -23,7 +23,7 @@
 	-lb ( )
 #                                                                              #
 # Keywords                                                                     #
-*.wsed-template
+*.ext
 	-lk keyword1
 	-lk keyword2
 	-lk keyword3
