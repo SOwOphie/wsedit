@@ -61,7 +61,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.0.19"
+version = "1.2.1.0"
 
 -- | Upstream URL.
 upstream :: String
@@ -80,7 +80,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = Release
+stability = RC
 
 
 
@@ -175,6 +175,9 @@ data EdState = EdState
     , status       :: String
         -- ^ Status string displayed at the bottom.
 
+    , badgeText    :: Maybe String
+        -- ^ Whether to overlay a badge in the top right corner.
+
     , lastEvent    :: Maybe Event
         -- ^ Last recorded input event.
 
@@ -235,6 +238,7 @@ instance Default EdState where
         , continue     = True
         , exitMsg      = Nothing
         , status       = ""
+        , badgeText    = Nothing
         , lastEvent    = Nothing
 
         , buildDict    = []

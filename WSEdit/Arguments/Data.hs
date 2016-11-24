@@ -31,6 +31,8 @@ data Argument = AutocompAdd     (Maybe Int) FileMatch
               | DebugWRIOn
               | DebugStability  Stability
 
+              | DisplayBadgeSet String
+              | DisplayBadgeOff
               | DisplayDotsOn
               | DisplayDotsOff
               | DisplayInvBGOn

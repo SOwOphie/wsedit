@@ -42,9 +42,10 @@ import WSEdit.Data                   ( EdConfig ( blockComment, brackets
                                                 , purgeOnClose, strDelim
                                                 , tabWidth, vtyObj, wriCheck
                                                 )
-                                     , EdState ( EdState, buildDict, detectTabs
-                                               , fname, loadPos, readOnly
-                                               , replaceTabs, searchTerms
+                                     , EdState ( EdState, badgeText, buildDict
+                                               , detectTabs, fname, loadPos
+                                               , readOnly, replaceTabs
+                                               , searchTerms
                                                )
                                      , PathInfo (absPath)
                                      , Stability (Release)
@@ -334,6 +335,8 @@ selectArgs files args = do
 applyArg :: (EdConfig, EdState) -> Argument -> IO (EdConfig, EdState)
 applyArg (c, s) (AutocompAdd     n f) = return (c, s { buildDict   = (Just f , n) : buildDict s })
 applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, n) : buildDict s })
+applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })
+applyArg (c, s)  DisplayBadgeOff      = return (c, s { badgeText   = Nothing                    })
 applyArg (c, s)  AutocompOff          = return (c, s { buildDict   = []                         })
 
 applyArg (c, s)  EditorTabModeSpc     = return (c, s { replaceTabs = True

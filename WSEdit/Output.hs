@@ -31,9 +31,9 @@ import Graphics.Vty             ( Attr
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
-                                , char, cropBottom, cropRight, horizCat
-                                , pad, picForImage, reverseVideo, string
-                                , translateX, update, vertCat, withStyle
+                                , char, cropBottom, cropRight, emptyImage
+                                , horizCat, pad, picForImage, reverseVideo
+                                , string, translateX, update, vertCat, withStyle
                                 , (<|>), (<->)
                                 )
 import Numeric                  (showHex)
@@ -48,9 +48,10 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                            , dJumpMarkFmt, dStatusFormat
                                            , dTabExt, dTabStr
                                            )
-                                , EdState ( changed, edLines, fname, markPos
-                                          , overwrite, rangeCache, readOnly
-                                          , replaceTabs, scrollOffset, status
+                                , EdState ( badgeText, changed, edLines, fname
+                                          , markPos, overwrite, rangeCache
+                                          , readOnly, replaceTabs, scrollOffset
+                                          , status
                                           )
                                 , HighlightMode (HNone, HSelected)
                                 , WSEdit
@@ -563,6 +564,26 @@ makeScrollbar = do
 
 
 
+-- | Generates a badge over the top right corner.
+makeShittyBadge :: String -> WSEdit Image
+makeShittyBadge str = do
+    d         <- edDesign <$> ask
+    (_, cols) <- getDisplayBounds
+
+    return $ vertCat
+           $ (++ [ pad (cols - 2) 0 0 0 $ string (dFrameFormat d) "\\ "
+                 , pad (cols - 1) 0 0 0 $ string (dFrameFormat d) "\\"
+                 ]
+             )
+           $ map (\(n, c) -> pad (cols - length str - 2 + n) 0 0 0
+                           $  string (dFrameFormat  d) "\\ "
+                          <|> string (dLineNoFormat d) [c]
+                          <|> string (dFrameFormat  d) " \\"
+                 )
+           $ zip [0..] str
+
+
+
 -- | Draws everything.
 draw :: WSEdit ()
 draw = do
@@ -577,13 +598,17 @@ draw = do
     bg    <- makeBackground
 
     scr   <- makeScrollbar
+    bad   <- case badgeText s of
+                  Just str  -> makeShittyBadge $ " " ++ str ++ " "
+                  Nothing -> return emptyImage
 
     liftIO $ update (vtyObj c)
              Picture
                 { picCursor     = if readOnly s || ru + rd + cl + cr > 0
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
-                , picLayers     = [ frame
+                , picLayers     = [ bad
+                                  , frame
                                   , txt
                                   , bg
                                   , scr

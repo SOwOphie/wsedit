@@ -120,6 +120,8 @@ configOption = (choice
     [ autocompAdd
     , autocompAddSelf
     , autocompOff
+    , displayBadgeSet
+    , displayBadgeOff
     , displayDotsOn
     , displayDotsOff
     , displayInvBGOn
@@ -178,6 +180,7 @@ configOption = (choice
 
 
 autocompOff       = try (string "-A"  ) >> return AutocompOff
+displayBadgeOff   = try (string "-dS" ) >> return DisplayBadgeOff
 displayDotsOn     = try (string "-db" ) >> return DisplayDotsOn
 displayDotsOff    = try (string "-dB" ) >> return DisplayDotsOff
 displayInvBGOn    = try (string "-dx" ) >> return DisplayInvBGOn
@@ -210,6 +213,7 @@ debugWriOff       = try (string "-yi" ) >> return DebugWRIOff
 debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
 autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                           }
+displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet <$> word                              }
 editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                           }
 editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                           }
 editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                           }
