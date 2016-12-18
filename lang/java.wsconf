@@ -1,0 +1,76 @@
+################################################################################
+#                                                                              #
+#       ##                                                              ##     #
+#    ########                                                       #########  #
+#    ######  #               Java Files                             ######  #  #
+#     #### #                                                         #### #    #
+#  ##########                                                     ##########   #
+#                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.java
+	-lcl //
+	-lcb /* */
+	-lsr \" \"
+	-lsc ' '
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.java
+	-lk abstract
+	-lk assert
+	-lk boolean
+	-lk break
+	-lk byte
+	-lk case
+	-lk catch
+	-lk char
+	-lk class
+	-lk const
+	-lk continue
+	-lk default
+	-lk do
+	-lk double
+	-lk else
+	-lk enum
+	-lk extends
+	-lk final
+	-lk finally
+	-lk float
+	-lk for
+	-lk goto
+	-lk if
+	-lk implements
+	-lk import
+	-lk instanceof
+	-lk int
+	-lk interface
+	-lk long
+	-lk native
+	-lk new
+	-lk package
+	-lk private
+	-lk protected
+	-lk public
+	-lk return
+	-lk short
+	-lk static
+	-lk strictfp
+	-lk super
+	-lk switch
+	-lk synchronized
+	-lk this
+	-lk throw
+	-lk throws
+	-lk transient
+	-lk try
+	-lk void
+	-lk volatile
+	-lk while
+#                                                                              #
+################################################################################
