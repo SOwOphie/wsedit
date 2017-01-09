@@ -1,0 +1,114 @@
+################################################################################
+#                                                                              #
+#    ####                                                     ####             #
+#   ##  ##   #    #                                          ##  ##   #    #   #
+#   ##      ###  ###          C/C++ Files                    ##      ###  ###  #
+#   ##  ##   #    #                                          ##  ##   #    #   #
+#    ####                                                     ####             #
+#                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.cpp
+	-lcl //
+	-lcb /* */
+	-lsr \" \"
+	-lsc ' '
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.cpp
+	-lk alignas
+	-lk alignof
+	-lk and
+	-lk and_eq
+	-lk asm
+	-lk auto
+	-lk bitand
+	-lk bitor
+	-lk bool
+	-lk break
+	-lk case
+	-lk catch
+	-lk char
+	-lk char16_t
+	-lk char32_t
+	-lk class
+	-lk compl
+	-lk const
+	-lk constexpr
+	-lk const_cast
+	-lk continue
+	-lk decltype
+	-lk default
+	-lk delete
+	-lk do
+	-lk double
+	-lk dynamic_cast
+	-lk else
+	-lk enum
+	-lk explicit
+	-lk export
+	-lk extern
+	-lk false
+	-lk float
+	-lk for
+	-lk friend
+	-lk goto
+	-lk if
+	-lk inline
+	-lk int
+	-lk long
+	-lk mutable
+	-lk namespace
+	-lk new
+	-lk noexcept
+	-lk not
+	-lk not_eq
+	-lk nullptr
+	-lk operator
+	-lk or
+	-lk or_eq
+	-lk private
+	-lk protected
+	-lk public
+	-lk register
+	-lk reinterpret_cast
+	-lk return
+	-lk short
+	-lk signed
+	-lk sizeof
+	-lk static
+	-lk static_assert
+	-lk static_cast
+	-lk struct
+	-lk switch
+	-lk template
+	-lk this
+	-lk thread_local
+	-lk throw
+	-lk true
+	-lk try
+	-lk typedef
+	-lk typeid
+	-lk typename
+	-lk union
+	-lk unsigned
+	-lk using
+	-lk virtual
+	-lk void
+	-lk volatile
+	-lk wchar_t
+	-lk while
+	-lk xor
+	-lk xor_eq
+#                                                                              #
+# Common synonyms                                                              #
+*.h: -mi file.cpp
+*.c: -mi file.cpp
+#                                                                              #
+################################################################################
