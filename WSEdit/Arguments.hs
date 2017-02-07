@@ -33,11 +33,11 @@ import WSEdit.Arguments.Data         ( ArgBlock (ArgBlock, abMatch, abArg)
 import WSEdit.Arguments.Parser       (configCmd, configFile)
 import WSEdit.Control.Base           (standby)
 import WSEdit.Control.Global         (quitComplain)
-import WSEdit.Data                   ( EdConfig ( blockComment, brackets
-                                                , chrDelim, drawBg, dumpEvents
-                                                , edDesign, encoding, escapeO
-                                                , escapeS, initJMarks, keymap
-                                                , keywords, lineComment
+import WSEdit.Data                   ( EdConfig ( atomicSaves, blockComment
+                                                , brackets, chrDelim, drawBg
+                                                , dumpEvents, edDesign, encoding
+                                                , escapeO, escapeS, initJMarks
+                                                , keymap, keywords, lineComment
                                                 , mStrDelim, newlineMode
                                                 , purgeOnClose, strDelim
                                                 , tabWidth, vtyObj, wriCheck
@@ -367,6 +367,8 @@ applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def          
 applyArg (c, s) (EditorIndSet    n  ) = return (c { tabWidth     = n                                       }, s)
 applyArg (c, s) (EditorJumpMAdd  n  ) = return (c { initJMarks   = n      : delete n      (initJMarks   c) }, s)
 applyArg (c, s) (EditorJumpMDel  n  ) = return (c { initJMarks   =          delete n      (initJMarks   c) }, s)
+applyArg (c, s)  FileAtomicOff        = return (c { atomicSaves  = False                                   }, s)
+applyArg (c, s)  FileAtomicOn         = return (c { atomicSaves  = True                                    }, s)
 applyArg (c, s) (FileEncodingSet e  ) = return (c { encoding     = Just e                                  }, s)
 applyArg (c, s)  FileEncodingDef      = return (c { encoding     = Nothing                                 }, s)
 applyArg (c, s)  FileLineEndUnix      = return (c { newlineMode  = NewlineMode CRLF   LF                   }, s)

@@ -132,6 +132,8 @@ configOption = (choice
     , editorTabModeSpc
     , editorTabModeTab
     , editorTabModeAuto
+    , fileAtomicOff
+    , fileAtomicOn
     , fileEncodingSet
     , fileEncodingDef
     , fileLineEndUnix
@@ -188,6 +190,8 @@ displayInvBGOff   = try (string "-dX" ) >> return DisplayInvBGOff
 editorTabModeSpc  = try (string "-ets") >> return EditorTabModeSpc
 editorTabModeTab  = try (string "-ett") >> return EditorTabModeTab
 editorTabModeAuto = try (string "-eT" ) >> return EditorTabModeAuto
+fileAtomicOff     = try (string "-fa" ) >> return FileAtomicOff
+fileAtomicOn      = try (string "-fA" ) >> return FileAtomicOn
 fileEncodingDef   = try (string "-fE" ) >> return FileEncodingDef
 fileLineEndUnix   = try (string "-flu") >> return FileLineEndUnix
 fileLineEndWin    = try (string "-flw") >> return FileLineEndWin

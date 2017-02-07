@@ -43,9 +43,9 @@ import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
                                    , refuseOnReadOnly, standby
                                    )
-import WSEdit.Data                 ( EdConfig ( encoding, initJMarks
-                                              , newlineMode, purgeOnClose
-                                              , vtyObj, wriCheck
+import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
+                                              , initJMarks, newlineMode
+                                              , purgeOnClose, vtyObj, wriCheck
                                               )
                                    , EdState  ( changed, continue, cursorPos
                                               , detectTabs, dict, edLines
@@ -211,17 +211,23 @@ save = refuseOnReadOnly $ do
 
        else do
             c <- ask
-            liftIO $ writeF (fname s ++ ".atomic") (encoding c) (newlineMode c)
+
+            let
+                targetFName = if atomicSaves c
+                                 then fname s ++ ".atomic"
+                                 else fname s
+
+            liftIO $ writeF targetFName (encoding c) (newlineMode c)
                    $ unlinesPlus
                    $ map snd
                    $ B.toList
                    $ edLines s
 
-            b <- if wriCheck c
+            b <- if atomicSaves c && wriCheck c
                     then doWriCheck
                     else return True
 
-            when b $ do
+            when (atomicSaves c && b) $ do
                 liftIO $ do
                     doesFileExist (fname s)
                         >>= flip when ( copyPermissions (fname s)
@@ -230,13 +236,14 @@ save = refuseOnReadOnly $ do
 
                     renameFile (fname s ++ ".atomic") (fname s)
 
-                put s { changed = False }
+            when (not (atomicSaves c) || b) $ do
+                modify $ \s' -> s' { changed = False }
 
                 setStatus $ "Saved "
-                         ++ show (B.length (edLines s))
-                         ++ " lines of "
-                         ++ fromMaybe "native" (encoding c)
-                         ++ " text."
+                             ++ show (B.length (edLines s))
+                             ++ " lines of "
+                             ++ fromMaybe "native" (encoding c)
+                             ++ " text."
 
     dictAddRec
 

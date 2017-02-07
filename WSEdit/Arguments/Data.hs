@@ -45,6 +45,8 @@ data Argument = AutocompAdd     (Maybe Int) FileMatch
               | EditorTabModeTab
               | EditorTabModeAuto
 
+              | FileAtomicOff
+              | FileAtomicOn
               | FileEncodingSet String
               | FileEncodingDef
               | FileLineEndUnix

@@ -12,12 +12,13 @@ module WSEdit.Data.Pretty
 import Graphics.Vty      (Attr, Event, Vty)
 import System.IO         (NewlineMode)
 
-import WSEdit.Data       ( EdConfig ( EdConfig, blockComment, brackets, chrDelim
-                                    , drawBg, dumpEvents, edDesign, encoding
-                                    , escapeO, escapeS, histSize, initJMarks
-                                    , keymap, keywords, lineComment, mStrDelim
-                                    , newlineMode, purgeOnClose, strDelim
-                                    , tabWidth, vtyObj, wriCheck
+import WSEdit.Data       ( EdConfig ( EdConfig, atomicSaves, blockComment
+                                    , brackets, chrDelim, drawBg, dumpEvents
+                                    , edDesign, encoding, escapeO, escapeS
+                                    , histSize, initJMarks, keymap, keywords
+                                    , lineComment, mStrDelim, newlineMode
+                                    , purgeOnClose, strDelim, tabWidth
+                                    , vtyObj, wriCheck
                                     )
                          , EdDesign ( EdDesign, dBGChar, dBGFormat, dBrMod
                                     , dCharStyles, dColChar, dColNoFormat
@@ -42,6 +43,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pTabWidth     :: Int
     , pDrawBg       :: Bool
     , pDumpEvents   :: Bool
+    , pAtomicSaves  :: Bool
     , pWriCheck     :: Bool
     , pPurgeOnClose :: Bool
     , pInitJMarks   :: [Int]
@@ -69,6 +71,7 @@ prettyEdConfig c = PrettyEdConfig
     , pTabWidth     =                  tabWidth     c
     , pDrawBg       =                  drawBg       c
     , pDumpEvents   =                  dumpEvents   c
+    , pAtomicSaves  =                  atomicSaves  c
     , pWriCheck     =                  wriCheck     c
     , pPurgeOnClose =                  purgeOnClose c
     , pInitJMarks   =                  initJMarks   c
@@ -95,6 +98,7 @@ unPrettyEdConfig v k p = EdConfig
     , tabWidth     = pTabWidth                    p
     , drawBg       = pDrawBg                      p
     , dumpEvents   = pDumpEvents                  p
+    , atomicSaves  = pAtomicSaves                 p
     , wriCheck     = pWriCheck                    p
     , purgeOnClose = pPurgeOnClose                p
     , initJMarks   = pInitJMarks                  p

@@ -61,7 +61,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.1.0"
+version = "1.2.1.1"
 
 -- | Upstream URL.
 upstream :: String
@@ -282,6 +282,9 @@ data EdConfig = EdConfig
     , dumpEvents   :: Bool
         -- ^ Whether or not to dump every received event to the status line.
 
+    , atomicSaves  :: Bool
+        -- ^ Whether to perform the write-read identity check on save.
+
     , wriCheck     :: Bool
         -- ^ Whether to perform the write-read identity check on save.
 
@@ -337,6 +340,7 @@ mkDefConfig v k = EdConfig
                 , tabWidth     = 4
                 , drawBg       = False
                 , dumpEvents   = False
+                , atomicSaves  = True
                 , wriCheck     = True
                 , purgeOnClose = False
                 , initJMarks   = []
