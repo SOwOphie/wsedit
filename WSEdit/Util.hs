@@ -21,6 +21,7 @@ module WSEdit.Util
     , dump
     , timed
     , mayReadFile
+    , listDirectoryDeep
     , CharClass (..)
     , charClass
     , isIdentifierChar
@@ -53,7 +54,9 @@ import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
                          , MaybeDefault (Default, KeepCurrent,SetTo)
                          )
 import Safe              (foldl1Note, headMay, lastDef, lastNote)
-import System.Directory  (doesFileExist, getHomeDirectory)
+import System.Directory  ( doesDirectoryExist, doesFileExist, getHomeDirectory
+                         , listDirectory
+                         )
 import System.Exit       (ExitCode (ExitSuccess))
 import System.Info       (os)
 import System.IO         ( IOMode (ReadMode)
@@ -234,6 +237,22 @@ mayReadFile f = do
                 Left  e -> const (return Nothing) (e :: SomeException)
        else return Nothing
 
+
+
+-- | Lists all files in a given directory recursively, following symlinks.
+listDirectoryDeep :: FilePath -> IO [FilePath]
+listDirectoryDeep p = listDirectory p >>= fmap concat . mapM (\s -> do
+        let
+            name = p ++ "/" ++ s
+
+        dir  <- doesDirectoryExist name
+        file <- doesFileExist      name
+
+        case (dir , file) of
+             (True, _   ) -> listDirectoryDeep name
+             (_   , True) -> return [name]
+             (_   , _   ) -> return []
+    )
 
 
 

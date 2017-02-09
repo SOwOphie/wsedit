@@ -73,8 +73,8 @@ need your help to test some things for me.
 3.  Run `stack install`, the binary will be placed into `$HOME/.local/bin/`.
 4.  Either add `$HOME/.local/bin/` to your `$PATH` or copy/link/symlink the
     execuable where you actually want it.
-5.  Copy all relevant definitions from `lang/` to `$HOME/.config/wsedit`. Just
-    copying everything is fine too.
+5.  Copy all relevant definitions from `lang/` into `$HOME/.config/wsedit`. Just
+    copying everything or symlinking the directory from the repo is fine too.
 6.  Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
     Most importantly: press `Ctrl-Q` to quit.
@@ -104,8 +104,8 @@ the `Troubleshooting` section further down below and see if it helps.
     the line `PATH="${PATH}:${HOME}/.local/bin"` to the file `~/.bashrc`. This
     file will be executed every time you open a shell, so you either need to
     re-open the terminal or run `source ~/.bashrc` to re-run it manually.
-9.  To get syntax highlighting, first create the folder `~/.config/wsedit` by
-    running `mkdir -p ~/.config/wsedit`. Then take a look at the repository's
+9.  To get syntax highlighting, first create the folder `~/.config/wsedit/lang`
+    by running `mkdir -p ~/.config/wsedit`. Then take a look at the repository's
     `lang/` folder. Copy everything you need (or just everything, it won't hurt)
     to the newly created folder using `cp lang/* ~/.config/wsedit/`. If your
     favourite language has no definitions available, you can easily create them
@@ -167,10 +167,6 @@ This will simulate a crash and create the above-mentioned files.
 
 Deactivate the `-db` switch.
 
-### The language definitions won't work!
-
-Make sure they're placed directly into `~/.config/wsedit/`, not in sub-folders.
-
 ### `wsedit` is slow (on older machines)!
 
   * Disable `-db` if it is active.
@@ -181,7 +177,7 @@ Make sure they're placed directly into `~/.config/wsedit/`, not in sub-folders.
 ### The build fails with some obscure error message
 
   * Make sure all dependencies listed above are satisfied.
-  * Try `stack clean`.
+  * Try `stack clean` or maybe `stack update`.
   * If that doesn't work, delete the `.stack-work` folder and try again.
 
 ### `wsedit` destroys Unicode on `xterm`

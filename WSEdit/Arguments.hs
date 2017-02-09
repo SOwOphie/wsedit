@@ -16,7 +16,7 @@ import Data.List                     ( delete, isSuffixOf, nub, null
 import Data.Maybe                    (catMaybes, fromMaybe)
 import Safe                          (lastMay, maximumDef, readMay)
 import System.Directory              ( doesDirectoryExist, doesFileExist
-                                     , getHomeDirectory, listDirectory
+                                     , getHomeDirectory
                                      )
 import System.Environment            (getArgs)
 import System.IO                     ( Newline (CRLF, LF)
@@ -57,8 +57,9 @@ import WSEdit.Data.Pretty            (unPrettyEdConfig)
 import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
                                      , versionHelp
                                      )
-import WSEdit.Util                   ( linesPlus, mayReadFile, readEncFile
-                                     , unlinesPlus, withFst, withSnd
+import WSEdit.Util                   ( linesPlus, mayReadFile, listDirectoryDeep
+                                     , readEncFile , unlinesPlus, withFst
+                                     , withSnd
                                      )
 
 
@@ -229,10 +230,8 @@ parseArguments (c, s) = do
 
             fnames <- if not b
                          then return []
-                         else fmap ( map (confDir h ++)
-                                   . filter (isSuffixOf ".wsconf")
-                                   )
-                            $ listDirectory
+                         else fmap (filter (isSuffixOf ".wsconf"))
+                            $ listDirectoryDeep
                             $ confDir h
 
             confFiles <- mapM (\n -> do

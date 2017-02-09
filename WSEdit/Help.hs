@@ -143,7 +143,7 @@ confHelp = renderText 80
     , "There are four distinct locations from which you can influence the behaviour of"
     , "wsedit:"
     , ""
-    , "  *  The files \"~/.config/wsedit/*.wsconf\", intended primarily for language"
+    , "  *  The files \"~/.config/wsedit/**/*.wsconf\", intended primarily for language"
     , "     definitions (see \"wsedit -h\" --> Language Options)"
     , ""
     , "  *  The file \"~/.config/wsedit.wsconf\" (shortcut: \"wsedit -ocg\"), intended for"
