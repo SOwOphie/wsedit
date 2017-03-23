@@ -80,7 +80,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = RC
+stability = Release
 
 
 
@@ -108,7 +108,7 @@ type RangeCache     = [RangeCacheElem]
 
 
 -- | Stores bracketed ranges, as well as the parser's stack at the end of each
---   line.
+--   line. Every backet pair ends up in the last line it touches.
 type BracketCacheElem = ([((Int, Int), (Int, Int))], BracketStack)
 
 -- | Only built from the start of the file to the end of the viewport, lines are
@@ -477,7 +477,7 @@ instance Default EdDesign where
                             `withStyle`     bold
               )
             , (Unprintable, defAttr
-                            `withForeColor` brightRed
+                            `withForeColor` magenta
                             `withStyle`     bold
               )
             , (Special    , defAttr
@@ -572,7 +572,7 @@ brightTheme = EdDesign
                             `withStyle`     bold
               )
             , (Unprintable, defAttr
-                            `withForeColor` brightRed
+                            `withForeColor` magenta
                             `withStyle`     bold
               )
             , (Special    , defAttr

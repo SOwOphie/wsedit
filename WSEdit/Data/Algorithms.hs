@@ -289,20 +289,23 @@ getCurrBracket = do
     s <- get
 
     let
+        -- All bracket pairs starting from the current line.
         brs1 = concat
              $ drop (cR - 1)
              $ reverse
              $ map fst
              $ bracketCache s
 
+        -- All brackets not closed in the current viewport.
         brs2 = map (withSnd $ const (maxBound, maxBound))
              $ fromMaybe []
              $ fmap snd
              $ headMay
              $ bracketCache s
 
+        -- All bracket pairs that the cursor currently is inside of.
         brs  = filter ((>= (cR, cC)) . snd)
-             $ filter ((<= (cR, cC)) . fst)
+             $ filter ((<  (cR, cC)) . fst)
              $ brs1 ++ brs2
 
     return $ headMay brs

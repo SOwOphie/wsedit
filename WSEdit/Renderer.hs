@@ -313,7 +313,7 @@ rLn (rc, bc) (lNr, l) = do
             = (([]                          , PNothing       ), ([], st))
 
         {- --------------------------------------------------------------------*
-        |  Closing varoius other constructs                                    |
+        |  Closing various other constructs                                    |
         *-------------------------------------------------------------------- -}
 
         -- Close block comments
