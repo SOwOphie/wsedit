@@ -1,3 +1,4 @@
+
 {-# LANGUAGE LambdaCase #-}
 
 module WSEdit.Control.Global
@@ -22,6 +23,7 @@ import Control.Exception           (SomeException, evaluate, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
 import Control.Monad.RWS.Strict    (ask, get, modify, put)
+import Data.Function               (on)
 import Data.Maybe                  (fromMaybe, isJust)
 import Graphics.Vty                (Vty (shutdown))
 import Safe                        (fromJustNote, headDef)
@@ -81,14 +83,29 @@ simulateCrash :: WSEdit ()
 simulateCrash = error "Simulated crash."
 
 
--- | Dump the current file state into @$HOME/CRASH-RESCUE@ unconditionally.
+-- | Dump the current file state into @$HOME/CRASH-RESCUE@ unconditionally using
+--   the system's default encoding. This, as the name suggests, is an emergency
+--   function so we're not taking any chances. I'd rather have a correct file in
+--   the wrong format than a corrupted file in the right one.
 emergencySave :: WSEdit ()
 emergencySave = do
+    standby "Saving..."
+
     h <- liftIO $ getHomeDirectory
     s <- get
-    put s { fname = h ++ "/CRASH-RESCUE" }
-    save
-    put s
+    c <- ask
+
+    liftIO $ writeF (h ++ "/CRASH-RESCUE") (newlineMode c)
+           $ unlinesPlus
+           $ map snd
+           $ B.toList
+           $ edLines s
+
+    where
+        writeF :: FilePath -> NewlineMode -> String -> IO ()
+        writeF path nl cont = withFile path WriteMode $ \h -> do
+            hSetNewlineMode h nl
+            hPutStr h cont
 
 
 -- | Shuts down vty gracefully, prints out an error message, creates a
@@ -268,7 +285,7 @@ save = refuseOnReadOnly $ do
                 load False
                 s' <- get
                 put s
-                if (B.toList (edLines s) == B.toList (edLines s'))
+                if (on (==) (map snd . B.toList) (edLines s) (edLines s'))
                    then return True
                    else do
                         c <- ask
