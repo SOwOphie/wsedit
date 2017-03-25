@@ -107,7 +107,7 @@ the `Troubleshooting` section further down below and see if it helps.
 9.  To get syntax highlighting, first create the folder `~/.config/wsedit/lang`
     by running `mkdir -p ~/.config/wsedit`. Then take a look at the repository's
     `lang/` folder. Copy everything you need (or just everything, it won't hurt)
-    to the newly created folder using `cp lang/* ~/.config/wsedit/`. If your
+    to the newly created folder using `cp lang/* ~/.config/wsedit/lang`. If your
     favourite language has no definitions available, you can easily create them
     yourself, take a look at `lang/README.md` for instructions.
 10. Done! I recommend opening two terminals next to each other, running `wsedit`
@@ -157,7 +157,7 @@ off the caching system.
 ### Non-fatal bugs
 
 Most non-fatal bugs will probably be rendering glitches. Reproduce the
-situation, point the cursor at it if possible, then press Meta + ".".
+situation, point the cursor at it if possible, then press Alt + ".".
 This will simulate a crash and create the above-mentioned files.
 
 
@@ -176,7 +176,7 @@ Deactivate the `-db` switch.
 
 ### The build fails with some obscure error message
 
-  * Make sure all dependencies listed above are satisfied.
+  * Make sure all non-haskell dependencies listed above are satisfied.
   * Try `stack clean` or maybe `stack update`.
   * If that doesn't work, delete the `.stack-work` folder and try again.
 

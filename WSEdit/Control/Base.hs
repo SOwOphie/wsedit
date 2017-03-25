@@ -6,16 +6,24 @@ module WSEdit.Control.Base
     , moveCursor
     , fetchCursor
     , standby
+    , askConfirm
     ) where
 
 
 import Control.Monad            (unless)
-import Control.Monad.RWS.Strict (get, modify, put)
+import Control.Monad.IO.Class   (liftIO)
+import Control.Monad.RWS.Strict (ask, get, modify, put)
+import Data.Char                (isSpace, toLower)
 import Data.Maybe               (fromMaybe)
+import Graphics.Vty             ( Event (EvKey)
+                                , Key (KChar)
+                                , nextEvent
+                                )
 
-import WSEdit.Data              ( EdState  ( canComplete, cursorPos, edLines
-                                           , rangeCache, readOnly, scrollOffset
-                                           , wantsPos
+import WSEdit.Data              ( EdConfig (vtyObj)
+                                , EdState  ( badgeText, canComplete, cursorPos
+                                           , edLines, rangeCache, readOnly
+                                           , scrollOffset, wantsPos
                                            )
                                 , FmtParserState (PNothing)
                                 , HighlightMode (HSearch)
@@ -59,7 +67,7 @@ alterBuffer a = refuseOnReadOnly
 
 -- | Declares that an action will alter the text buffer or the cursor position.
 --   Included in 'alterBuffer'.
-alterState :: WSEdit () -> WSEdit ()
+alterState :: WSEdit a -> WSEdit a
 alterState a = modify (\s -> s { canComplete = False })
             >> a
 
@@ -176,6 +184,7 @@ standby str = do
                                        ([((1, maxBound), HSearch)], PNothing)
             , scrollOffset = (0, 0)
             , readOnly     = True
+            , badgeText    = Nothing
             }
     draw
     put s
@@ -185,5 +194,29 @@ standby str = do
         forceBreakAt n = concatMap (breakLine n)
 
         breakLine :: Int -> String -> [String]
-        breakLine _ [] = []
-        breakLine l s  = take l s : breakLine l (drop l s)
+        breakLine _ []      = []
+        breakLine l s
+            | length s <= l = [s]
+            | otherwise     =
+                case break isSpace $ reverse $ take l s of
+                     (_, []) -> take l s
+                              : breakLine l (drop l s)
+
+                     (c, ln) -> reverse (dropWhile isSpace ln)
+                              : breakLine l (reverse c ++ drop l s)
+
+
+
+-- | Ask the user to confirm something.
+askConfirm :: String -> WSEdit Bool
+askConfirm str = do
+    standby $ str ++ " [y/n] "
+
+    c  <- ask
+    ev <- liftIO $ nextEvent $ vtyObj c
+
+    case ev of
+         EvKey (KChar k) _
+            | toLower k == 'y' -> return True
+            | toLower k == 'n' -> return False
+         _                     -> askConfirm str

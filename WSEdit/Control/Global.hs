@@ -42,8 +42,8 @@ import System.IO                   ( IOMode (AppendMode, WriteMode)
 import Text.Show.Pretty            (ppShow)
 
 import WSEdit.Control.Autocomplete (dictAddRec)
-import WSEdit.Control.Base         ( alterState, fetchCursor, moveCursor
-                                   , refuseOnReadOnly, standby
+import WSEdit.Control.Base         ( alterState, askConfirm, fetchCursor
+                                   , moveCursor, refuseOnReadOnly, standby
                                    )
 import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
                                               , initJMarks, newlineMode
@@ -282,7 +282,7 @@ save = refuseOnReadOnly $ do
             True  -> do
                 s <- get
                 put $ s { fname = fname s ++ ".atomic" }
-                load False
+                _ <- load False
                 s' <- get
                 put s
                 if (on (==) (map snd . B.toList) (edLines s) (edLines s'))
@@ -319,7 +319,9 @@ save = refuseOnReadOnly $ do
 -- | Tries to load the text buffer from the file name in the editor state.
 --   Pass 'True' to make it display a loading screen (pun not entirely
 --   unintended) and rebuild the dictionary or 'False' to make it a raw load.
-load :: Bool -> WSEdit ()
+--   `load` returns `False` when the loading process was aborted. This will
+--   never occur for a raw load.
+load :: Bool -> WSEdit Bool
 load lS = alterState $ do
     when lS $ standby "Loading..."
 
@@ -337,58 +339,107 @@ load lS = alterState $ do
                       then liftIO $ readEncFile p'
                       else return (Just undefined, "")
 
-    when lS $ standby "Rebuilding hashes..."
+    let
+        l = linesPlus txt
+        nChrs = length txt
+        nLns  = length l
+        nLine = maximum $ map length l
 
-    l <- liftIO
-       $ evaluate
-       $ force
-       $ B.toFirst
-       $ fromMaybe (B.singleton (False, ""))
-       $ B.fromList
-       $ map (withFst (`elem` initJMarks c))
-       $ zip [1..]
-       $ linesPlus txt
 
-    put $ s
-        { edLines     = l
-        , fname       = p'
-        , cursorPos   = 1
-        , readOnly    = not (isJust mEnc && w && not (readOnly s))
-        , replaceTabs = if detectTabs s
-                           then '\t' `notElem` txt
-                           else replaceTabs s
-        }
 
-    when lS $ setStatus
-            $ case (b    , w    , mEnc   ) of
-                   (True , True , Just e ) -> "Loaded "
-                                           ++ show (length $ linesPlus txt)
-                                           ++ " lines of "
-                                           ++ e
-                                           ++ " text."
+    doLoad <- case () of
+        _ | not lS       -> return True
 
-                   (True , False, Just e ) -> "Warning: "
-                                           ++ e
-                                           ++ " file not writable, "
-                                           ++ "opening in read-only mode ..."
+        _ | nLns > 10000 ->
+           askConfirm
+               ( "The file you're about to load is very long ("
+              ++ show nLns
+              ++ " lines). WSEdit is not built for handling huge files, "
+              ++ "loading might take up to a few minutes and editing will be "
+              ++ "slow. Continue anyways?"
+               )
 
-                   (True , _    , Nothing) -> "Warning: unknown character "
-                                           ++ "encoding, opening raw..."
+        _ | nLine > 300 ->
+           askConfirm
+               ( "The file you're about to load contains very long lines ("
+              ++ show nLine
+              ++ " characters). WSEdit is not built for handling these, "
+              ++ "loading might take up to a few minutes and editing will be "
+              ++ "slow. Continue anyways?"
+               )
 
-                   (False, True , _      ) -> "Warning: file "
-                                           ++ p'
-                                           ++ " not found, creating on "
-                                           ++ "save ..."
+        _ | nChrs > 10000000 ->
+           askConfirm
+               ( "The file you're about to load is very large ("
+              ++ show nChrs
+              ++ " characters). WSEdit is not built for handling huge files, "
+              ++ "loading might take up to a few minutes and editing will be "
+              ++ "slow. Continue anyways?"
+               )
 
-                   (False, False, _      ) -> "Warning: cannot create file "
-                                           ++ p'
-                                           ++ " , check permissions and disk "
-                                           ++ "state."
+        _ -> return True
 
-    -- Move the cursor to where it should be placed.
-    uncurry moveCursor $ withPair dec dec $ loadPos s
+    if doLoad
+       then do
+            when lS $ standby "Rebuilding hashes..."
 
-    when lS $ dictAddRec
+
+            l' <- liftIO
+                $ evaluate
+                $ force
+                $ B.toFirst
+                $ fromMaybe (B.singleton (False, ""))
+                $ B.fromList
+                $ map (withFst (`elem` initJMarks c))
+                $  zip [1..] l
+
+            put $ s
+                { edLines     = l'
+                , fname       = p'
+                , cursorPos   = 1
+                , readOnly    = not (isJust mEnc && w && not (readOnly s))
+                , replaceTabs = if detectTabs s
+                                   then '\t' `notElem` txt
+                                   else replaceTabs s
+                }
+
+            when lS $ setStatus
+                    $ case (b    , w    , mEnc   ) of
+                           (True , True , Just e ) -> "Loaded "
+                                                   ++ show (nLns)
+                                                   ++ " lines of "
+                                                   ++ e
+                                                   ++ " text."
+
+                           (True , False, Just e ) -> "Warning: "
+                                                   ++ e
+                                                   ++ " file not writable, "
+                                                   ++ "opening in read-only "
+                                                   ++ "mode ..."
+
+                           (True , _    , Nothing) -> "Warning: unknown "
+                                                   ++ "character encoding, "
+                                                   ++ "opening raw..."
+
+                           (False, True , _      ) -> "Warning: file "
+                                                   ++ p'
+                                                   ++ " not found, creating on "
+                                                   ++ "save ..."
+
+                           (False, False, _      ) -> "Warning: cannot create "
+                                                   ++ "file "
+                                                   ++ p'
+                                                   ++ " , check permissions "
+                                                   ++ "and disk state."
+
+            -- Move the cursor to where it should be placed.
+            uncurry moveCursor $ withPair dec dec $ loadPos s
+
+            when lS $ dictAddRec
+
+            return True
+
+       else return False
 
     where
         dec :: Int -> Int

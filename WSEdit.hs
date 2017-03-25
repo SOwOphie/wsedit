@@ -80,13 +80,14 @@ start = do
                           (\e -> quitComplain $ "An I/O error occured while loading:\n\n"
                               ++ show e
                           )
-                   $ do
-                        load True
+                   ( load True
+                 >>= flip when (do
+                                    standby "Building initial rendering cache..."
+                                    rebuildAll Nothing
+                                    mainLoop
+                               )
+                   )
 
-                        standby "Building initial rendering cache..."
-                        rebuildAll Nothing
-
-            mainLoop
             drawExitFrame
 
 
