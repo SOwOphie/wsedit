@@ -1,0 +1,68 @@
+################################################################################
+#                                                                              #
+#      _                                                                _      #
+#    _(_)_                       Julia Files                          _(_)_    #
+#   (_) (_)                                                          (_) (_)   #
+#                                                                              #
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Indentation settings                                                         #
+*.jl
+    -ei 4
+    -ets
+#                                                                              #
+# Syntax highlighting                                                          #
+*.jl
+    -lcl #
+    -lcb #= =#
+    -lsc ' '
+    -lsm \"\"\" \"\"\"
+    -lsr \" \"
+    -lsr ` `
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.jl
+    -lk abstract
+    -lk baremodule
+    -lk begin
+    -lk bitstype
+    -lk break
+    -lk catch
+    -lk const
+    -lk continue
+    -lk do
+    -lk else
+    -lk elseif
+    -lk end
+    -lk export
+    -lk finally
+    -lk for
+    -lk function
+    -lk global
+    -lk if
+    -lk immutable
+    -lk import
+    -lk importall
+    -lk in
+    -lk isa
+    -lk let
+    -lk local
+    -lk macro
+    -lk module
+    -lk mutable
+    -lk quote
+    -lk return
+    -lk struct
+    -lk try
+    -lk type
+    -lk typealias
+    -lk using
+    -lk where
+    -lk while
+#                                                                              #
+################################################################################
