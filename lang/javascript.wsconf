@@ -1,0 +1,95 @@
+################################################################################
+#                                                                              #
+#      #   ####                                                      #   ####  #
+#      #  #                                                          #  #      #
+#      #   ###               WSConf Template Files                   #   ###   #
+#  #   #      #                                                  #   #      #  #
+#   ###   ####                                                    ###   ####   #
+#                                                                              #
+# by Felix Hirn (felix.hirn@wyvernscale.com)                                   #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.js
+	-lcl //
+	-lcb /* */
+	-lsr \" \"
+	-lsr ' '
+	-lsr / /
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.js
+	-lk abstract
+	-lk arguments
+	-lk await
+	-lk boolean
+	-lk break
+	-lk byte
+	-lk case
+	-lk catch
+	-lk char
+	-lk class
+	-lk const
+	-lk continue
+	-lk debugger
+	-lk default
+	-lk delete
+	-lk do
+	-lk double
+	-lk else
+	-lk enum
+	-lk eval
+	-lk export
+	-lk extends
+	-lk false
+	-lk final
+	-lk finally
+	-lk float
+	-lk for
+	-lk function
+	-lk goto
+	-lk if
+	-lk implements
+	-lk import
+	-lk in
+	-lk instanceof
+	-lk int
+	-lk interface
+	-lk let
+	-lk long
+	-lk native
+	-lk new
+	-lk null
+	-lk of
+	-lk package
+	-lk private
+	-lk protected
+	-lk public
+	-lk return
+	-lk short
+	-lk static
+	-lk super
+	-lk switch
+	-lk synchronized
+	-lk this
+	-lk throw
+	-lk throws
+	-lk transient
+	-lk true
+	-lk try
+	-lk typeof
+	-lk var
+	-lk void
+	-lk volatile
+	-lk while
+	-lk with
+	-lk yield
+#                                                                              #
+# Common synonyms                                                              #
+*.json: -mi file.js
+#                                                                              #
+################################################################################
