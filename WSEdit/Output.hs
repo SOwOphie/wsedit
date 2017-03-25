@@ -31,9 +31,10 @@ import Graphics.Vty             ( Attr
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
-                                , char, cropBottom, cropRight, emptyImage
-                                , horizCat, pad, picForImage, reverseVideo
-                                , string, translateX, update, vertCat, withStyle
+                                , char, cropBottom, cropRight, defAttr
+                                , emptyImage, horizCat, pad, picForImage
+                                , reverseVideo, string, translateX, update
+                                , vertCat, withStyle
                                 , (<|>), (<->)
                                 )
 import Numeric                  (showHex)
@@ -53,13 +54,17 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                           , readOnly, replaceTabs, scrollOffset
                                           , status
                                           )
-                                , HighlightMode (HNone, HSelected)
+                                , HighlightMode ( HError, HNone, HSelected
+                                                , HString
+                                                )
                                 , WSEdit
                                 )
 import WSEdit.Data.Algorithms   ( getCurrBracket, getCursor, getDisplayBounds
                                 , getOffset, getSelBounds
                                 )
-import WSEdit.Util              ( CharClass (Bracket, Unprintable, Whitesp)
+import WSEdit.Util              ( CharClass ( Bracket, Lower, Special
+                                            , Unprintable, Whitesp
+                                            )
                                 , charClass, combineAttrs, iff, lookupBy
                                 , padLeft, padRight
                                 )
@@ -362,40 +367,47 @@ makeFooter = do
                ++ "╩─"
                 )
           <-> (  string (dFrameFormat d)
-                (" " ++ show (B.length $ edLines s) ++ " │ ")
+                    (" " ++ show (B.length $ edLines s) ++ " │ ")
+             <|> (if replaceTabs s
+                     then string (charStyle Lower   d) "SPC"
+                     else string (charStyle Whitesp d) "TAB"
+                 )
+             <|> string (dFrameFormat d) " "
+             <|> (if overwrite s
+                     then string (hlStyle HError d) "OVR"
+                     else string (dFrameFormat   d) "INS"
+                 )
+             <|> string (dFrameFormat d) " "
+             <|> (if readOnly s
+                     then string (charStyle Special d) "R"
+                     else string (dFrameFormat      d) "W"
+                 )
+             <|> string (dFrameFormat d) " │ "
+             <|> string (dFrameFormat d) (fname s)
+             <|> (if changed s
+                     then string (hlStyle HString d) "*"
+                     else string (dFrameFormat    d) " "
+                 )
              <|> string (dFrameFormat d)
-                ( (if replaceTabs s
-                      then "SPC "
-                      else "TAB "
-                  )
-               ++ (if overwrite s
-                      then "OVR "
-                      else "INS "
-                  )
-               ++ (if readOnly s
-                      then "R "
-                      else "W "
-                  )
-               ++ "│ "
-                )
-             <|> string (dFrameFormat d)
-                ( fname s
-               ++ (if changed s
-                      then "*"
-                      else " "
-                  )
-               ++ if readOnly s
-                     then ""
-                     else ( case markPos s of
-                                 Nothing -> ""
-                                 Just  m -> show m
-                                         ++ " -> "
-                          )
-               ++ show (r, c)
-               ++ " "
-                )
+                 ( if readOnly s
+                      then ""
+                      else ( case markPos s of
+                                  Nothing -> ""
+                                  Just  m -> show m
+                                          ++ " -> "
+                           )
+                ++ show (r, c)
+                ++ " "
+                 )
              <|> string (dStatusFormat d) (padRight nCols ' ' $ status s)
               )
+
+    where
+        charStyle :: CharClass -> EdDesign -> Attr
+        charStyle c d = lookupJustDef defAttr c $ dCharStyles d
+
+        hlStyle :: HighlightMode -> EdDesign -> Attr
+        hlStyle m d = lookupJustDef defAttr m $ dHLStyles d
 
 
 
