@@ -180,7 +180,7 @@ Deactivate the `-db` switch.
   * Try `stack clean` or maybe `stack update`.
   * If that doesn't work, delete the `.stack-work` folder and try again.
 
-### `wsedit` destroys Unicode on `xterm`
+### `wsedit` destroys Unicode on `xterm` (sometimes)
 
 __Symptoms:__ After running `wsedit`, any unicode output by other programs (e.g.
 `tree`) will be garbled.
