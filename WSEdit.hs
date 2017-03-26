@@ -78,11 +78,12 @@ start = do
         -- | Possibly loads the file specified in `fname`, then runs the editor.
         exec :: Bool -> WSEdit ()
         exec b = do
-            when b $ flip catchEditor
-                          (\e -> quitComplain $ "An I/O error occured while loading:\n\n"
-                              ++ show e
-                          )
-                   ( load True
+            when b $ ( catchEditor (load True)
+                        (\e -> quitComplain ( "An I/O error occured while loading:\n\n"
+                                           ++ show e
+                                            )
+                            >> return False
+                        )
                  >>= flip when (do
                                     standby "Building initial rendering cache..."
                                     rebuildAll Nothing
@@ -102,7 +103,9 @@ mainLoop = do
     c <- ask
     s <- get
 
-    ev <- flip catchEditor (errHdlDraw >> return undefined) $ do
+    ev <- flip catchEditor (\e -> errHdlDraw e
+                               >> return (EvResize undefined undefined)
+                           ) $ do
         draw
         setStatus ""
 
@@ -148,9 +151,12 @@ mainLoop = do
             b <- changed <$> get
             if b
                then do
-                    standby $ "An error occured: " ++ show e
-                           ++ "\n\n"
-                           ++ "Dumping unsaved changes..."
+
+                    flip catchEditor (const $ return ())
+                        $ standby
+                        $ "An error occured: " ++ show e ++ "\n\n"
+                       ++ "Dumping unsaved changes..."
+
                     emergencySave
 
                     bail (Just comp) $ "An error occured: " ++ show e

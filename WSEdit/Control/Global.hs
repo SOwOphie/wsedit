@@ -1,4 +1,3 @@
-
 {-# LANGUAGE LambdaCase #-}
 
 module WSEdit.Control.Global
@@ -58,7 +57,8 @@ import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
                                    , WSEdit
                                    , runWSEdit, version
                                    )
-import WSEdit.Data.Algorithms      ( chopHist, mapPast, popHist, setStatus
+import WSEdit.Data.Algorithms      ( catchEditor, chopHist, mapPast, popHist
+                                   , setStatus, tryEditor
                                    )
 import WSEdit.Data.Pretty          (prettyEdConfig)
 import WSEdit.Output               (drawExitFrame)
@@ -89,8 +89,6 @@ simulateCrash = error "Simulated crash."
 --   the wrong format than a corrupted file in the right one.
 emergencySave :: WSEdit ()
 emergencySave = do
-    standby "Saving..."
-
     h <- liftIO $ getHomeDirectory
     s <- get
     c <- ask
@@ -116,29 +114,33 @@ bail :: Maybe String -> String -> WSEdit ()
 bail mayComp s = do
     c  <- ask
     st <- get
-    h  <- liftIO $ getHomeDirectory
 
-    standby $ unlinesPlus
-        [ s
-        , ""
-        , "Writing state dump to $HOME/CRASH-DUMP ..."
-        ]
+    r <- tryEditor $ do
+        h  <- liftIO $ getHomeDirectory
 
-    liftIO $ writeFile (h ++ "/CRASH-DUMP")
-           $ "WSEDIT " ++ version ++ " CRASH LOG\n"
-          ++ "Error message: " ++ (headDef "" $ lines s)
-                ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
-          ++ "\nLast recorded event: "
-                ++ fromMaybe "-" (fmap show $ lastEvent st)
-          ++ "\n\nEditor configuration:\n"
-          ++ indent (ppShow $ prettyEdConfig c)
-          ++ "\n\nEditor state:\n"
-          ++ indent ( ppShow
-                     $ mapPast (\hs -> hs { dict = empty })
-                     $ fromJustNote (fqn "bail")
-                     $ chopHist 10
-                     $ Just st
-                     )
+        flip catchEditor (const $ return ())
+            $ standby
+            $ unlinesPlus
+                [ s
+                , ""
+                , "Writing state dump to $HOME/CRASH-DUMP ..."
+                ]
+
+        liftIO $ writeFile (h ++ "/CRASH-DUMP")
+               $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+              ++ "Error message: " ++ (headDef "" $ lines s)
+                    ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
+              ++ "\nLast recorded event: "
+                    ++ fromMaybe "-" (fmap show $ lastEvent st)
+              ++ "\n\nEditor configuration:\n"
+              ++ indent (ppShow $ prettyEdConfig c)
+              ++ "\n\nEditor state:\n"
+              ++ indent ( ppShow
+                        $ mapPast (\hs -> hs { dict = empty })
+                        $ fromJustNote (fqn "bail")
+                        $ chopHist 10
+                        $ Just st
+                        )
 
     drawExitFrame
 
@@ -146,6 +148,11 @@ bail mayComp s = do
         shutdown $ vtyObj c
         putStrLn s
         putStrLn "A state dump is located at $HOME/CRASH-DUMP ."
+
+        case r of
+             Right _  -> return ()
+             Left err -> putStrLn $ "\nAdditionally, the exception handler crashed with this message:\n"
+                                 ++ show err
 
         exitFailure
 

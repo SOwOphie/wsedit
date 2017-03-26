@@ -25,6 +25,7 @@ import Graphics.Vty               ( Event (EvKey, EvResize)
                                   , Key (KChar)
                                   , nextEvent
                                   )
+import Safe                       (maximumDef)
 
 import WSEdit.Data                ( EdConfig (keymap, vtyObj)
                                   , EdState  ( badgeText, canComplete, continue
@@ -43,7 +44,7 @@ import WSEdit.Data.Algorithms     ( alter, getCursor, getOffset, setCursor
                                   , setStatus, setOffset, tryEditor
                                   )
 import WSEdit.Output              ( cursorOffScreen, draw, getViewportDimensions
-                                  , txtToVisPos, visToTxtPos
+                                  , stringWidth, txtToVisPos, visToTxtPos
                                   )
 import WSEdit.Renderer            (rebuildAll)
 import WSEdit.Util                (linesPlus, withPair)
@@ -86,12 +87,24 @@ alterState a = modify (\s -> s { canComplete = False })
 
 -- | Moves the viewport by the given amount of rows, columns.
 moveViewport :: Int -> Int -> WSEdit ()
-moveViewport r c =
+moveViewport r c = do
+    s <- get
+
+    (scrollRows, _) <- getOffset
+    (   txtRows, _) <- getViewportDimensions
+
+    let maxRow = subtract 1 $ B.length $ edLines s
+
+    maxCol <- fmap ((subtract 1) . maximumDef 2)
+            $ mapM (stringWidth 1 . snd)
+            $ B.sub scrollRows (scrollRows + txtRows - 1)
+            $ edLines s
+
     getOffset
         >>= setOffset
             . withPair
-                (max 0 . (+r))
-                (max 0 . (+c))
+                (max 0 . min maxRow . (+r))
+                (max 0 . min maxCol . (+c))
 
 
 
@@ -176,8 +189,7 @@ fetchCursor = refuseOnReadOnly $ do
 
 
 
--- | Display a message on the status bar until the next draw call. Restores the
---   original contents of the status bar before returning.
+-- | Display a message until the next draw call.
 standby :: String -> WSEdit ()
 standby str = do
     s      <- get
@@ -197,7 +209,9 @@ standby str = do
             , readOnly     = True
             , badgeText    = Nothing
             }
+
     draw
+
     put s
 
     where
