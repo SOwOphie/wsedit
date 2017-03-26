@@ -20,7 +20,8 @@ import Data.Char                   (isSpace)
 import Safe                        (fromJustNote)
 
 import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
-                                   , refuseOnReadOnly
+                                   , moveCursorHome, refuseOnReadOnly
+                                   , validateCursor
                                    )
 import WSEdit.Data                 ( WSEdit
                                    , EdConfig (tabWidth)
@@ -53,7 +54,7 @@ insert c = alterBuffer $ insertRaw [c]
 -- | Inserts a string at the cursor location, moving the cursor to the right.
 --   Low-level function that disregards undo functionality, read-only-ness, ...
 insertRaw :: String -> WSEdit ()
-insertRaw s = refuseOnReadOnly $ modify (ins s) >> moveCursor 0 0
+insertRaw s = refuseOnReadOnly $ modify (ins s) >> validateCursor
     where
         ins :: String -> EdState -> EdState
         ins s' st = st
@@ -179,7 +180,7 @@ smartHome = alterState $ do
          .  edLines
         <$> get
 
-    moveCursor 0 (-65535)
+    moveCursorHome
 
     when (cC /= pos) $ moveCursor 0 $ pos - 1
 
@@ -190,7 +191,6 @@ smartHome = alterState $ do
 smartNewLine :: WSEdit ()
 smartNewLine = alterBuffer $ do
     modify snl
-    moveCursor 0 (-65535)
     smartHome
 
     where
@@ -199,11 +199,13 @@ smartNewLine = alterBuffer $ do
             let
                 ln = B.pos $ edLines s
             in
-                s { edLines = B.insertLeft (False, takeWhile isSpace      (snd ln)
-                                                ++ drop (cursorPos s - 1) (snd ln)
-                                           )
-                            $ B.withCurr (withSnd $ take (cursorPos s - 1))
-                            $ edLines s
+                s { edLines   = B.insertLeft (False, takeWhile isSpace      (snd ln)
+                                                  ++ drop (cursorPos s - 1) (snd ln)
+                                             )
+                              $ B.withCurr (withSnd $ take (cursorPos s - 1))
+                              $ edLines s
+
+                  , cursorPos = 1
                   }
 
 
@@ -212,7 +214,7 @@ smartNewLine = alterBuffer $ do
 dumbNewLine :: WSEdit ()
 dumbNewLine = alterBuffer $ do
     modify nl
-    moveCursor 0 (-65535)
+    moveCursorHome
 
     where
         nl :: EdState -> EdState
@@ -222,7 +224,7 @@ dumbNewLine = alterBuffer $ do
             in
                 s { edLines = B.insertLeft (False, drop (cursorPos s - 1)
                                                  $ snd ln
-                                                 )
+                                           )
                             $ B.withCurr (withSnd $ take (cursorPos s - 1))
                             $ edLines s
                   }
@@ -241,7 +243,7 @@ cleanse = alterBuffer $ do
                     }
            )
 
-    moveCursor 0 0
+    validateCursor
 
     where
         trim :: String -> String

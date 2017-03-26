@@ -43,6 +43,7 @@ import Text.Show.Pretty            (ppShow)
 import WSEdit.Control.Autocomplete (dictAddRec)
 import WSEdit.Control.Base         ( alterState, askConfirm, fetchCursor
                                    , moveCursor, refuseOnReadOnly, standby
+                                   , validateCursor
                                    )
 import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
                                               , initJMarks, newlineMode
@@ -366,7 +367,7 @@ load lS = alterState $ do
               ++ "slow. Continue anyways?"
                )
 
-        _ | nLine > 300 ->
+        _ | nLine > 1000 ->
            askConfirm
                ( "The file you're about to load contains very long lines ("
               ++ show nLine
@@ -496,4 +497,4 @@ toggleReadOnly = alterState $ do
 undo :: WSEdit ()
 undo = refuseOnReadOnly
      $ alterState
-     $ popHist >> moveCursor 0 0
+     $ popHist >> validateCursor

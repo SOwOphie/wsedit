@@ -7,7 +7,7 @@ module WSEdit.Control.Marks
 
 import Control.Monad.RWS.Strict (get, modify)
 
-import WSEdit.Control.Base      (moveCursor, refuseOnReadOnly)
+import WSEdit.Control.Base      (moveCursor, moveCursorHome, refuseOnReadOnly)
 import WSEdit.Data              ( EdState (edLines, searchTerms)
                                 , WSEdit
                                 )
@@ -30,7 +30,8 @@ toggleJumpMark = refuseOnReadOnly
 -- | Advance to the next jump mark or search term.
 forwardToMark :: WSEdit ()
 forwardToMark = refuseOnReadOnly $ do
-    moveCursor 1 (-65535)
+    moveCursorHome
+    moveCursor 1 0
     s <- get
 
     let
@@ -48,7 +49,8 @@ forwardToMark = refuseOnReadOnly $ do
 -- | Go back to the previous jump mark or search term.
 backwardsToMark :: WSEdit ()
 backwardsToMark = refuseOnReadOnly $ do
-    moveCursor (-1) (-65535)
+    moveCursorHome
+    moveCursor (-1) 0
     s <- get
 
     let

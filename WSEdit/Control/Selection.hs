@@ -21,7 +21,7 @@ import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
 
 import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
-                                , refuseOnReadOnly
+                                , moveCursorHome, refuseOnReadOnly
                                 )
 import WSEdit.Data              ( EdConfig (tabWidth)
                                 , EdState (cursorPos, edLines, fullRebdReq
@@ -156,7 +156,7 @@ paste = alterBuffer $ do
                 }
 
             if length c > 1
-               then moveCursor 0 (-65535)
+               then moveCursorHome
                  >> moveCursor 0 (length $ last c)
 
                else moveCursor 0 $ length c1

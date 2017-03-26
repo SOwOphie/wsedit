@@ -5,7 +5,10 @@ module WSEdit.Control.Base
     , alterBuffer
     , alterState
     , moveViewport
+    , validateCursor
     , moveCursor
+    , moveCursorHome
+    , moveCursorEnd
     , fetchCursor
     , standby
     , askConfirm
@@ -40,8 +43,8 @@ import WSEdit.Data                ( EdConfig (keymap, vtyObj)
                                   , mkDefConfig
                                   , runIn
                                   )
-import WSEdit.Data.Algorithms     ( alter, getCursor, getOffset, setCursor
-                                  , setStatus, setOffset, tryEditor
+import WSEdit.Data.Algorithms     ( alter, currLineLen, getCursor, getOffset
+                                  , setCursor, setStatus, setOffset, tryEditor
                                   )
 import WSEdit.Output              ( cursorOffScreen, draw, getViewportDimensions
                                   , stringWidth, txtToVisPos, visToTxtPos
@@ -72,7 +75,7 @@ alterBuffer :: WSEdit () -> WSEdit ()
 alterBuffer a = refuseOnReadOnly
               $ alterState
               $ modify (\s -> s { wantsPos = Nothing })
-             >> moveCursor 0 0
+             >> validateCursor
              >> alter
              >> a
 
@@ -107,6 +110,14 @@ moveViewport r c = do
                 (max 0 . min maxCol . (+c))
 
 
+
+
+
+-- | Move the cursor to a legal position.
+validateCursor :: WSEdit ()
+validateCursor = do
+    lineLen <- currLineLen
+    modify $ \st -> st { cursorPos = max 1 $ min (lineLen + 1) $ cursorPos st }
 
 
 
@@ -158,20 +169,53 @@ moveCursor r c = alterState $ do
         -- | Horizontal portion of the movement
         moveH :: Int -> WSEdit ()
         moveH n = do
+            s              <- get
             (currR, currC) <- getCursor
-            lns <- edLines <$> get
+            len            <- currLineLen
 
-            let currLn = snd $ B.pos lns
+            case () of
+                 _ | currC + n > len + 1 ->
+                    if currR < B.length (edLines s)
+                       then do
+                                moveCursor   1 0
+                                moveCursorHome
+                                moveCursor   0 (currC + n - len - 2)
+                       else moveCursorEnd
 
-            setCursor (currR
-                      , min (length currLn + 1)
-                      $ max 1
-                      $ currC + n
-                      )
+                   | currC + n < 1       ->
+                    if currR > 1
+                       then do
+                                moveCursor (-1) 0
+                                moveCursorEnd
+                                moveCursor   0  (currC + n         )
+                       else moveCursorHome
+
+                   | otherwise
+                    -> setCursor ( currR
+                                 , currC + n
+                                 )
 
             -- Since this function will not be called for purely vertical
             -- motions, we can safely discard the target cursor position here.
-            modify (\s -> s { wantsPos = Nothing })
+            modify (\st -> st { wantsPos = Nothing })
+
+
+
+-- | Moves the cursor to the first column using `moveCursor`.
+moveCursorHome :: WSEdit ()
+moveCursorHome = do
+    (_, c) <- getCursor
+    moveCursor 0 $ 1 - c
+
+
+
+-- | Moves the cursor to the last column using `moveCursor`.
+moveCursorEnd :: WSEdit ()
+moveCursorEnd = do
+    (_, c) <- getCursor
+    l      <- currLineLen
+
+    moveCursor 0 $ l - c + 1
 
 
 
@@ -182,7 +226,7 @@ fetchCursor = refuseOnReadOnly $ do
     (r, _) <- getViewportDimensions
 
     put $ s { cursorPos = 1
-            , edLines = B.toFirst $ edLines s
+            , edLines   = B.toFirst $ edLines s
             }
 
     moveCursor (fst (scrollOffset s) + (r `div` 2)) 0

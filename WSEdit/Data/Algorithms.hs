@@ -23,6 +23,7 @@ module WSEdit.Data.Algorithms
     , catchEditor
     , tryEditor
     , fileMatch
+    , currLineLen
     ) where
 
 
@@ -355,3 +356,15 @@ fileMatch match file =
 
                              else s1 `isPrefixOf` absPath file
                                && s2 `isSuffixOf` absPath file
+
+
+
+
+
+-- | Returns the length of the current line.
+currLineLen :: WSEdit Int
+currLineLen =  length
+            .  snd
+            .  B.pos
+            .  edLines
+           <$> get

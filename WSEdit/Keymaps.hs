@@ -11,8 +11,8 @@ import Graphics.Vty   ( Event (EvKey)
                       )
 
 import WSEdit.Control.Autocomplete (completeOr)
-import WSEdit.Control.Base         ( fetchCursor, moveCursor, moveViewport
-                                   , showText
+import WSEdit.Control.Base         ( fetchCursor, moveCursor, moveCursorEnd
+                                   , moveViewport, showText
                                    )
 import WSEdit.Control.Global       ( forceQuit, quit, save, simulateCrash
                                    , toggleInsOvr, toggleReadOnly, toggleTabRepl
@@ -151,7 +151,7 @@ defaultKM =
              )
            )
     , Just ( EvKey KEnd []
-           , ( moveCursor 0 65535 >> clearMark
+           , ( moveCursorEnd >> clearMark
              , "Move Cursor to the end of the line."
              )
            )
@@ -187,7 +187,7 @@ defaultKM =
              )
            )
     , Just ( EvKey KEnd [MShift]
-           , ( initMark >> moveCursor 0 65535
+           , ( initMark >> moveCursorEnd
              , "Move Cursor to the end of the line, selecting text."
              )
            )
