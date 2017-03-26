@@ -1,0 +1,83 @@
+################################################################################
+#                                                                              #
+#     ### #                                                          ### #     #
+#   ###  # # #                                                     ###  # # #  #
+#  ########  #               Ruby/Crystal Files                   ########  #  #
+#   #####    #                                                     #####    #  #
+#     ## # # #                                                       ## # # #  #
+#                                                                              #
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Indentation settings                                                         #
+*.rb
+    -ei 2
+    -ets
+#                                                                              #
+# Syntax highlighting                                                          #
+*.rb
+    -lcl #
+    -lcb =begin =end
+    -lsr \" \"
+    -lsr ' '
+    -lsr ` `
+    -lsr %! !
+    -lsr %q! !
+    -lsr %Q( )
+    -lsr %x{ }
+    -lsr %r/ /
+    -lsr %r| |
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.rb
+    -lk __ENCODING__
+    -lk __LINE__
+    -lk __FILE__
+    -lk BEGIN
+    -lk END
+    -lk alias
+    -lk and
+    -lk begin
+    -lk break
+    -lk case
+    -lk class
+    -lk def
+    -lk defined?
+    -lk do
+    -lk else
+    -lk elsif
+    -lk end
+    -lk ensure
+    -lk false
+    -lk for
+    -lk if
+    -lk in
+    -lk module
+    -lk next
+    -lk nil
+    -lk not
+    -lk or
+    -lk raise
+    -lk redo
+    -lk rescue
+    -lk retry
+    -lk return
+    -lk self
+    -lk super
+    -lk then
+    -lk true
+    -lk undef
+    -lk unless
+    -lk until
+    -lk when
+    -lk while
+    -lk yield
+#                                                                              #
+# Common synonyms                                                              #
+*.cr: -mi file.rb
+#                                                                              #
+################################################################################
