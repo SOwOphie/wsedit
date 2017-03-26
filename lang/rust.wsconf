@@ -1,0 +1,83 @@
+################################################################################
+#                                                                              #
+#   #######                                                       #######      #
+#    ##   ##                                                       ##   ##     #
+#    ######                      Rust Files                        ######      #
+#    ##  ##  #                                                     ##  ##  #   #
+#   ####  ####                                                    ####  ####   #
+#                                                                              #
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Indentation settings                                                         #
+*.rs
+    -ei 4
+    -ets
+#                                                                              #
+# Syntax highlighting                                                          #
+*.rs
+    -lcl //
+    -lcb /* */
+    -lsr \" \"
+    -lsc ' '
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.rs
+    -lk abstract
+    -lk alignof
+    -lk as
+    -lk become
+    -lk box
+    -lk break
+    -lk const
+    -lk continue
+    -lk crate
+    -lk do
+    -lk else
+    -lk enum
+    -lk extern
+    -lk false
+    -lk final
+    -lk fn
+    -lk for
+    -lk if
+    -lk impl
+    -lk in
+    -lk let
+    -lk loop
+    -lk macro
+    -lk match
+    -lk mod
+    -lk move
+    -lk mut
+    -lk offsetof
+    -lk override
+    -lk priv
+    -lk proc
+    -lk pub
+    -lk pure
+    -lk ref
+    -lk return
+    -lk Self
+    -lk self
+    -lk sizeof
+    -lk static
+    -lk struct
+    -lk super
+    -lk trait
+    -lk true
+    -lk type
+    -lk typeof
+    -lk unsafe
+    -lk unsized
+    -lk use
+    -lk virtual
+    -lk where
+    -lk while
+    -lk yield
+#                                                                              #
+################################################################################
