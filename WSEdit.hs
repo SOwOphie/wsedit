@@ -11,7 +11,7 @@ import Data.Default                (def)
 import Data.Maybe                  (catMaybes)
 import Graphics.Vty                ( Event (EvKey, EvResize)
                                    , Key (KChar)
-                                   , mkVty, nextEvent, shutdown
+                                   , defaultConfig, mkVty, nextEvent, shutdown
                                    )
 import System.IO                   (mkTextEncoding)
 
@@ -49,7 +49,7 @@ fqn = ("WSEdit." ++)
 start :: IO ()
 start = do
     -- initialize vty
-    v <- mkVty def
+    v <- mkVty defaultConfig
 
     -- create the configuration object
     let conf = mkDefConfig v defaultKM

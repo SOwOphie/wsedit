@@ -20,7 +20,6 @@ import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get)
 import Data.Char                (ord)
-import Data.Default             (def)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
@@ -111,8 +110,8 @@ charRep br hl pos n '\t' = do
                  (flip combineAttrs currSty)
            $ iff br (combineAttrs $ dBrMod d)
            $ case hl of
-                  HSelected -> lookupJustDef def HSelected $ dHLStyles   d
-                  _         -> lookupJustDef def Whitesp   $ dCharStyles d
+                  HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
+                  _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
            , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
            )
 
@@ -124,7 +123,7 @@ charRep br hl pos _ ' ' = do
     return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
                  (flip combineAttrs $ dCurrLnMod d)
            $ iff br (combineAttrs $ dBrMod d)
-           $ lookupJustDef def hl (dHLStyles d)
+           $ lookupJustDef defAttr hl (dHLStyles d)
            , " "
            )
 
@@ -137,7 +136,7 @@ charRep br hl pos _ ch = do
                  (flip combineAttrs $ dCurrLnMod d)
            $ iff br (combineAttrs $ dBrMod d)
            $ lookupJustDef
-                (lookupJustDef def (charClass ch) (dCharStyles d))
+                (lookupJustDef defAttr (charClass ch) (dCharStyles d))
                 hl
                     (dHLStyles d)
            , if charClass ch == Unprintable
@@ -452,10 +451,10 @@ makeTextFrame = do
                           (_                    , True) -> (char (dJumpMarkFmt d) '•' <|>)
 
                           (Just ((x, _), (y, _)), _   )
-                            | x == l && l == y -> (char (                            dLineNoFormat d) ' ' <|>)
-                            | x == l           -> (char (lookupJustDef def Bracket $ dCharStyles   d) '┌' <|>)
-                            |           l == y -> (char (lookupJustDef def Bracket $ dCharStyles   d) '└' <|>)
-                            | x <  l && l <  y -> (char (lookupJustDef def Bracket $ dCharStyles   d) '│' <|>)
+                            | x == l && l == y -> (char (                                dLineNoFormat d) ' ' <|>)
+                            | x == l           -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '┌' <|>)
+                            |           l == y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '└' <|>)
+                            | x <  l && l <  y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '│' <|>)
 
                           _ -> (char (dLineNoFormat d) ' ' <|>)
                     )
@@ -464,7 +463,7 @@ makeTextFrame = do
                     $ (iff (not $ drawBg c)
                            (<|> char ( iff (l == cR && not (readOnly s))
                                            (combineAttrs $ dCurrLnMod d)
-                                     $ lookupJustDef def Whitesp
+                                     $ lookupJustDef defAttr Whitesp
                                      $ dCharStyles d
                                      ) (dBGChar d)
                            )
@@ -638,4 +637,4 @@ drawExitFrame :: WSEdit ()
 drawExitFrame = do
     v <- vtyObj <$> ask
 
-    liftIO $ update v $ picForImage $ char def ' '
+    liftIO $ update v $ picForImage $ char defAttr ' '
