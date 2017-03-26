@@ -77,7 +77,7 @@ need your help to test some things for me.
     copying everything or symlinking the directory from the repo is fine too.
 6.  Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
-    Most importantly: press `Ctrl-Q` to quit.
+    Alternatively, you can view the keybinds with `F1`.
 
 #### "I'm new, please be gentle"
 
@@ -112,8 +112,7 @@ the `Troubleshooting` section further down below and see if it helps.
     yourself, take a look at `lang/README.md` for instructions.
 10. Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
-    Most importantly: press `Ctrl-Q` to quit, or `Ctrl-Alt-Q` to quit discarding
-    all changes.
+    Alternatively, you can view the keybinds with `F1`.
 
 
 ## Bugs / Crashes and how to report them properly

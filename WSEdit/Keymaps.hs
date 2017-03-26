@@ -5,13 +5,15 @@ module WSEdit.Keymaps
 
 import Graphics.Vty   ( Event (EvKey)
                       , Key ( KBackTab, KBS, KChar, KDel, KDown, KEnd, KEnter
-                            , KEsc, KHome, KIns, KLeft, KRight, KUp
+                            , KEsc, KFun, KHome, KIns, KLeft, KRight, KUp
                             )
                       , Modifier (MCtrl, MMeta, MShift)
                       )
 
 import WSEdit.Control.Autocomplete (completeOr)
-import WSEdit.Control.Base         (fetchCursor, moveCursor, moveViewport)
+import WSEdit.Control.Base         ( fetchCursor, moveCursor, moveViewport
+                                   , showText
+                                   )
 import WSEdit.Control.Global       ( forceQuit, quit, save, simulateCrash
                                    , toggleInsOvr, toggleReadOnly, toggleTabRepl
                                    , undo
@@ -28,13 +30,20 @@ import WSEdit.Control.Text         ( cleanse, delLeft, delRight, insertTab
                                    )
 import WSEdit.Data                 (Keymap)
 import WSEdit.Data.Algorithms      (clearMark)
+import WSEdit.Help                 (keymapHelp)
 
 
 
 -- | Default keymap used.
 defaultKM :: Keymap
 defaultKM =
-    [ Just ( EvKey (KChar 'u') [MCtrl]
+    [ Just ( EvKey (KFun  1  ) []
+           , ( showText (keymapHelp defaultKM) helpKM
+             , "Show this help."
+             )
+           )
+    , Nothing
+    , Just ( EvKey (KChar 'u') [MCtrl]
            , ( moveViewport (-10) 0
              , "Move Viewport up 10 lines."
              )
@@ -245,7 +254,7 @@ defaultKM =
              , "Increase the indentation of the current selection OR apply autocomplete OR insert a tab."
              )
            )
-    , Just ( EvKey (KChar '\t') [MMeta]
+    , Just ( EvKey (KChar 't') [MMeta, MCtrl]
            , ( toggleTabRepl
              , "Toggle tab replacement (tabs/spaces)."
              )
@@ -302,6 +311,146 @@ defaultKM =
              )
            )
     , Nothing
+    , Just ( EvKey (KChar 'q') [MCtrl]
+           , ( quit
+             , "Quit."
+             )
+           )
+    , Just ( EvKey (KChar 'q') [MMeta, MCtrl]
+           , ( forceQuit
+             , "Quit, even if unsaved changes are present."
+             )
+           )
+    , Just ( EvKey (KChar '.') [MMeta]
+           , ( simulateCrash
+             , "Crash the editor and create a state dump."
+             )
+           )
+    ]
+
+
+
+-- | Keymap for the help screen.
+
+helpKM :: Keymap
+helpKM =
+    [ Just ( EvKey (KChar 'u') [MCtrl]
+           , ( moveViewport (-10) 0
+             , "Move Viewport up 10 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'd') [MCtrl]
+           , ( moveViewport 10 0
+             , "Move Viewport down 10 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'l') [MCtrl]
+           , ( moveViewport 0 (-10)
+             , "Move Viewport left 10 columns."
+             )
+           )
+    , Just ( EvKey (KChar 'r') [MCtrl]
+           , ( moveViewport 0 10
+             , "Move Viewport right 10 columns."
+             )
+           )
+    , Just ( EvKey (KChar 'u') [MMeta]
+           , ( moveViewport (-100) 0
+             , "Move Viewport up 100 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'd') [MMeta]
+           , ( moveViewport 100 0
+             , "Move Viewport down 100 lines."
+             )
+           )
+    , Just ( EvKey (KChar 'l') [MMeta]
+           , ( moveViewport 0 (-100)
+             , "Move Viewport left 100 columns."
+             )
+           )
+    , Just ( EvKey (KChar 'r') [MMeta]
+           , ( moveViewport 0 10
+             , "Move Viewport right 100 columns."
+             )
+           )
+    , Nothing
+    , Just ( EvKey KUp []
+           , ( moveCursor (-1) 0 >> clearMark
+             , "Move Cursor up 1 line."
+             )
+           )
+    , Just ( EvKey KDown []
+           , ( moveCursor 1 0 >> clearMark
+             , "Move Cursor down 1 line."
+             )
+           )
+    , Just ( EvKey KLeft []
+           , ( moveCursor 0 (-1) >> clearMark
+             , "Move Cursor left 1 column."
+             )
+           )
+    , Just ( EvKey KRight []
+           , ( moveCursor 0 1 >> clearMark
+             , "Move Cursor right 1 column."
+             )
+           )
+    , Just ( EvKey KUp [MCtrl]
+           , ( moveCursor (-10) 0 >> clearMark
+             , "Move Cursor up 10 lines."
+             )
+           )
+    , Just ( EvKey KDown [MCtrl]
+           , ( moveCursor 10 0 >> clearMark
+             , "Move Cursor down 10 lines."
+             )
+           )
+    , Just ( EvKey KLeft [MCtrl]
+           , ( moveCursor 0 (-10) >> clearMark
+             , "Move Cursor left 10 columns."
+             )
+           )
+    , Just ( EvKey KRight [MCtrl]
+           , ( moveCursor 0 10 >> clearMark
+             , "Move Cursor right 10 columns."
+             )
+           )
+    , Just ( EvKey KUp [MMeta]
+           , ( moveCursor (-100) 0 >> clearMark
+             , "Move Cursor up 100 lines."
+             )
+           )
+    , Just ( EvKey KDown [MMeta]
+           , ( moveCursor 100 0 >> clearMark
+             , "Move Cursor down 100 lines."
+             )
+           )
+    , Just ( EvKey KLeft [MMeta]
+           , ( moveCursor 0 (-100) >> clearMark
+             , "Move Cursor left 100 columns."
+             )
+           )
+    , Just ( EvKey KRight [MMeta]
+           , ( moveCursor 0 100 >> clearMark
+             , "Move Cursor right 100 columns."
+             )
+           )
+    , Nothing
+    , Just ( EvKey (KFun 1) []
+           , ( quit
+             , "Quit."
+             )
+           )
+    , Just ( EvKey (KEsc) []
+           , ( quit
+             , "Quit."
+             )
+           )
+    , Just ( EvKey (KChar 'q') []
+           , ( quit
+             , "Quit."
+             )
+           )
     , Just ( EvKey (KChar 'q') [MCtrl]
            , ( quit
              , "Quit."

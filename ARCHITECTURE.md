@@ -29,7 +29,6 @@ The file tree looks somewhat like this:
             Marks.hs
             Selection.hs
             Text.hs
-        Control.hs
         Data/
             Algorithms.hs
             Pretty.hs
@@ -80,11 +79,10 @@ Now that we've covered all the boring boilerplate, let's get to the juicy part!
      [PointedList](http://hackage.haskell.org/package/pointedlist)s, but with
      some additional features to improve efficiency for our use case.
 
-   * __WSEdit/Control.hs__: Aggregator for its sub-modules, contains no actual
-     code. These modules define the handler functions used mostly in
-     `WSEdit/Keymaps.hs`, but also in some other places, as well as some common
-     building blocks for handler functions. Corresponds to the __Controller__
-     part of the MVC design pattern.
+   * __WSEdit/Control/__: These modules define the handler functions used mostly
+     in `WSEdit/Keymaps.hs`, but also in some other places, as well as some
+     common building blocks for handler functions. Corresponds to the
+     __Controller__ part of the MVC design pattern.
 
      * __WSEdit/Control/Autocomplete.hs__: Contains everything related to tab
 

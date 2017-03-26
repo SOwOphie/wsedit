@@ -14,7 +14,7 @@ import Data.Maybe         (catMaybes)
 import Data.Ord           (Down (Down))
 import Graphics.Vty       ( Button (BLeft, BMiddle, BRight)
                           , Event (EvKey, EvMouseDown)
-                          , Key (KBS, KChar, KFun)
+                          , Key (KBackTab, KBS, KChar, KFun)
                           , Modifier (MCtrl, MMeta, MShift)
                           )
 import Safe               (lastDef, maximumNote)
@@ -90,18 +90,21 @@ keymapHelp km =
                               $ catMaybes $ prettyKeymap km
                               )
     in
-        "Dumping keymap (Meta = Alt on most systems):\n\n"
-            ++ renderText 80
-               ( map (uncurry (++))
-               $ concatMap (\case
-                    Nothing     -> [("",""), ("","")]
-                    Just (e, s) ->
-                        zip ( padRight wdt ' ' (showEv e)
-                            : repeat (replicate wdt ' ')
-                            ) $ chunkWords (80 - wdt) s
-                           )
-               $ prettyKeymap km
-               )
+        "Some terminals are a bit weird when it comes to telling Meta-<something> and\n"
+     ++ "Ctrl-Meta-<something> apart. If one doesn't work, try the other. If none work,\n"
+     ++ "please open an issue on GitHub and don't forget to add which terminal emulator\n"
+     ++ "you're using.\n\n"
+     ++ renderText 80
+        ( map (uncurry (++))
+        $ concatMap (\case
+            Nothing     -> [("",""), ("","")]
+            Just (e, s) ->
+                zip ( padRight wdt ' ' (showEv e)
+                    : repeat (replicate wdt ' ')
+                    ) $ chunkWords (80 - wdt) s
+                   )
+        $ prettyKeymap km
+        )
 
     where
         showEv :: Event -> String
@@ -121,6 +124,7 @@ keymapHelp km =
         showKey (KChar '\t') = "Tab"
         showKey (KChar  c  ) = [toUpper c]
         showKey  KBS         = "Backspace"
+        showKey  KBackTab    = "Shift-Tab"
         showKey (KFun   n  ) = 'F' : show n
         showKey  k           = drop 1 $ show k
 

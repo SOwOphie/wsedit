@@ -1,5 +1,5 @@
 name:          wsedit
-version:       1.2.1.4
+version:       1.2.1.5
 synopsis:      A simple terminal source code editor.
 description:
 homepage:      https://github.com/SirBoonami/wsedit
@@ -21,7 +21,6 @@ library
     WSEdit.Arguments.Data,
     WSEdit.Arguments.Parser,
     WSEdit.Buffer,
-    WSEdit.Control,
     WSEdit.Control.Autocomplete,
     WSEdit.Control.Base,
     WSEdit.Control.Global,
@@ -45,6 +44,7 @@ library
     data-default     >= 0.5.3  && < 1,
     deepseq          >= 1.2.0  && < 2,
     directory        >= 1.2.6  && < 2,
+    either           >= 4.4.1  && < 5,
     filepath         >= 1.4.1  && < 2,
     hashable         >= 1.2.4  && < 2,
     Hclip            >= 3      && < 5,

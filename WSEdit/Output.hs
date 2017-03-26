@@ -399,7 +399,10 @@ makeFooter = do
                 ++ show (r, c)
                 ++ " "
                  )
-             <|> string (dStatusFormat d) (padRight nCols ' ' $ status s)
+             <|> string (dStatusFormat d) ( padRight nCols ' '
+                                          $ filter (/= '\n')
+                                          $ status s
+                                          )
               )
 
     where

@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module WSEdit.Control.Base
     ( refuseOnReadOnly
     , alterBuffer
@@ -7,35 +9,44 @@ module WSEdit.Control.Base
     , fetchCursor
     , standby
     , askConfirm
+    , showText
     ) where
 
 
-import Control.Monad            (unless)
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.Char                (isSpace, toLower)
-import Data.Maybe               (fromMaybe)
-import Graphics.Vty             ( Event (EvKey)
-                                , Key (KChar)
-                                , nextEvent
-                                )
+import Control.Exception          (SomeException)
+import Control.Monad              (unless, when)
+import Control.Monad.IO.Class     (liftIO)
+import Control.Monad.RWS.Strict   (ask, get, modify, put)
+import Control.Monad.Trans.Either (EitherT (EitherT, runEitherT))
+import Data.Char                  (isSpace, toLower)
+import Data.Default               (def)
+import Data.Maybe                 (catMaybes, fromMaybe)
+import Graphics.Vty               ( Event (EvKey, EvResize)
+                                  , Key (KChar)
+                                  , nextEvent
+                                  )
 
-import WSEdit.Data              ( EdConfig (vtyObj)
-                                , EdState  ( badgeText, canComplete, cursorPos
-                                           , edLines, rangeCache, readOnly
-                                           , scrollOffset, wantsPos
-                                           )
-                                , FmtParserState (PNothing)
-                                , HighlightMode (HSearch)
-                                , WSEdit
-                                )
-import WSEdit.Data.Algorithms   ( alter, getCursor, getOffset, setCursor
-                                , setStatus, setOffset
-                                )
-import WSEdit.Output            ( cursorOffScreen, draw, getViewportDimensions
-                                , txtToVisPos, visToTxtPos
-                                )
-import WSEdit.Util              (linesPlus, withPair)
+import WSEdit.Data                ( EdConfig (keymap, vtyObj)
+                                  , EdState  ( badgeText, canComplete, continue
+                                             , cursorPos, edLines, rangeCache
+                                             , readOnly, scrollOffset, status
+                                             , wantsPos
+                                             )
+                                  , FmtParserState (PNothing)
+                                  , HighlightMode (HSearch)
+                                  , Keymap
+                                  , WSEdit
+                                  , mkDefConfig
+                                  , runIn
+                                  )
+import WSEdit.Data.Algorithms     ( alter, getCursor, getOffset, setCursor
+                                  , setStatus, setOffset, tryEditor
+                                  )
+import WSEdit.Output              ( cursorOffScreen, draw, getViewportDimensions
+                                  , txtToVisPos, visToTxtPos
+                                  )
+import WSEdit.Renderer            (rebuildAll)
+import WSEdit.Util                (linesPlus, withPair)
 
 import qualified WSEdit.Buffer as B
 
@@ -220,3 +231,52 @@ askConfirm str = do
             | toLower k == 'y' -> return True
             | toLower k == 'n' -> return False
          _                     -> askConfirm str
+
+
+
+-- | Switch to a text in read-only mode. This function re-implements a reduced
+--   version of the main loop to avoid having to deal with circular imports.
+showText :: String -> Keymap -> WSEdit ()
+showText s k = do
+    c <- ask
+    runIn ( mkDefConfig (vtyObj c) k
+          , def { edLines  = B.toFirst
+                           $ fromMaybe (B.singleton (False, ""))
+                           $ B.fromList
+                           $ zip (repeat False)
+                           $ linesPlus s
+
+                , readOnly = True
+                }
+          ) (rebuildAll Nothing >> runEitherT loop)
+        >>= \case
+            Right _ -> return ()
+            Left  e -> setStatus (show e)
+
+    where
+        loop :: EitherT SomeException WSEdit ()
+        loop = do
+            EitherT $ tryEditor $ do
+                c <- ask
+                st <- get
+
+                draw
+                setStatus ""
+
+                ev <- liftIO $ nextEvent $ vtyObj c
+
+
+                maybe (case ev of
+                            EvResize _ _       -> setStatus $ status st
+                            _                  -> setStatus $ "Event not bound: "
+                                                           ++ show ev
+                      )
+                      fst
+                      $ lookup ev
+                      $ catMaybes
+                      $ keymap c
+
+
+                rebuildAll $ Just st
+
+            continue <$> get >>= flip when loop

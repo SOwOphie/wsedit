@@ -3,35 +3,37 @@
 module WSEdit where
 
 
-import Control.Exception        (SomeException, try)
-import Control.Monad            (when)
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, runRWST)
-import Data.Default             (def)
-import Data.Maybe               (catMaybes)
-import Graphics.Vty             ( Event (EvKey, EvResize)
-                                , Key (KChar)
-                                , mkVty, nextEvent, shutdown
-                                )
-import System.IO                (mkTextEncoding)
+import Control.Exception           (SomeException, try)
+import Control.Monad               (when)
+import Control.Monad.IO.Class      (liftIO)
+import Control.Monad.RWS.Strict    (ask, get, modify, runRWST)
+import Data.Default                (def)
+import Data.Maybe                  (catMaybes)
+import Graphics.Vty                ( Event (EvKey, EvResize)
+                                   , Key (KChar)
+                                   , mkVty, nextEvent, shutdown
+                                   )
+import System.IO                   (mkTextEncoding)
 
-import WSEdit.Arguments         (parseArguments)
-import WSEdit.Control           ( bail, deleteSelection, emergencySave, insert
-                                , listAutocomplete, load, quitComplain, standby
-                                )
-import WSEdit.Data              ( EdConfig ( dumpEvents, encoding, keymap
-                                           , vtyObj
-                                           )
-                                , EdState ( changed, continue, exitMsg
-                                          , lastEvent, status
-                                          )
-                                , WSEdit
-                                , mkDefConfig, runWSEdit
-                                )
-import WSEdit.Data.Algorithms   (catchEditor, setStatus)
-import WSEdit.Keymaps           (defaultKM)
-import WSEdit.Renderer          (rebuildAll)
-import WSEdit.Output            (draw, drawExitFrame)
+import WSEdit.Arguments            (parseArguments)
+import WSEdit.Control.Autocomplete (listAutocomplete)
+import WSEdit.Control.Base         (standby)
+import WSEdit.Control.Global       (bail, emergencySave, load, quitComplain)
+import WSEdit.Control.Selection    (deleteSelection)
+import WSEdit.Control.Text         (insert)
+import WSEdit.Data                 ( EdConfig ( dumpEvents, encoding, keymap
+                                              , vtyObj
+                                              )
+                                   , EdState ( changed, continue, exitMsg
+                                             , lastEvent, status
+                                             )
+                                   , WSEdit
+                                   , mkDefConfig, runWSEdit
+                                   )
+import WSEdit.Data.Algorithms      (catchEditor, setStatus)
+import WSEdit.Keymaps              (defaultKM)
+import WSEdit.Renderer             (rebuildAll)
+import WSEdit.Output               (draw, drawExitFrame)
 
 
 
@@ -117,7 +119,7 @@ mainLoop = do
                                        >> insert k
                                        >> listAutocomplete
 
-                    EvResize _ _       -> return ()
+                    EvResize _ _       -> setStatus $ status s
                     _                  -> setStatus $ "Event not bound: "
                                                    ++ show ev
               )

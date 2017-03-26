@@ -24,7 +24,6 @@ than 30 minutes.
    * Try to draw some kind of ASCII-Art to represent the file type.
      * If the standard has a logo, take that.
      * If not, think of something (e.g. "C#" for C#).
-     * The convention is to use only the '#' character for drawing.
      * The resulting image should be 5 characters high and max. 20 characters
        wide.
    * Place your masterpiece at both sides of the header, two columns away from

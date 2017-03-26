@@ -21,6 +21,7 @@ module WSEdit.Data.Algorithms
     , getDisplayBounds
     , getCurrBracket
     , catchEditor
+    , tryEditor
     , fileMatch
     ) where
 
@@ -326,6 +327,14 @@ catchEditor a e = do
                         return (r, s')
     put s'
     return r
+
+
+
+
+
+-- | Lifted version of 'try' typed to 'SomeException'.
+tryEditor :: WSEdit a -> WSEdit (Either SomeException a)
+tryEditor a = catchEditor (Right <$> a) (return . Left)
 
 
 

@@ -21,6 +21,7 @@ module WSEdit.Data
     , brightTheme
     , WSEdit
     , runWSEdit
+    , runIn
     , Keymap
     , HighlightMode (..)
     , PathInfo (..)
@@ -29,6 +30,7 @@ module WSEdit.Data
     ) where
 
 
+import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (RWST, runRWST)
 import Data.Default             (Default (def))
 import Graphics.Vty             ( Attr
@@ -62,7 +64,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.1.4"
+version = "1.2.1.5"
 
 -- | Upstream URL.
 upstream :: String
@@ -613,12 +615,17 @@ brightTheme = EdDesign
 
 
 
--- | Editor monad. Reads an 'EdConfig', writes nothing, alters an 'EdState'.
+-- | Editor monad. Reads an `EdConfig`, writes nothing, alters an `EdState`.
 type WSEdit = RWST EdConfig () EdState IO
 
--- | Convenience shortcut to run 'WSEdit' actions in 'IO'.
+-- | Convenience shortcut to run `WSEdit` actions in `IO`.
 runWSEdit :: (EdConfig, EdState) -> WSEdit a -> IO a
 runWSEdit (c, s) a = runRWST a c s >>= \(r, _, _) -> return r
+
+-- | Run a `WSEdit` action in a different, isolated context. All changes made to
+--   `EdState` are discarded.
+runIn :: (EdConfig, EdState) -> WSEdit a -> WSEdit a
+runIn env = liftIO . runWSEdit env
 
 
 
