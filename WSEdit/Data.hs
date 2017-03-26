@@ -44,6 +44,7 @@ import Graphics.Vty             ( Attr
 import System.Directory         ( canonicalizePath
                                 , makeRelativeToCurrentDirectory
                                 )
+import System.FilePath          (normalise)
 import System.IO                (NewlineMode, universalNewlineMode)
 
 import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
@@ -61,7 +62,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.1.3"
+version = "1.2.1.4"
 
 -- | Upstream URL.
 upstream :: String
@@ -655,7 +656,7 @@ pathInfo path = do
 
     return PathInfo
         { absPath = a
-        , relPath = r
+        , relPath = normalise r
         }
 
 

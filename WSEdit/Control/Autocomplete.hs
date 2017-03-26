@@ -14,7 +14,7 @@ import Control.Monad.RWS.Strict (ask, get, modify, put)
 import Data.Char                (isSpace)
 import Data.List                (intercalate, isPrefixOf, stripPrefix)
 import Safe                     (lastDef)
-import System.FilePath          (splitPath)
+import System.FilePath          (splitPath, (</>))
 import System.Directory         ( doesDirectoryExist, doesFileExist
                                 , listDirectory
                                 )
@@ -120,8 +120,7 @@ dictAddRec = do
     unless (null $ buildDict s) $ dictAddRec' "."
 
     where
-        -- | Processes the files inside the given directory. First parameter is
-        --   the indentation depth to search at.
+        -- | Processes the files inside the given directory.
         dictAddRec' :: FilePath -> WSEdit ()
         dictAddRec' p =
             let
@@ -133,7 +132,7 @@ dictAddRec = do
 
                     forM_ l $ \p' -> do
                         -- Full file name
-                        let f = p ++ "/" ++ p'
+                        let f = p </> p'
 
                         isFile <- liftIO $ doesFileExist f
                         if isFile
