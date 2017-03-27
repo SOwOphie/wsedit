@@ -1,0 +1,62 @@
+################################################################################
+#                                                                              #
+#       #####                                                      #####       #
+#       #####                                                      #####       #
+#   #########....                                              #########....   #
+#  #######........             Python Files                   #######........  #
+#   ###..........                                              ###..........   #
+#       .....                                                      .....       #
+#       .....                                                      .....       #
+#                                                                              #
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.py
+    -lcl #
+    -lsr \" \"
+    -lsr ' '
+    -lsm \"\"\" \"\"\"
+    -lsm ''' '''
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.py
+    -lk False
+    -lk None
+    -lk True
+    -lk and
+    -lk as
+    -lk assert
+    -lk break
+    -lk class
+    -lk continue
+    -lk def
+    -lk del
+    -lk elif
+    -lk else
+    -lk except
+    -lk finally
+    -lk for
+    -lk from
+    -lk global
+    -lk if
+    -lk import
+    -lk in
+    -lk is
+    -lk lambda
+    -lk nonlocal
+    -lk not
+    -lk or
+    -lk pass
+    -lk raise
+    -lk return
+    -lk try
+    -lk while
+    -lk with
+    -lk yield
+#                                                                              #
+################################################################################
