@@ -1,0 +1,90 @@
+################################################################################
+#                                                                              #
+#     ##    ##                                                    ##    ##     #
+#   ##        ##                                                ##        ##   #
+#   #          #               Lisp/Scheme Files                #          #   #
+#   ##        ##                                                ##        ##   #
+#     ##    ##                                                    ##    ##     #
+#                                                                              #
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.lsp
+    -lcl ;
+    -lcb #| |#
+    -lsr \" \"
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.lsp
+    -lk #f
+    -lk #t
+    -lk apply
+    -lk and
+    -lk assoc
+    -lk assq
+    -lk assv
+    -lk begin
+    -lk boolean?
+    -lk caar
+    -lk cadr
+    -lk car
+    -lk case
+    -lk cdddar
+    -lk cdr
+    -lk cond
+    -lk cons
+    -lk define
+    -lk define-syntax
+    -lk delay
+    -lk do
+    -lk dynamic-wind
+    -lk else
+    -lk eq?
+    -lk equal?
+    -lk eqv?
+    -lk eval
+    -lk for-each
+    -lk if
+    -lk lambda
+    -lk let
+    -lk let*
+    -lk let-syntax
+    -lk letrec
+    -lk letrec-syntax
+    -lk list
+    -lk list->string
+    -lk list->vector
+    -lk list-ref
+    -lk list-tail
+    -lk list?
+    -lk map
+    -lk member
+    -lk memq
+    -lk memv
+    -lk not
+    -lk null?
+    -lk or
+    -lk pair?
+    -lk quasiquote
+    -lk quote
+    -lk set!
+    -lk set-car!
+    -lk set-cdr!
+    -lk string
+    -lk syntax-rules
+    -lk values
+    -lk vector
+    -lk vector->list
+    -lk vector-fill!
+    -lk vector-set!
+    -lk zero?
+#                                                                              #
+# Common synonyms                                                              #
+*.scm: -mi file.lsp
+#                                                                              #
+################################################################################
