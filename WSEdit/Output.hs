@@ -23,10 +23,13 @@ import Data.Char                (ord)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
-import Graphics.Vty             ( Attr
+import Graphics.Vty             ( Attr ( Attr, attrBackColor, attrForeColor
+                                       , attrStyle
+                                       )
                                 , Background (ClearBackground)
                                 , Cursor (Cursor, NoCursor)
                                 , Image
+                                , MaybeDefault (KeepCurrent)
                                 , Picture ( Picture, picBackground, picCursor
                                           , picLayers
                                           )
@@ -88,7 +91,25 @@ stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n' + 1) c) $ n - 1
 
 
 -- | Intermediate format for rendering.
-type Snippet = (Attr, String)
+data Snippet = Snippet
+    { sNominal :: Attr
+        -- | What it should look like.
+
+    , sStr     :: String
+        -- | Contained string.
+    }
+
+-- | Intermediate format for rendering.
+data CalcSnippet = CalcSnippet
+    { csNominal :: Attr
+        -- | What it should look like.
+
+    , csActual  :: Attr
+        -- | Optimized `Attr` carrying over attributes from the previous snippet, if possibe.
+
+    , csStr     :: String
+        -- | Contained string.
+    }
 
 
 -- | Returns the visual representation of a character at a given buffer position
@@ -106,43 +127,50 @@ charRep br hl pos n '\t' = do
         tW      = tabWidth conf
         extTab  = padLeft tW (dTabExt d) $ dTabStr d
 
-    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (flip combineAttrs currSty)
-           $ iff br (combineAttrs $ dBrMod d)
-           $ case hl of
-                  HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
-                  _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
-           , drop (length extTab - (tW - (n-1) `mod` tW)) extTab
-           )
+    return $ Snippet
+        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                         (flip combineAttrs currSty)
+                   $ iff br (combineAttrs $ dBrMod d)
+                   $ case hl of
+                          HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
+                          _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
+
+        , sStr     =  drop (length extTab - (tW - (n-1) `mod` tW)) extTab
+        }
 
 charRep br hl pos _ ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (flip combineAttrs $ dCurrLnMod d)
-           $ iff br (combineAttrs $ dBrMod d)
-           $ lookupJustDef defAttr hl (dHLStyles d)
-           , " "
-           )
+    return $ Snippet
+        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                         (flip combineAttrs $ dCurrLnMod d)
+                   $ iff br (combineAttrs $ dBrMod d)
+                   $ lookupJustDef defAttr hl
+                   $ dHLStyles d
+
+        , sStr     = " "
+        }
 
 charRep br hl pos _ ch = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
 
-    return ( iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                 (flip combineAttrs $ dCurrLnMod d)
-           $ iff br (combineAttrs $ dBrMod d)
-           $ lookupJustDef
-                (lookupJustDef defAttr (charClass ch) (dCharStyles d))
-                hl
+    return $ Snippet
+        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                         (flip combineAttrs $ dCurrLnMod d)
+                   $ iff br (combineAttrs $ dBrMod d)
+                   $ lookupJustDef
+                        (lookupJustDef defAttr (charClass ch) (dCharStyles d))
+                     hl
                     (dHLStyles d)
-           , if charClass ch == Unprintable
-                then "?#" ++ showHex (ord ch) ";"
-                else [ch]
-           )
+
+        , sStr     = if charClass ch == Unprintable
+                        then "?#" ++ showHex (ord ch) ";"
+                        else [ch]
+        }
 
 
 
@@ -169,23 +197,57 @@ lineRep lNo str = do
                     vPos
                     c
 
-            return (i:im, tPos + 1, vPos + length (snd i))
+            return (i:im, tPos + 1, vPos + length (sStr i))
 
     (r,_ ,_) <- foldM f ([], 1, 1) str
 
     return $ horizCat
-           $ map (uncurry string)
-           $ groupSnippet Nothing
+           $ map (\CalcSnippet { csActual = a, csStr = b } -> string a b)
+           $ calcSnippet Nothing
            $ reverse r
 
     where
-        groupSnippet :: Maybe Snippet -> [Snippet] -> [Snippet]
-        groupSnippet  Nothing      []             = []
-        groupSnippet (Just x     ) []             = [x]
-        groupSnippet  Nothing      (x       :xs ) = groupSnippet (Just x) xs
-        groupSnippet (Just (a, s)) ((xa, xs):xxs)
-            | a == xa   =          groupSnippet (Just (a , s ++ xs)) xxs
-            | otherwise = (a, s) : groupSnippet (Just (xa,      xs)) xxs
+        -- | Snippet combiner. The first argument is an accumulator for the
+        --   current snippet, the second is a list of snippets to combine.
+        calcSnippet :: Maybe CalcSnippet -> [Snippet] -> [CalcSnippet]
+        calcSnippet  Nothing      []             = []
+        calcSnippet (Just x     ) []             = [x]
+        calcSnippet  Nothing      (x       :xs ) =
+            calcSnippet (Just $ CalcSnippet { csNominal = sNominal x
+                                            , csActual  = sNominal x
+                                            , csStr     = sStr     x
+                                            }
+                        ) xs
+
+        calcSnippet (Just cs) (x:xs)
+            | csNominal cs == sNominal x =
+                calcSnippet (Just $ cs { csStr = csStr cs ++ sStr x }) xs
+
+            | otherwise                  =
+                cs : calcSnippet (Just $ CalcSnippet
+                                    { csNominal = sNominal x
+                                    , csActual  = Attr
+                                        { attrStyle     = tryPreserve
+                                            (attrStyle     $ csNominal cs)
+                                            (attrStyle     $  sNominal x )
+
+                                        , attrForeColor = tryPreserve
+                                            (attrForeColor $ csNominal cs)
+                                            (attrForeColor $  sNominal x )
+
+                                        , attrBackColor = tryPreserve
+                                            (attrBackColor $ csNominal cs)
+                                            (attrBackColor $  sNominal x )
+                                        }
+                                    , csStr     = sStr x
+                                    }
+                                 ) xs
+
+
+        tryPreserve :: (Eq a) => MaybeDefault a -> MaybeDefault a -> MaybeDefault a
+        tryPreserve x y | x == y    = KeepCurrent
+                        | otherwise = y
+
 
         inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
         inBracketHL ((a, b), (c, d)) (x, y) = (x, y) `elem` [(a, b), (c, d)]
