@@ -153,10 +153,10 @@ configOption = (choice
     , langCommBlkDel
     , langCommLineAdd
     , langCommLineDel
-    , langEscOSet
-    , langEscOOff
-    , langEscSSet
-    , langEscSOff
+    , langEscOAdd
+    , langEscODel
+    , langEscSAdd
+    , langEscSDel
     , langKeywordAdd
     , langKeywordDel
     , langStrChrAdd
@@ -202,8 +202,6 @@ helpGeneral       = try (string "-h"  ) >> return HelpGeneral
 helpConfig        = try (string "-hc" ) >> return HelpConfig
 helpKeybinds      = try (string "-hk" ) >> return HelpKeybinds
 helpVersion       = try (string "-hv" ) >> return HelpVersion
-langEscOOff       = try (string "-leO") >> return LangEscOOff
-langEscSOff       = try (string "-leS") >> return LangEscSOff
 metaFailsafe      = try (string "-mf" ) >> return MetaFailsafe
 metaStateFile     = try (string "-ms" ) >> return MetaStateFile
 otherOpenCfGlob   = try (string "-ocg") >> return OtherOpenCfGlob
@@ -226,8 +224,10 @@ generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word 
 generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                              }
 langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                              }
 langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                              }
-langEscOSet       = do { try $ string "-leo"; spaces'; LangEscOSet     <$> singleChar                        }
-langEscSSet       = do { try $ string "-les"; spaces'; LangEscSSet     <$> singleChar                        }
+langEscOAdd       = do { try $ string "-leo"; spaces'; LangEscOAdd     <$> word                              }
+langEscODel       = do { try $ string "-leO"; spaces'; LangEscODel     <$> word                              }
+langEscSAdd       = do { try $ string "-les"; spaces'; LangEscSAdd     <$> word                              }
+langEscSDel       = do { try $ string "-leS"; spaces'; LangEscSDel     <$> word                              }
 langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                              }
 langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                              }
 metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                              }

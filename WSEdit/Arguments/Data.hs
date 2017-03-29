@@ -69,10 +69,10 @@ data Argument = AutocompAdd     (Maybe Int) FileMatch
               | LangCommLineDel String
               | LangCommBlkAdd  String String
               | LangCommBlkDel  String String
-              | LangEscOSet     Char
-              | LangEscOOff
-              | LangEscSSet     Char
-              | LangEscSOff
+              | LangEscOAdd     String
+              | LangEscODel     String
+              | LangEscSAdd     String
+              | LangEscSDel     String
               | LangKeywordAdd  String
               | LangKeywordDel  String
               | LangStrChrAdd   String String

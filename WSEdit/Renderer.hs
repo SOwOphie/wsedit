@@ -106,8 +106,8 @@ tkLn (_, str) = do
           ++ token  str (unpack $ strDelim     c)
           ++ token  str (unpack $ mStrDelim    c)
           ++ token  str (unpack $ chrDelim     c)
-          ++ token  str (maybe [] (return . return) $ escapeO c)
-          ++ token  str (maybe [] (return . return) $ escapeS c)
+          ++ token  str (         escapeO      c)
+          ++ token  str (         escapeS      c)
 
     where
         token :: String -> [String] -> [(Int, String)]
@@ -205,7 +205,7 @@ rLn (rc, bc) (lNr, l) = do
         *-------------------------------------------------------------------- -}
 
         fsm (c, s) lNo st ((n1, e):(n2, _):xs)
-            | n1 + 1 == n2 && Just e == fmap return (escapeO c)
+            | n1 + length e == n2 && e `elem` escapeO c
                 = fsm (c, s) lNo st xs
 
         {- --------------------------------------------------------------------*
@@ -214,7 +214,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- Escape character
         fsm (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
-            | n2 + 1 == n3 && Just e == fmap return (escapeS c)
+            | n2 + length e == n3 && e `elem` escapeS c
                 = fsm (c, s) lNo (PMLString n1 str, st) xs
 
         fsm (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
@@ -234,7 +234,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- Escape character
         fsm (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
-            | n2 + 1 == n3 && Just e == fmap return (escapeS c)
+            | n2 + length e == n3 && e `elem` escapeS c
                 = fsm (c, s) lNo (PLnString n1 str, st) xs
 
         fsm (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
@@ -253,22 +253,22 @@ rLn (rc, bc) (lNr, l) = do
         *-------------------------------------------------------------------- -}
 
         -- (opening token):(escape token):(some token):(closing token):xs
-        -- Number of enclosed characters: 2
+        -- Number of enclosed characters: length escape + 1
         fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):_:(n4, x4):xs)
             | Just x4' <- x1 `lookup` chrDelim c
                     , x4 == x4'
-                   && n4 == n1 + length x1 + 2
-                   && Just x2 == fmap return (escapeS c)
+                   && n4 == n1 + length x1 + length x2 + 1
+                   && x2 `elem` escapeS c
                 = withFst (withFst (((n1, n4 + length x4 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 
         -- (opening token):(escape token):(closing token):xs
-        -- Number of enclosed characters: 2
+        -- Number of enclosed characters: length escape + 1
         fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):(n3, x3):xs)
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
-                   && n3 == n1 + length x1 + 2
-                   && Just x2 == fmap return (escapeS c)
+                   && n3 == n1 + length x1 + length x2 + 1
+                   && x2 `elem` escapeS c
                 = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 
@@ -278,7 +278,7 @@ rLn (rc, bc) (lNr, l) = do
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
                    && n3 == n1 + length x1 + 1
-                   && Just x2 /= fmap return (escapeS c)
+                   && x2 `notElem` escapeS c
                 = withFst (withFst (((n1, n3 + length x3 - 1), HString):))
                 $ fsm (c, s) lNo (PNothing, st) xs
 

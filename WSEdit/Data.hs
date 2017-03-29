@@ -64,7 +64,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.1.9"
+version = "1.2.1.10"
 
 -- | Upstream URL.
 upstream :: String
@@ -323,10 +323,10 @@ data EdConfig = EdConfig
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
 
-    , escapeO      :: Maybe Char
+    , escapeO      :: [String]
         -- ^ Escape character outside strings.
 
-    , escapeS      :: Maybe Char
+    , escapeS      :: [String]
         -- ^ Escape character for strings.
 
     , brackets     :: [(String, String)]
@@ -355,8 +355,8 @@ mkDefConfig v k = EdConfig
                 , mStrDelim    = []
                 , chrDelim     = []
                 , keywords     = []
-                , escapeO      = Nothing
-                , escapeS      = Nothing
+                , escapeO      = []
+                , escapeS      = []
                 , brackets     = []
               }
 

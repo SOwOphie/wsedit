@@ -55,8 +55,8 @@ data PrettyEdConfig = PrettyEdConfig
     , pMStrDelim    :: [(String, String)]
     , pChrDelim     :: [(String, String)]
     , pKeywords     :: [String]
-    , pEscapeO      :: Maybe Char
-    , pEscapeS      :: Maybe Char
+    , pEscapeO      :: [String]
+    , pEscapeS      :: [String]
     , pBrackets     :: [(String, String)]
     }
     deriving (Eq, Read, Show)
