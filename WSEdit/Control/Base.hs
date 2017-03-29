@@ -113,11 +113,14 @@ moveViewport r c = do
 
 
 
--- | Move the cursor to a legal position.
+-- | Move the cursor to a legal position and move the viewport so that the
+--   cursor is visible.
 validateCursor :: WSEdit ()
 validateCursor = do
     lineLen <- currLineLen
     modify $ \st -> st { cursorPos = max 1 $ min (lineLen + 1) $ cursorPos st }
+    moveCursor 0 0
+
 
 
 
