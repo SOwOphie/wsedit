@@ -1,0 +1,253 @@
+################################################################################
+#                                                                              #
+#         ###                                                      ###         #
+#  #####    #  #####                                        #####    #  #####  #
+#   ###    #    ###                                          ###    #    ###   #
+#   ####  ##   ##        LLVM Assembly Language Files        ####  ##   ##     #
+#     #########                                                #########       #
+#   #   ###                                                  #   ###           #
+#   #####                                                    #####             #
+#
+# by Alex Arslan (ararslan@comcast.net)                                        #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.ll
+    -lcl ;
+    -lsr \" \"
+    -les \\
+    -lb ( )
+    -lb [ ]
+    -lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.ll
+    -lk acq_rel
+    -lk acquire
+    -lk addrspace
+    -lk alias
+    -lk align
+    -lk alignstack
+    -lk alwaysinline
+    -lk appending
+    -lk argmemonly
+    -lk arm_aapcscc
+    -lk arm_aapcs_vfpcc
+    -lk arm_apcscc
+    -lk asm
+    -lk atomic
+    -lk available_externally
+    -lk blockaddress
+    -lk byval
+    -lk c
+    -lk catch
+    -lk caller
+    -lk cc
+    -lk ccc
+    -lk cleanup
+    -lk coldcc
+    -lk comdat
+    -lk common
+    -lk constant
+    -lk datalayout
+    -lk declare
+    -lk default
+    -lk define
+    -lk deplibs
+    -lk dereferenceable
+    -lk distinct
+    -lk dllexport
+    -lk dllimport
+    -lk except
+    -lk external
+    -lk externally_initialized
+    -lk extern_weak
+    -lk fastcc
+    -lk filter
+    -lk from
+    -lk gc
+    -lk global
+    -lk hhvmcc
+    -lk hhvm_ccc
+    -lk hidden
+    -lk initialexec
+    -lk inlinehint
+    -lk inreg
+    -lk inteldialect
+    -lk intel_ocl_bicc
+    -lk internal
+    -lk linkonce
+    -lk linkonce_odr
+    -lk localdynamic
+    -lk localexec
+    -lk local_unnamed_addr
+    -lk minsize
+    -lk module
+    -lk monotonic
+    -lk msp430_intrcc
+    -lk musttail
+    -lk naked
+    -lk nest
+    -lk noalias
+    -lk nocapture
+    -lk noimplicitfloat
+    -lk noinline
+    -lk nonlazybind
+    -lk norecurse
+    -lk noredzone
+    -lk noreturn
+    -lk nounwind
+    -lk optnone
+    -lk optsize
+    -lk personality
+    -lk private
+    -lk protected
+    -lk ptx_device
+    -lk ptx_kernel
+    -lk readnone
+    -lk readonly
+    -lk release
+    -lk returned
+    -lk returns_twice
+    -lk sanitize_address
+    -lk sanitize_memory
+    -lk sanitize_thread
+    -lk section
+    -lk seq_cst
+    -lk sideeffect
+    -lk signext
+    -lk singlethread
+    -lk source_filename
+    -lk spir_func
+    -lk spir_kernel
+    -lk sret
+    -lk ssp
+    -lk sspreq
+    -lk sspstrong
+    -lk swiftcc
+    -lk tail
+    -lk target
+    -lk thread_local
+    -lk to
+    -lk triple
+    -lk unnamed_addr
+    -lk unordered
+    -lk uselistorder
+    -lk uselistorder_bb
+    -lk uwtable
+    -lk volatile
+    -lk weak
+    -lk weak_odr
+    -lk within
+    -lk writeonly
+    -lk x86_64_sysvcc
+    -lk x86_64_win64cc
+    -lk x86_fastcallcc
+    -lk x86_stdcallcc
+    -lk x86_thiscallcc
+    -lk zeroext
+#                                                                              #
+# Instructions                                                                 #
+*.ll
+    -lk add
+    -lk addrspacecast
+    -lk alloca
+    -lk and
+    -lk arcp
+    -lk ashr
+    -lk atomicrmw
+    -lk bitcast
+    -lk br
+    -lk catchpad
+    -lk catchswitch
+    -lk catchret
+    -lk call
+    -lk cleanuppad
+    -lk cleanupret
+    -lk cmpxchg
+    -lk eq
+    -lk exact
+    -lk extractelement
+    -lk extractvalue
+    -lk fadd
+    -lk fast
+    -lk fcmp
+    -lk fdiv
+    -lk fence
+    -lk fmul
+    -lk fpext
+    -lk fptosi
+    -lk fptoui
+    -lk fptrunc
+    -lk free
+    -lk frem
+    -lk fsub
+    -lk getelementptr
+    -lk icmp
+    -lk inbounds
+    -lk indirectbr
+    -lk insertelement
+    -lk insertvalue
+    -lk inttoptr
+    -lk invoke
+    -lk landingpad
+    -lk load
+    -lk lshr
+    -lk malloc
+    -lk max
+    -lk min
+    -lk mul
+    -lk nand
+    -lk ne
+    -lk ninf
+    -lk nnan
+    -lk nsw
+    -lk nsz
+    -lk nuw
+    -lk oeq
+    -lk oge
+    -lk ogt
+    -lk ole
+    -lk olt
+    -lk one
+    -lk or
+    -lk ord
+    -lk phi
+    -lk ptrtoint
+    -lk resume
+    -lk ret
+    -lk sdiv
+    -lk select
+    -lk sext
+    -lk sge
+    -lk sgt
+    -lk shl
+    -lk shufflevector
+    -lk sitofp
+    -lk sle
+    -lk slt
+    -lk srem
+    -lk store
+    -lk sub
+    -lk switch
+    -lk trunc
+    -lk udiv
+    -lk ueq
+    -lk uge
+    -lk ugt
+    -lk uitofp
+    -lk ule
+    -lk ult
+    -lk umax
+    -lk umin
+    -lk une
+    -lk uno
+    -lk unreachable
+    -lk unwind
+    -lk urem
+    -lk va_arg
+    -lk xchg
+    -lk xor
+    -lk zext
+#                                                                              #
+################################################################################
