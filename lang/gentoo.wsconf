@@ -103,5 +103,12 @@
 	-lk use_with
 # might be missing some stuff
 
+/etc/fonts/*.conf
+	-lcb <!-- -->
+	-lcl #
+
+/etc/init.d/*
+	-mi f.sh
+
 #                                                                              #
 ################################################################################
