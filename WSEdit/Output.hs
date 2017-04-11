@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase
+           , MultiWayIf
+           #-}
 
 module WSEdit.Output
     ( charWidth
@@ -393,15 +395,13 @@ makeLineNos = do
         mkLn :: EdState -> EdDesign -> Int -> Int -> Int -> Image
         mkLn s d lNoWidth r n =
              char (dLineNoFormat d) ' '
-         <|> string (case () of
-                    _ | r == n && not (readOnly s)   -> combineAttrs (dCurrLnMod    d)
-                                                                     (dLineNoFormat d)
-                      | n `mod` dLineNoInterv d == 0 ->               dLineNoFormat d
-                      | otherwise                    ->               dFrameFormat  d
+         <|> string (if | r == n && not (readOnly s)   -> combineAttrs (dCurrLnMod    d)
+                                                                       (dLineNoFormat d)
+                        | n `mod` dLineNoInterv d == 0 ->               dLineNoFormat d
+                        | otherwise                    ->               dFrameFormat  d
                     )
              ( padLeft lNoWidth ' '
-             $ case () of
-                _ | n > B.length (edLines s)               -> ""
+             $ if | n > B.length (edLines s)               -> ""
                   | n `mod` dLineNoInterv d == 0 || r == n -> show n
                   | otherwise                              -> "·"
              )
@@ -632,11 +632,11 @@ makeScrollbar = do
     where
         repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
         repl (d, s, cProg, marksAt) (n, c) =
-            char (dFrameFormat d) '║' <|> case () of
-                _ | readOnly s       -> char (dFrameFormat  d)  c
-                  | n == cProg       -> char (dLineNoFormat d) '<'
-                  | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
-                  | otherwise        -> char (dFrameFormat  d)  c
+            char (dFrameFormat d) '║'
+                <|> if | readOnly s       -> char (dFrameFormat  d)  c
+                       | n == cProg       -> char (dLineNoFormat d) '<'
+                       | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
+                       | otherwise        -> char (dFrameFormat  d)  c
 
 
 

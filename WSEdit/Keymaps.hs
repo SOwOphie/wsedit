@@ -39,7 +39,7 @@ defaultKM :: Keymap
 defaultKM =
     [ Just ( EvKey (KFun  1  ) []
            , ( showText (keymapHelp defaultKM) helpKM
-             , "Show this help."
+             , "Show keymap help."
              )
            )
     , Nothing
@@ -287,8 +287,8 @@ defaultKM =
            )
     , Just ( EvKey (KChar 'f') [MCtrl]
            , ( searchFor
-             , "Add the selection to the list of highlighted search terms, or pop"
-                ++ " the last one if the selection is empty."
+             , "Add the selection to the list of highlighted search terms, or pop \
+               \the last one if the selection is empty."
              )
            )
     , Nothing

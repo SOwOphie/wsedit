@@ -183,12 +183,12 @@ parseArguments (c, s) = do
                         when (stability < selStab)
                              $ runWSEdit (c, s)
                              $ quitComplain
-                             $ "This release is not stable enough for your preferences:\n\n"
-                            ++ "    " ++ show stability ++ " < " ++ show selStab ++ "\n\n"
-                            ++ "Getting the latest stable release from the \"Releases\" section\n"
-                            ++ "on " ++ upstream ++ " is highly recommended,\n"
-                            ++ "but you can also continue using this unstable version by passing\n"
-                            ++ "-ys " ++ show stability ++ " or adding it to a config file."
+                             $ "This release is not stable enough for your preferences:\n\n\
+                               \    " ++ show stability ++ " < " ++ show selStab ++ "\n\n\
+                               \Getting the latest stable release from the \"Releases\" section\n\
+                               \on " ++ upstream ++ " is highly recommended,\n\
+                               \but you can also continue using this unstable version by passing\n\
+                               \-ys " ++ show stability ++ " or adding it to a config file."
 
                         -- Dump arguments if desired
                         when (DebugDumpArgs `elem` allArgs) $ do

@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase
+           , MultiWayIf
+           #-}
 
 module WSEdit.Control.Base
     ( refuseOnReadOnly
@@ -176,8 +178,7 @@ moveCursor r c = alterState $ do
             (currR, currC) <- getCursor
             len            <- currLineLen
 
-            case () of
-                 _ | currC + n > len + 1 ->
+            if | currC + n > len + 1 ->
                     if currR < B.length (edLines s)
                        then do
                                 moveCursor   1 0
@@ -185,7 +186,7 @@ moveCursor r c = alterState $ do
                                 moveCursor   0 (currC + n - len - 2)
                        else moveCursorEnd
 
-                   | currC + n < 1       ->
+               | currC + n < 1       ->
                     if currR > 1
                        then do
                                 moveCursor (-1) 0
@@ -193,10 +194,10 @@ moveCursor r c = alterState $ do
                                 moveCursor   0  (currC + n         )
                        else moveCursorHome
 
-                   | otherwise
-                    -> setCursor ( currR
-                                 , currC + n
-                                 )
+               | otherwise           ->
+                    setCursor ( currR
+                              , currC + n
+                              )
 
             -- Since this function will not be called for purely vertical
             -- motions, we can safely discard the target cursor position here.

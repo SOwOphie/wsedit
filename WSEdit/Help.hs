@@ -90,10 +90,11 @@ keymapHelp km =
                               $ catMaybes $ prettyKeymap km
                               )
     in
-        "Some terminals are a bit weird when it comes to telling Meta-<something> and\n"
-     ++ "Ctrl-Meta-<something> apart. If one doesn't work, try the other. If none work,\n"
-     ++ "please open an issue on GitHub and don't forget to add which terminal emulator\n"
-     ++ "you're using.\n\n"
+        "Some terminals are a bit weird when it comes to telling Meta-<something> and\n\
+        \Ctrl-Meta-<something> apart. If one doesn't work, try the other. If none work,\n\
+        \please open an issue on GitHub and don't forget to add which terminal emulator\n\
+        \you're using.\n\n\
+        \-*- Keymap -*-\n\n"
      ++ renderText 80
         ( map (uncurry (++))
         $ concatMap (\case
