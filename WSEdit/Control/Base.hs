@@ -181,9 +181,9 @@ moveCursor r c = alterState $ do
             if | currC + n > len + 1 ->
                     if currR < B.length (edLines s)
                        then do
-                                moveCursor   1 0
+                                moveCursor   1  0
                                 moveCursorHome
-                                moveCursor   0 (currC + n - len - 2)
+                                moveCursor   0  (currC + n - len - 2)
                        else moveCursorEnd
 
                | currC + n < 1       ->
@@ -191,7 +191,7 @@ moveCursor r c = alterState $ do
                        then do
                                 moveCursor (-1) 0
                                 moveCursorEnd
-                                moveCursor   0  (currC + n         )
+                                moveCursor   0  (currC + n          )
                        else moveCursorHome
 
                | otherwise           ->
@@ -207,19 +207,15 @@ moveCursor r c = alterState $ do
 
 -- | Moves the cursor to the first column using `moveCursor`.
 moveCursorHome :: WSEdit ()
-moveCursorHome = do
-    (_, c) <- getCursor
-    moveCursor 0 $ 1 - c
+moveCursorHome = modify $ \s -> s { cursorPos = 1, wantsPos = Nothing }
 
 
 
 -- | Moves the cursor to the last column using `moveCursor`.
 moveCursorEnd :: WSEdit ()
 moveCursorEnd = do
-    (_, c) <- getCursor
-    l      <- currLineLen
-
-    moveCursor 0 $ l - c + 1
+    l <- currLineLen
+    modify $ \s -> s { cursorPos = l + 1, wantsPos = Nothing }
 
 
 
