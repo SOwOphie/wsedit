@@ -42,8 +42,9 @@ how `wsedit` works, except some small quirks here and there maybe.
 
 ### Windows: not supported
 
-The whole idea of running a terminal editor on Windows seems a bit strange to
-me.  However, you are free to try building it from source (see below).
+As `vty` (`wsedit`'s terminal I/O library) depends on `unix` which supports
+neither `Cygwin` nor `MinGW`, there's currently no way to build `wsedit` for
+Windows. Maybe with `WSL`?
 
 ### Linux: build from source
 
@@ -92,8 +93,8 @@ the `Troubleshooting` section further down below and see if it helps.
 2.  Make sure you have `ncurses` with unicode support installed. This should be
     default on most popular distributions.
 3.  *Optional*, Linux only: Install either `xclip` or `xsel` with your package
-    manager. If this step is skipped, `wsedit` will use an internal buffer
-    instead of the system facilities for copy/paste functionality.
+    manager. If this step is skipped, `wsedit` will use a file buffer instead of
+    the system facilities for copy/paste functionality.
 4.  Grab the latest stable release of `wsedit` from the `Releases` tab on
     GitHub.
 5.  Extract the archive and point your shell towards its contents.
@@ -105,11 +106,12 @@ the `Troubleshooting` section further down below and see if it helps.
     file will be executed every time you open a shell, so you either need to
     re-open the terminal or run `source ~/.bashrc` to re-run it manually.
 9.  To get syntax highlighting, first create the folder `~/.config/wsedit/lang`
-    by running `mkdir -p ~/.config/wsedit`. Then take a look at the repository's
-    `lang/` folder. Copy everything you need (or just everything, it won't hurt)
-    to the newly created folder using `cp lang/* ~/.config/wsedit/lang`. If your
-    favourite language has no definitions available, you can easily create them
-    yourself, take a look at `lang/README.md` for instructions.
+    by running `mkdir -p ~/.config/wsedit/lang`. Then take a look at the
+    repository's `lang/` folder. Copy everything you need (or just everything,
+    it won't hurt) to the newly created folder using
+    `cp lang/* ~/.config/wsedit/lang`. If your favourite language has no
+    definitions available, you can easily create them yourself, take a look at
+    `lang/README.md` for instructions.
 10. Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
     Alternatively, you can view the keybinds with `F1`.
@@ -191,7 +193,7 @@ support.
 
 ### Some inputs (e.g. `Ctrl-Down`) don't work in `rxvt-unicode`
 
-Yeah, `urxvt` is a mess. I recommand changing to another terminal, but adding
+Yeah, `urxvt` is a mess. I recommend switching to another terminal, but adding
 this to your `.Xresources` file will soothe your pain:
 
     ! From http://thedarnedestthing.com/urxvt

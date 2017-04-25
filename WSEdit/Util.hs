@@ -44,29 +44,31 @@ module WSEdit.Util
 
 
 
-import Control.DeepSeq   (NFData, force)
-import Codec.Text.Detect (detectEncodingName)
-import Control.Exception (SomeException, evaluate, try)
-import Data.Char         (chr, isAlphaNum, isControl, isMark, isPrint)
-import Data.List         (inits, intercalate, intersect, tails)
-import Data.Time.Clock   (diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
-import Graphics.Vty      ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
-                         , MaybeDefault (Default, KeepCurrent,SetTo)
-                         )
-import Safe              (foldl1Note, headMay, lastDef, lastNote)
-import System.Directory  ( doesDirectoryExist, doesFileExist, getHomeDirectory
-                         , listDirectory
-                         )
-import System.Exit       (ExitCode (ExitSuccess))
-import System.Info       (os)
-import System.IO         ( IOMode (ReadMode)
-                         , hSetEncoding, hSetNewlineMode, mkTextEncoding
-                         , universalNewlineMode, char8, withFile
-                         )
-import System.IO.Strict  (hGetContents)
-import System.IO.Unsafe  (unsafePerformIO)
-import System.Process    (readProcessWithExitCode)
-import Text.Show.Pretty  (ppShow)
+import Control.DeepSeq    (NFData, force)
+import Codec.Text.Detect  (detectEncodingName)
+import Control.Exception  (SomeException, evaluate, try)
+import Data.Char          (chr, isAlphaNum, isControl, isMark, isPrint)
+import Data.List          (inits, intercalate, intersect, tails)
+import Data.Maybe         (isJust)
+import Data.Time.Clock    (diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
+import Graphics.Vty       ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
+                          , MaybeDefault (Default, KeepCurrent,SetTo)
+                          )
+import Safe               (foldl1Note, headMay, lastDef, lastNote)
+import System.Directory   ( doesDirectoryExist, doesFileExist, getHomeDirectory
+                          , listDirectory
+                          )
+import System.Environment (lookupEnv)
+import System.Exit        (ExitCode (ExitSuccess))
+import System.Info        (os)
+import System.IO          ( IOMode (ReadMode)
+                          , hSetEncoding, hSetNewlineMode, mkTextEncoding
+                          , universalNewlineMode, char8, withFile
+                          )
+import System.IO.Strict   (hGetContents)
+import System.IO.Unsafe   (unsafePerformIO)
+import System.Process     (readProcessWithExitCode)
+import Text.Show.Pretty   (ppShow)
 
 import qualified Data.ByteString.Lazy as S
 
@@ -410,9 +412,10 @@ checkClipboardSupport =
     if os == "darwin"
        then return True
        else do
-            r1 <- try $ readProcessWithExitCode "xclip" ["-version"] ""
-            r2 <- try $ readProcessWithExitCode "xsel"  []           ""
-            return $ ok r1 || ok r2
+            r1   <- try $ readProcessWithExitCode "xclip" ["-version"] ""
+            r2   <- try $ readProcessWithExitCode "xsel"  []           ""
+            disp <- lookupEnv "DISPLAY"
+            return $ (ok r1 || ok r2) && isJust disp
 
     where
         ok :: Either SomeException (ExitCode, String, String) -> Bool
