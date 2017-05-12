@@ -19,6 +19,9 @@ import Data.Maybe               (fromMaybe, isJust)
 import Safe                     (headMay, headNote, initNote, lastNote)
 import System.Directory         (getHomeDirectory)
 import System.Hclip             (getClipboard, setClipboard)
+import System.Posix.Files       ( fileMode, getFileStatus, intersectFileModes
+                                , ownerModes, setFileMode
+                                )
 
 import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
                                 , moveCursorHome, refuseOnReadOnly
@@ -96,8 +99,15 @@ copy = refuseOnReadOnly
 
                    else do
                         liftIO $ do
-                            h <- getHomeDirectory
-                            writeFile (h ++ "/.wsedit-clipboard") s
+                            fname <- (++ "/.wsedit-clipboard")
+                                 <$> getHomeDirectory
+
+                            writeFile   fname ""
+                            setFileMode fname
+                                . intersectFileModes ownerModes
+                              =<< fmap fileMode (getFileStatus fname)
+
+                            writeFile fname s
 
                         setStatus $ "Copied "
                                  ++ show (length $ linesPlus s)

@@ -15,8 +15,8 @@
 	-lcb /* */
 	-lsr \" \"
 	-lsr ' '
-	-lsr / /
 	-les \\
+	-leo \\
 	-lb ( )
 	-lb [ ]
 	-lb { }
