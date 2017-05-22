@@ -83,7 +83,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = WIP
+stability = RC
 
 
 
