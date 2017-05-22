@@ -37,8 +37,8 @@ import Graphics.Vty             ( Attr ( Attr, attrBackColor, attrForeColor
                                           )
                                 , char, cropBottom, cropRight, defAttr
                                 , emptyImage, horizCat, pad, picForImage
-                                , reverseVideo, string, translateX, update
-                                , vertCat, withStyle
+                                , reverseVideo, string, update, vertCat
+                                , withStyle
                                 , (<|>), (<->)
                                 )
 import Numeric                  (showHex)
@@ -176,18 +176,24 @@ charRep br hl pos _ ch = do
 
 
 
--- | Returns the visual representation of a line with a given line number.
-lineRep :: Int -> String -> WSEdit Image
-lineRep lNo str = do
-    st <- get
+-- | Returns the visual representation of a line with a given line number at a
+--   given horizontal offset.
+lineRep :: Int -> Int -> String -> WSEdit Image
+lineRep lNo off str = do
+    st     <- get
     maySel <- getSelBounds
     mayBr  <- getCurrBracket
 
     let
+        -- | `rangeCache` excerpt for the current line.
         fmt = atDef [] (map fst $ rangeCache st) (length (rangeCache st) - lNo)
 
-        f :: ([Snippet], Int, Int) -> Char -> WSEdit ([Snippet], Int, Int)
-        f (im, tPos, vPos) c = do
+        -- | Folding helper, renders `Char`s into `Snippet`s. Folds over the
+        --   line chars with a
+        --   ([Snippet], textual position, visual position, ccolumns left to skip)
+        --   state.
+        f :: ([Snippet], Int, Int, Int) -> Char -> WSEdit ([Snippet], Int, Int, Int)
+        f (im, tPos, vPos, toSkip) c = do
             i <- charRep
                     (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
                     (case (maySel, lookupBy (`inRange` tPos) fmt) of
@@ -199,9 +205,20 @@ lineRep lNo str = do
                     vPos
                     c
 
-            return (i:im, tPos + 1, vPos + length (sStr i))
+            return $ if
+                | toSkip <= 0              -> (i:im, tPos + 1, vPos + length (sStr i), 0)
+                | toSkip < length (sStr i) -> ( i { sStr = drop toSkip $ sStr i} : im
+                                              , tPos + 1
+                                              , vPos + length (sStr i)
+                                              , 0
+                                              )
+                | otherwise                -> ( im
+                                              , tPos + 1
+                                              , vPos + length (sStr i)
+                                              , toSkip - length (sStr i)
+                                              )
 
-    (r,_ ,_) <- foldM f ([], 1, 1) str
+    (r,_ ,_ ,_) <- foldM f ([], 1, 1, off) str
 
     return $ horizCat
            $ map (\CalcSnippet { csActual = a, csStr = b } -> string a b)
@@ -500,7 +517,7 @@ makeTextFrame = do
     (   txtRows, txtCols   ) <- getViewportDimensions
     (cR        , _         ) <- getCursor
 
-    txt <- mapM (\(n, (b, l)) -> lineRep n l >>= \l' -> return (b, l'))
+    txt <- mapM (\(n, (b, l)) -> lineRep n scrollCols l >>= \l' -> return (b, l'))
          $ zip [1 + scrollRows ..]
          $ B.sub scrollRows (scrollRows + txtRows - 1)
          $ edLines s
@@ -520,8 +537,7 @@ makeTextFrame = do
 
                           _ -> (char (dLineNoFormat d) ' ' <|>)
                     )
-                    $ translateX (-scrollCols)
-                    $ pad 0 0 (scrollCols + 1) 0
+                    $ pad 0 0 1 0
                     $ (iff (not $ drawBg c)
                            (<|> char ( iff (l == cR && not (readOnly s))
                                            (combineAttrs $ dCurrLnMod d)
