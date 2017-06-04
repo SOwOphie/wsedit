@@ -8,9 +8,10 @@ module WSEdit.Arguments
 
 
 import Control.Monad                 (foldM, unless, when)
+import Control.Monad.IO.Class        (liftIO)
 import Data.Default                  (def)
 import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, isSuffixOf, nub, null
+import Data.List                     ( delete, inits, isSuffixOf, nub, null
                                      , (\\)
                                      )
 import Data.Maybe                    (catMaybes, fromMaybe)
@@ -19,6 +20,9 @@ import System.Directory              ( doesDirectoryExist, doesFileExist
                                      , getHomeDirectory
                                      )
 import System.Environment            (getArgs)
+import System.FilePath               ( joinPath, splitPath, takeDirectory
+                                     , (</>)
+                                     )
 import System.IO                     ( Newline (CRLF, LF)
                                      , NewlineMode (NewlineMode)
                                      , universalNewlineMode
@@ -90,20 +94,11 @@ parseArguments (c, s) = do
 
     -- read arguments and files
     args  <- getArgs
-    files <- readConfigFiles
 
     -- parse them
     let
-        parsedFiles = map (\(p, x) ->  parse configFile (absPath p) x) files
         parsedArgs  = parse configCmd "command line"
                     $ fancyUnwords args
-
-        -- list of successfully parsed options from files only (!)
-        parsedSuccF = concat $ rights $ parsedFiles
-
-        -- list of all parse errors, regardless of source
-        parseErrors = lefts parsedFiles
-                   ++ lefts [parsedArgs]
 
     -- errors in command line arguments?
     case parsedArgs of
@@ -136,6 +131,23 @@ parseArguments (c, s) = do
                      -- name that we're opening later, just something closely
                      -- resembling it. See 'providedFile' for more info.
                      Just f  -> do
+
+                        -- Read and parse config files
+                        files <- readConfigFiles =<< liftIO (pathInfo f)
+
+                        let
+                            parsedFiles = map (\(p, x) -> parse configFile
+                                                                (absPath p)
+                                                                x
+                                              ) files
+
+                            -- list of successfully parsed options from files
+                            -- only (!)
+                            parsedSuccF = concat $ rights $ parsedFiles
+
+                            -- list of all parse errors, regardless of source
+                            parseErrors = lefts parsedFiles
+                                       ++ lefts [parsedArgs]
 
                         -- Assemble all the file names to match against. This
                         -- includes the file we just obtained as well as all
@@ -217,37 +229,30 @@ parseArguments (c, s) = do
         globC :: String -> String
         globC = (++ "/.config/wsedit.wsconf")
 
-        -- | local wsedit config file
-        locC :: String
-        locC = ".local.wsconf"
-
 
         -- | Read in all config files.
-        readConfigFiles :: IO [(PathInfo, String)]
-        readConfigFiles = do
-            h      <- getHomeDirectory
-            b      <- doesDirectoryExist $ confDir h
+        readConfigFiles :: PathInfo -> IO [(PathInfo, String)]
+        readConfigFiles p = do
+            h <- getHomeDirectory
+            b <- doesDirectoryExist $ confDir h
 
-            fnames <- if not b
-                         then return []
-                         else fmap (filter (isSuffixOf ".wsconf"))
-                            $ listDirectoryDeep
-                            $ confDir h
+            globConfs <- if not b
+                            then return []
+                            else fmap (filter (isSuffixOf ".wsconf"))
+                               $ listDirectoryDeep
+                               $ confDir h
 
-            confFiles <- mapM (\n -> do
-                                    i <- pathInfo    n
-                                    x <- mayReadFile n
-                                    return (i, fromMaybe "" x)
-                              )
-                              fnames
+            let locConfs = map ((</> ".local.wsconf") . joinPath)
+                         $ inits
+                         $ splitPath
+                         $ takeDirectory
+                         $ absPath p
 
-            glob <- fmap (fromMaybe "") $ mayReadFile $ globC h
-            loc  <- fmap (fromMaybe "") $ mayReadFile $ locC
-
-            piGlob <- pathInfo $ globC h
-            piLoc  <- pathInfo    locC
-
-            return $ confFiles ++ [(piGlob, glob), (piLoc, loc)]
+            mapM (\n -> do
+                            i <- pathInfo    n
+                            x <- mayReadFile n
+                            return (i, fromMaybe "" x)
+                 ) $ globConfs ++ [globC h] ++ locConfs
 
 
         -- | Unwords, escaping quotes, spaces and backslashes.

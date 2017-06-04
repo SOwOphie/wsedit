@@ -1,3 +1,12 @@
+# v1.2.2
+
+## Other Changes
+
+- Local config files are now parsed independently of the working directory:
+  Starting from the file system root ("/"), check for a ".local.wsconf" file,
+  parse it if possible, descend into the folder leading to the opened file.
+  Repeat for every folder along the way.
+
 # v1.2.1
 
 This release doesn't contain any big features, but lots of small improvements
