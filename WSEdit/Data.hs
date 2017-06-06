@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances
+{-# LANGUAGE FlexibleContexts
+           , FlexibleInstances
            , TypeSynonymInstances
            #-}
 
@@ -19,6 +20,8 @@ module WSEdit.Data
     , mkDefConfig
     , EdDesign (..)
     , brightTheme
+    , MonadEditor (..)
+    , WSPure
     , WSEdit
     , runWSEdit
     , runIn
@@ -31,7 +34,12 @@ module WSEdit.Data
 
 
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (RWST, runRWST)
+import Control.Monad.RWS.Strict ( RWS
+                                , RWST
+                                , MonadReader
+                                , MonadState
+                                , ask, get, put, runRWS, runRWST
+                                )
 import Data.Default             (Default (def))
 import Graphics.Vty             ( Attr
                                 , Event ()
@@ -168,6 +176,9 @@ data EdState = EdState
     , scrollOffset :: (Int, Int)
         -- ^ Viewport offset, 0-based.
 
+    , dispBounds :: (Int, Int)
+        -- ^ Viewport size.
+
 
     , continue     :: Bool
         -- ^ Whether the main loop should continue past this iteration.
@@ -175,7 +186,7 @@ data EdState = EdState
     , exitMsg      :: Maybe String
         -- ^ Optional message to print after exiting using @continue = False@.
 
-    , status       :: String
+    , status       :: !String
         -- ^ Status string displayed at the bottom.
 
     , badgeText    :: Maybe String
@@ -237,6 +248,7 @@ instance Default EdState where
         , wantsPos     = Nothing
         , markPos      = Nothing
         , scrollOffset = (0, 0)
+        , dispBounds   = (1, 1)
 
         , continue     = True
         , exitMsg      = Nothing
@@ -614,9 +626,28 @@ brightTheme = EdDesign
         }
 
 
+class (Monad m, MonadReader EdConfig m, MonadState EdState m) => MonadEditor m where
+    runPure :: WSPure a -> m a
+
+
+-- | Pure editor monad variant.
+type WSPure = RWS EdConfig () EdState
+
+instance MonadEditor WSPure where
+    runPure = id
+
+
 
 -- | Editor monad. Reads an `EdConfig`, writes nothing, alters an `EdState`.
 type WSEdit = RWST EdConfig () EdState IO
+
+instance MonadEditor WSEdit where
+    runPure f = do
+        c <- ask
+        s <- get
+        let (r, s', _) = runRWS f c s
+        put s'
+        return r
 
 -- | Convenience shortcut to run `WSEdit` actions in `IO`.
 runWSEdit :: (EdConfig, EdState) -> WSEdit a -> IO a

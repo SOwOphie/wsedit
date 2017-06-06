@@ -6,7 +6,7 @@ module WSEdit where
 import Control.Exception           (SomeException, try)
 import Control.Monad               (when)
 import Control.Monad.IO.Class      (liftIO)
-import Control.Monad.RWS.Strict    (ask, get, modify, runRWST)
+import Control.Monad.RWS.Strict    (ask, get, gets, modify, runRWST)
 import Data.Default                (def)
 import Data.Maybe                  (catMaybes)
 import Graphics.Vty                ( Event (EvKey, EvResize)
@@ -28,9 +28,9 @@ import WSEdit.Data                 ( EdConfig ( dumpEvents, encoding, keymap
                                              , lastEvent, status
                                              )
                                    , WSEdit
-                                   , mkDefConfig, runWSEdit
+                                   , mkDefConfig, runPure, runWSEdit
                                    )
-import WSEdit.Data.Algorithms      (catchEditor, setStatus)
+import WSEdit.Data.Algorithms      (catchEditor, refreshDispBounds, setStatus)
 import WSEdit.Keymaps              (defaultKM)
 import WSEdit.Renderer             (rebuildAll)
 import WSEdit.Output               (draw, drawExitFrame)
@@ -86,7 +86,7 @@ start = do
                         )
                  >>= flip when (do
                                     standby "Building initial rendering cache..."
-                                    rebuildAll Nothing
+                                    runPure $ rebuildAll Nothing
                                     mainLoop
                                )
                    )
@@ -107,38 +107,39 @@ mainLoop = do
                                >> return (EvResize undefined undefined)
                            ) $ do
         draw
-        setStatus ""
+        runPure $ setStatus ""
 
         ev <- liftIO $ nextEvent $ vtyObj c
         modify (\st -> st { lastEvent = Just ev })
+        refreshDispBounds
         return ev
 
     flip catchEditor errHdlControl $ do
         -- look up the event in the keymap
         -- if not found: insert the pressed key
         -- if it's not alphanumeric: show an "event not bound" warning
-        maybe (case ev of
-                    EvKey (KChar k) [] -> deleteSelection
-                                       >> insert k
-                                       >> listAutocomplete
+        maybe (runPure $ case ev of
+                EvKey (KChar k) [] -> deleteSelection
+                                   >> insert k
+                                   >> listAutocomplete
 
-                    EvResize _ _       -> setStatus $ status s
-                    _                  -> setStatus $ "Event not bound: "
-                                                   ++ show ev
+                EvResize _ _       -> setStatus $ status s
+                _                  -> setStatus $ "Event not bound: "
+                                               ++ show ev
               )
               fst
               $ lookup ev
               $ catMaybes
               $ keymap c
 
-    flip catchEditor errHdlRenderer $ do
+    flip catchEditor errHdlRenderer $ runPure $ do
         rebuildAll $ Just s
 
         when (dumpEvents c) $ do
             st <- get
             setStatus $ show ev ++ status st
 
-    b <- continue <$> get
+    b <- gets continue
     when b mainLoop
 
     where

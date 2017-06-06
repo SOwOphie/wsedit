@@ -18,6 +18,7 @@ module WSEdit.Data.Algorithms
     , popHist
     , getSelection
     , delSelection
+    , refreshDispBounds
     , getDisplayBounds
     , getCurrBracket
     , catchEditor
@@ -27,9 +28,9 @@ module WSEdit.Data.Algorithms
     ) where
 
 
-import Control.Exception        (SomeException, evaluate, try)
+import Control.Exception        (SomeException, try)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put, runRWST)
+import Control.Monad.RWS.Strict (ask, asks, get, gets, modify, put, runRWST)
 import Data.List                (isPrefixOf, isSuffixOf)
 import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
@@ -42,14 +43,15 @@ import Safe                     ( fromJustNote, headMay, headNote, initNote
 import System.FilePath          (isRelative)
 
 import WSEdit.Util              (unlinesPlus, withSnd)
-import WSEdit.Data              ( WSEdit
-                                , EdConfig (histSize, vtyObj)
+import WSEdit.Data              ( EdConfig (histSize, vtyObj)
                                 , EdState ( bracketCache, changed, cursorPos
-                                          , edLines, markPos, history
-                                          , scrollOffset, status
+                                          , dispBounds, edLines, markPos
+                                          , history, scrollOffset, status
                                           )
                                 , FileMatch (ExactName, PrefSuf)
                                 , PathInfo (absPath, relPath)
+                                , WSEdit
+                                , WSPure
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -64,51 +66,46 @@ fqn = ("WSEdit.Data.Algorithms" ++)
 
 
 -- | Retrieve the current cursor position.
-getCursor :: WSEdit (Int, Int)
+getCursor :: WSPure (Int, Int)
 getCursor = do
     s <- get
     return (B.currPos (edLines s) + 1, cursorPos s)
 
 -- | Set the current cursor position.
-setCursor :: (Int, Int) -> WSEdit ()
-setCursor (r, c) = do
-    s <- get
-    put $ s { cursorPos = c
-            , edLines   = B.moveTo (r - 1) $ edLines s
-            }
+setCursor :: (Int, Int) -> WSPure ()
+setCursor (r, c) = modify $ \s -> s
+    { cursorPos = c
+    , edLines   = B.moveTo (r - 1) $ edLines s
+    }
 
 
 -- | Retrieve the current mark position, if it exists.
-getMark :: WSEdit (Maybe (Int, Int))
-getMark = markPos <$> get
+getMark :: WSPure (Maybe (Int, Int))
+getMark = gets markPos
 
 
 -- | Set the mark to a position.
-setMark :: (Int, Int) -> WSEdit ()
-setMark p = do
-    s <- get
-    put $ s { markPos = Just p }
+setMark :: (Int, Int) -> WSPure ()
+setMark p = modify $ \s -> s { markPos = Just p }
 
 -- | Clear a previously set mark.
-clearMark :: WSEdit ()
-clearMark = do
-    s <- get
-    put $ s { markPos = Nothing }
+clearMark :: WSPure ()
+clearMark = modify $ \s -> s { markPos = Nothing }
 
 
 
 -- | Retrieve the position of the first selected element.
-getFirstSelected :: WSEdit (Maybe (Int, Int))
+getFirstSelected :: WSPure (Maybe (Int, Int))
 getFirstSelected = fmap fst <$> getSelBounds
 
 
 -- | Retrieve the position of the last selected element.
-getLastSelected :: WSEdit (Maybe (Int, Int))
+getLastSelected :: WSPure (Maybe (Int, Int))
 getLastSelected = fmap snd <$> getSelBounds
 
 
 -- | Faster combination of 'getFirstSelected' and 'getLastSelected'.
-getSelBounds :: WSEdit (Maybe ((Int, Int), (Int, Int)))
+getSelBounds :: WSPure (Maybe ((Int, Int), (Int, Int)))
 getSelBounds =
     getMark >>= \case
         Nothing -> return Nothing
@@ -128,26 +125,18 @@ getSelBounds =
 
 
 -- | Retrieve the current viewport offset (relative to the start of the file).
-getOffset :: WSEdit (Int, Int)
-getOffset = scrollOffset <$> get
+getOffset :: WSPure (Int, Int)
+getOffset = gets scrollOffset
 
 -- | Set the viewport offset.
-setOffset :: (Int, Int) -> WSEdit ()
-setOffset p = do
-    s <- get
-    put $ s { scrollOffset = p }
+setOffset :: (Int, Int) -> WSPure ()
+setOffset p = modify $ \s -> s { scrollOffset = p }
 
 
 
 -- | Set the status line's contents.
-setStatus :: String -> WSEdit ()
-setStatus st = do
-    s <- get
-
-    -- Precaution, since lazyness can be quirky sometimes
-    st' <- liftIO $ evaluate st
-
-    put $ s { status = st' }
+setStatus :: String -> WSPure ()
+setStatus st = modify $ \s -> s { status = st }
 
 
 
@@ -171,16 +160,16 @@ mapPast f s =
 
 
 -- | Create an undo checkpoint and set the changed flag.
-alter :: WSEdit ()
+alter :: WSPure ()
 alter = do
-    h <- histSize <$> ask
-    modify (\s -> s { history = chopHist h (Just s)
-                    , changed = True
-                    } )
+    h <- asks histSize
+    modify $ \s -> s { history = chopHist h (Just s)
+                     , changed = True
+                     }
 
 
 -- | Restore the last undo checkpoint, if available.
-popHist :: WSEdit ()
+popHist :: WSPure ()
 popHist = modify popHist'
 
     where
@@ -192,7 +181,7 @@ popHist = modify popHist'
 
 
 -- | Retrieve the contents of the current selection.
-getSelection :: WSEdit (Maybe String)
+getSelection :: WSPure (Maybe String)
 getSelection = getSelBounds >>= \case
     Nothing                   -> return Nothing
     Just ((sR, sC), (eR, eC)) -> do
@@ -224,7 +213,7 @@ getSelection = getSelBounds >>= \case
 
 
 -- | Delete the contents of the current selection from the text buffer.
-delSelection :: WSEdit Bool
+delSelection :: WSPure Bool
 delSelection = getSelBounds >>= \case
     Nothing                 -> return False
     Just ((_, sC), (_, eC)) -> do
@@ -276,15 +265,23 @@ delSelection = getSelBounds >>= \case
 
 
 
+-- | Refresh the `dispBounds` field.
+refreshDispBounds :: WSEdit ()
+refreshDispBounds = do
+    d <- displayBounds . outputIface . vtyObj =<< ask
+    modify $ \s -> s { dispBounds = swap d }
+
+
+
 -- | Retrieve the number of rows, colums displayed by vty, including all borders
 --   , frames and similar woo.
-getDisplayBounds :: WSEdit (Int, Int)
-getDisplayBounds = fmap swap (displayBounds . outputIface . vtyObj =<< ask)
+getDisplayBounds :: WSPure (Int, Int)
+getDisplayBounds = gets dispBounds
 
 
 
 -- | Returns the bounds of the brackets the cursor currently resides in.
-getCurrBracket :: WSEdit (Maybe ((Int, Int), (Int, Int)))
+getCurrBracket :: WSPure (Maybe ((Int, Int), (Int, Int)))
 getCurrBracket = do
     (cR, cC) <- getCursor
 
@@ -362,7 +359,7 @@ fileMatch match file =
 
 
 -- | Returns the length of the current line.
-currLineLen :: WSEdit Int
+currLineLen :: WSPure Int
 currLineLen =  length
             .  snd
             .  B.pos

@@ -23,11 +23,11 @@ import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
                                    , moveCursorHome, refuseOnReadOnly
                                    , validateCursor
                                    )
-import WSEdit.Data                 ( WSEdit
-                                   , EdConfig (tabWidth)
+import WSEdit.Data                 ( EdConfig (tabWidth)
                                    , EdState ( cursorPos, edLines, overwrite
                                              , replaceTabs
                                              )
+                                   , WSPure
                                    )
 import WSEdit.Data.Algorithms      (getCursor)
 import WSEdit.Output               (stringWidth)
@@ -46,14 +46,14 @@ fqn = ("WSEdit.Control.Text." ++)
 
 -- | Inserts a character at the cursor location, moving the cursor to the
 --   right and presenting autocomplete info in the status line.
-insert :: Char -> WSEdit ()
+insert :: Char -> WSPure ()
 insert c = alterBuffer $ insertRaw [c]
 
 
 
 -- | Inserts a string at the cursor location, moving the cursor to the right.
 --   Low-level function that disregards undo functionality, read-only-ness, ...
-insertRaw :: String -> WSEdit ()
+insertRaw :: String -> WSPure ()
 insertRaw s = refuseOnReadOnly $ modify (ins s) >> validateCursor
     where
         ins :: String -> EdState -> EdState
@@ -74,7 +74,7 @@ insertRaw s = refuseOnReadOnly $ modify (ins s) >> validateCursor
 
 
 -- | Inserts a tab character or the equivalent amount of spaces.
-insertTab :: WSEdit ()
+insertTab :: WSPure ()
 insertTab = alterBuffer $ do
     b <- replaceTabs <$> get
     c <- cursorPos <$> get
@@ -94,7 +94,7 @@ insertTab = alterBuffer $ do
 -- | Deletes the character left of the cursor, moving the cursor to the left.
 --   If the cursor is at the front of its line, it will instead merge the line
 --   to the previous one.
-delLeft :: WSEdit ()
+delLeft :: WSPure ()
 delLeft = alterBuffer
     $ getCursor >>= \case
         (1, 1) -> return ()
@@ -131,7 +131,7 @@ delLeft = alterBuffer
 
 -- | Deletes the character right of the cursor. If the cursor is at the end of
 --   its line, it will instead merge the line to the next one.
-delRight :: WSEdit ()
+delRight :: WSPure ()
 delRight = alterBuffer $ do
     (cR, _) <- getCursor
 
@@ -167,7 +167,7 @@ delRight = alterBuffer $ do
 -- | Moves the cursor to the beginning of the text in the current line,
 --   skipping leading whitespace. If the cursor is already there, it will
 --   be moved to the front of the line instead.
-smartHome :: WSEdit ()
+smartHome :: WSPure ()
 smartHome = alterState $ do
     (_, cC) <- getCursor
 
@@ -188,7 +188,7 @@ smartHome = alterState $ do
 
 -- | Splits the current line into two at the cursor position, indenting the
 --   second resulting line to the level of the first.
-smartNewLine :: WSEdit ()
+smartNewLine :: WSPure ()
 smartNewLine = alterBuffer $ do
     modify snl
     smartHome
@@ -211,7 +211,7 @@ smartNewLine = alterBuffer $ do
 
 
 -- | Splits the current line into two at the current position.
-dumbNewLine :: WSEdit ()
+dumbNewLine :: WSPure ()
 dumbNewLine = alterBuffer $ do
     modify nl
     moveCursorHome
@@ -232,7 +232,7 @@ dumbNewLine = alterBuffer $ do
 
 
 -- | Removes all trailing whitespace in the text buffer.
-cleanse :: WSEdit ()
+cleanse :: WSPure ()
 cleanse = alterBuffer $ do
     modify (\s -> s { edLines = (\b -> if snd (B.last b) == ""
                                           then                      b

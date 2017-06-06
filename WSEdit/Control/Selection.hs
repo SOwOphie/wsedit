@@ -30,7 +30,9 @@ import WSEdit.Data              ( EdConfig (tabWidth)
                                 , EdState (cursorPos, edLines, fullRebdReq
                                           , markPos, replaceTabs, searchTerms
                                           )
+                                , MonadEditor (runPure)
                                 , WSEdit
+                                , WSPure
                                 )
 import WSEdit.Data.Algorithms   ( clearMark, delSelection, getMark, getCursor
                                 , getSelection, setMark, setStatus
@@ -52,7 +54,7 @@ fqn = ("WSEdit.Control.Selection." ++)
 
 -- | Throw down the mark at the current cursor position, if it is not placed
 --   somewhere else already.
-initMark :: WSEdit ()
+initMark :: WSPure ()
 initMark = alterState
          $ getMark >>= \case
                 Nothing -> getCursor >>= setMark
@@ -62,7 +64,7 @@ initMark = alterState
 
 -- | Executes the first action if the user has selected text (Shift+Movement),
 --   or the second one if not.
-ifMarked :: WSEdit a -> WSEdit a -> WSEdit a
+ifMarked :: (MonadEditor m) => m a -> m a -> m a
 ifMarked x y = do
     b <- isJust . markPos <$> get
     if b
@@ -72,7 +74,7 @@ ifMarked x y = do
 
 
 -- | Delete the selected text.
-deleteSelection :: WSEdit ()
+deleteSelection :: WSPure ()
 deleteSelection = flip ifMarked (return ()) $ alterBuffer $ do
     _ <- delSelection
     clearMark
@@ -82,8 +84,8 @@ deleteSelection = flip ifMarked (return ()) $ alterBuffer $ do
 -- | Copy the text in the selection to the clipboard.
 copy :: WSEdit ()
 copy = refuseOnReadOnly
-     $ getSelection >>= \case
-            Nothing -> setStatus "Warning: nothing selected."
+     $ runPure getSelection >>= \case
+            Nothing -> runPure $ setStatus "Warning: nothing selected."
             Just s  -> do
                 b <- liftIO checkClipboardSupport
 
@@ -91,11 +93,12 @@ copy = refuseOnReadOnly
                    then do
                         liftIO $ setClipboard s
 
-                        setStatus $ "Copied "
-                                 ++ show (length $ linesPlus s)
-                                 ++ " lines ("
-                                 ++ show (length s)
-                                 ++ " chars) to system clipboard."
+                        runPure $ setStatus
+                                $ "Copied "
+                               ++ show (length $ linesPlus s)
+                               ++ " lines ("
+                               ++ show (length s)
+                               ++ " chars) to system clipboard."
 
                    else do
                         liftIO $ do
@@ -109,11 +112,12 @@ copy = refuseOnReadOnly
 
                             writeFile fname s
 
-                        setStatus $ "Copied "
-                                 ++ show (length $ linesPlus s)
-                                 ++ " lines ("
-                                 ++ show (length s)
-                                 ++ " chars) to editor clipboard."
+                        runPure $ setStatus
+                                $ "Copied "
+                               ++ show (length $ linesPlus s)
+                               ++ " lines ("
+                               ++ show (length s)
+                               ++ " chars) to editor clipboard."
 
 
 
@@ -131,15 +135,13 @@ paste = alterBuffer $ do
                     fromMaybe "" <$> mayReadFile (h ++ "/.wsedit-clipboard")
 
     if c1 == ""
-       then setStatus $ if b
-                           then "Warning: System clipboard is empty."
-                           else "Warning: Editor clipboard is empty."
+       then runPure $ setStatus $ if b
+                                     then "Warning: System clipboard is empty."
+                                     else "Warning: Editor clipboard is empty."
 
        else do
             let c = linesPlus c1
-            s <- get
-
-            put $ s     -- Arcane buffer magic incoming...
+            modify $ \s -> s    -- Arcane buffer magic incoming...
                 { edLines =
                     if length c == 1
                        then B.withCurr (withSnd (\l -> take (cursorPos s - 1) l
@@ -165,25 +167,26 @@ paste = alterBuffer $ do
                           $ edLines s
                 }
 
-            if length c > 1
-               then moveCursorHome
-                 >> moveCursor 0 (length $ last c)
+            runPure $ do
+                if length c > 1
+                   then moveCursorHome
+                     >> moveCursor 0 (length $ last c)
 
-               else moveCursor 0 $ length c1
+                   else moveCursor 0 $ length c1
 
-            setStatus $ "Pasted "
-                     ++ show (length c)
-                     ++ " lines ("
-                     ++ show (length c1)
-                     ++ if b
-                           then " chars) from system clipboard."
-                           else " chars) from editor clipboard."
+                setStatus $ "Pasted "
+                         ++ show (length c)
+                         ++ " lines ("
+                         ++ show (length c1)
+                         ++ if b
+                               then " chars) from system clipboard."
+                               else " chars) from editor clipboard."
 
 
 
 -- | Indent the currently selected area using the current tab width and
 --   replacement settings.
-indentSelection :: WSEdit ()
+indentSelection :: WSPure ()
 indentSelection = alterBuffer
     $ getMark >>= \case
        Nothing      -> return ()
@@ -215,7 +218,7 @@ indentSelection = alterBuffer
 
 -- | Unindent the currently selected area using the current tab width and
 --   replacement settings.
-unindentSelection :: WSEdit ()
+unindentSelection :: WSPure ()
 unindentSelection = alterBuffer
     $ getMark >>= \case
        Nothing      -> return ()
@@ -251,7 +254,7 @@ unindentSelection = alterBuffer
 
 -- | Add the currently selected area to the list of search terms, or pop the
 --   last search term from the list if the selection is empty.
-searchFor :: WSEdit ()
+searchFor :: WSPure ()
 searchFor = do
     getSelection >>= \case
         Nothing -> headMay . searchTerms <$> get >>= \case

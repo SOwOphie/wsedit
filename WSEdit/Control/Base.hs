@@ -41,12 +41,15 @@ import WSEdit.Data                ( EdConfig (keymap, vtyObj)
                                   , FmtParserState (PNothing)
                                   , HighlightMode (HSearch)
                                   , Keymap
+                                  , MonadEditor (runPure)
                                   , WSEdit
+                                  , WSPure
                                   , mkDefConfig
                                   , runIn
                                   )
 import WSEdit.Data.Algorithms     ( alter, currLineLen, getCursor, getOffset
-                                  , setCursor, setStatus, setOffset, tryEditor
+                                  , refreshDispBounds, setCursor, setStatus
+                                  , setOffset, tryEditor
                                   )
 import WSEdit.Output              ( cursorOffScreen, draw, getViewportDimensions
                                   , stringWidth, txtToVisPos, visToTxtPos
@@ -62,36 +65,35 @@ import qualified WSEdit.Buffer as B
 
 -- | Guard the given action against use in read-only mode. Will use 'setStatus'
 --   to issue a warning.
-refuseOnReadOnly :: WSEdit () -> WSEdit ()
+refuseOnReadOnly :: (MonadEditor m) => m () -> m ()
 refuseOnReadOnly a = do
     s <- get
     if readOnly s
-       then setStatus "Warning: read only (press Ctrl-Meta-R to enable editing)"
+       then runPure $ setStatus "Warning: read only (press Ctrl-Meta-R to enable editing)"
        else a
 
 
 -- | Declares that an action will alter the text buffer. Calls
 --   'refuseOnReadOnly', creates an undo point, wiggles the cursor to ensure it
 --   is in a valid position, ...
-alterBuffer :: WSEdit () -> WSEdit ()
-alterBuffer a = refuseOnReadOnly
-              $ alterState
-              $ modify (\s -> s { wantsPos = Nothing })
-             >> validateCursor
-             >> alter
-             >> a
+alterBuffer :: (MonadEditor m) => m () -> m ()
+alterBuffer a = refuseOnReadOnly $ alterState $ do
+    runPure $ do
+        modify (\s -> s { wantsPos = Nothing })
+        validateCursor
+        alter
+    a
 
 
 -- | Declares that an action will alter the text buffer or the cursor position.
 --   Included in 'alterBuffer'.
-alterState :: WSEdit a -> WSEdit a
-alterState a = modify (\s -> s { canComplete = False })
-            >> a
+alterState :: (MonadEditor m) => m a -> m a
+alterState a = modify (\s -> s { canComplete = False }) >> a
 
 
 
 -- | Moves the viewport by the given amount of rows, columns.
-moveViewport :: Int -> Int -> WSEdit ()
+moveViewport :: Int -> Int -> WSPure ()
 moveViewport r c = do
     s <- get
 
@@ -117,7 +119,7 @@ moveViewport r c = do
 
 -- | Move the cursor to a legal position and move the viewport so that the
 --   cursor is visible.
-validateCursor :: WSEdit ()
+validateCursor :: WSPure ()
 validateCursor = do
     lineLen <- currLineLen
     modify $ \st -> st { cursorPos = max 1 $ min (lineLen + 1) $ cursorPos st }
@@ -131,7 +133,7 @@ validateCursor = do
 --   by the shape of the underlying text, but pure vertical movement will try to
 --   maintain the original horizontal cursor position until horizontal movement
 --   occurs or 'alterBuffer' is called.
-moveCursor :: Int -> Int -> WSEdit ()
+moveCursor :: Int -> Int -> WSPure ()
 moveCursor r c = alterState $ do
     b <- readOnly <$> get
     if b
@@ -146,7 +148,7 @@ moveCursor r c = alterState $ do
 
     where
         -- | Vertical portion of the movement
-        moveV :: Int -> WSEdit ()
+        moveV :: Int -> WSPure ()
         moveV n = do
             (currR, currC) <- getCursor
             s <- get
@@ -172,7 +174,7 @@ moveCursor r c = alterState $ do
             setCursor (tLnNo, newC)
 
         -- | Horizontal portion of the movement
-        moveH :: Int -> WSEdit ()
+        moveH :: Int -> WSPure ()
         moveH n = do
             s              <- get
             (currR, currC) <- getCursor
@@ -206,7 +208,7 @@ moveCursor r c = alterState $ do
 
 
 -- | Moves the cursor to the first column using `moveCursor`.
-moveCursorHome :: WSEdit ()
+moveCursorHome :: WSPure ()
 moveCursorHome = do
     modify $ \s -> s { cursorPos = 1, wantsPos = Nothing }
     validateCursor
@@ -214,7 +216,7 @@ moveCursorHome = do
 
 
 -- | Moves the cursor to the last column using `moveCursor`.
-moveCursorEnd :: WSEdit ()
+moveCursorEnd :: WSPure ()
 moveCursorEnd = do
     l <- currLineLen
     modify $ \s -> s { cursorPos = l + 1, wantsPos = Nothing }
@@ -223,7 +225,7 @@ moveCursorEnd = do
 
 
 -- | Moves the cursor to the upper left corner of the viewport.
-fetchCursor :: WSEdit ()
+fetchCursor :: WSPure ()
 fetchCursor = refuseOnReadOnly $ do
     s <- get
     (r, _) <- getViewportDimensions
@@ -240,7 +242,7 @@ fetchCursor = refuseOnReadOnly $ do
 standby :: String -> WSEdit ()
 standby str = do
     s      <- get
-    (_, w) <- getViewportDimensions
+    (_, w) <- runPure getViewportDimensions
 
     let
         strLn = forceBreakAt w
@@ -258,7 +260,6 @@ standby str = do
             }
 
     draw
-
     put s
 
     where
@@ -309,10 +310,10 @@ showText s k = do
 
                 , readOnly = True
                 }
-          ) (rebuildAll Nothing >> runEitherT loop)
+          ) (runPure (rebuildAll Nothing) >> runEitherT loop)
         >>= \case
             Right _ -> return ()
-            Left  e -> setStatus (show e)
+            Left  e -> runPure $ setStatus $ show e
 
     where
         loop :: EitherT SomeException WSEdit ()
@@ -322,15 +323,16 @@ showText s k = do
                 st <- get
 
                 draw
-                setStatus ""
+                runPure $ setStatus ""
 
                 ev <- liftIO $ nextEvent $ vtyObj c
+                refreshDispBounds
 
 
-                maybe (case ev of
-                            EvResize _ _       -> setStatus $ status st
-                            _                  -> setStatus $ "Event not bound: "
-                                                           ++ show ev
+                maybe (runPure $ setStatus $ case ev of
+                        EvResize _ _ -> status st
+                        _            -> "Event not bound: "
+                                     ++ show ev
                       )
                       fst
                       $ lookup ev
@@ -338,6 +340,6 @@ showText s k = do
                       $ keymap c
 
 
-                rebuildAll $ Just st
+                runPure $ rebuildAll $ Just st
 
             continue <$> get >>= flip when loop

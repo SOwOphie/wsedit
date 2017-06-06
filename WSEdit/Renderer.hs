@@ -30,7 +30,7 @@ import WSEdit.Data              ( BracketCache
                                 , FmtParserState ( PNothing, PBComment
                                                  , PLnString, PMLString
                                                  )
-                                , WSEdit
+                                , WSPure
                                 )
 import WSEdit.Output            (getViewportDimensions)
 import WSEdit.Util              ( findInStr, findIsolated, withFst, withPair
@@ -45,7 +45,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Rebuilds the token cache. A past state may be given as a parameter to speed
 --   up the process.
-rebuildTk :: Maybe EdState -> WSEdit ()
+rebuildTk :: Maybe EdState -> WSPure ()
 rebuildTk Nothing  = do
     s <- get
 
@@ -70,7 +70,9 @@ rebuildTk (Just h) = do
     modify $ \st -> st { tokenCache = c }
 
     where
-        rebdTk :: B.Buffer [(Int, String)] -> B.Buffer (Bool, String) -> WSEdit (B.Buffer [(Int, String)])
+        rebdTk :: B.Buffer [(Int, String)]
+               -> B.Buffer (Bool, String)
+               -> WSPure (B.Buffer [(Int, String)])
         rebdTk cHull rebdFrom
             | B.length cHull == B.length rebdFrom
                 = do
@@ -90,7 +92,7 @@ rebuildTk (Just h) = do
 -- | Token line processor. Turns a line of text into the corresponding cache
 --   entry. The 'Bool' is only there for convenience when folding over the
 --   'edLines' buffer and will be completely ignored.
-tkLn :: (Bool, String) -> WSEdit [(Int, String)]
+tkLn :: (Bool, String) -> WSPure [(Int, String)]
 tkLn (_, str) = do
     c <- ask
     s <- get
@@ -133,7 +135,7 @@ tkLn (_, str) = do
 -- | Rebuilds the range cache from the token cache, therefore this should
 --   normally be called after 'rebuildTk'. A past state may be given to speed up
 --   the process.
-rebuildFmt :: Maybe EdState -> WSEdit ()
+rebuildFmt :: Maybe EdState -> WSPure ()
 rebuildFmt Nothing  = do
     s        <- get
     (rs, _ ) <- getViewportDimensions
@@ -170,7 +172,7 @@ rebuildFmt (Just h) = do
 
 -- | Range line processor. Processes a single line of token buffer into
 --   corresponding ranges.
-rLn :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSEdit (RangeCache, BracketCache)
+rLn :: (RangeCache, BracketCache) -> (Int, [(Int, String)]) -> WSPure (RangeCache, BracketCache)
 rLn (rc, bc) (lNr, l) = do
     c <- ask
     s <- get
@@ -376,7 +378,7 @@ rLn (rc, bc) (lNr, l) = do
 
 -- | Rebuilds all caches in order. A past state may be given to speed up the
 --   process.
-rebuildAll :: Maybe EdState -> WSEdit ()
+rebuildAll :: Maybe EdState -> WSPure ()
 rebuildAll h = do
     s <- get
     if fullRebdReq s

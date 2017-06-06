@@ -20,7 +20,7 @@ module WSEdit.Output
 
 import Control.Monad            (foldM)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get)
+import Control.Monad.RWS.Strict (ask, asks, get)
 import Data.Char                (ord)
 import Data.Ix                  (inRange)
 import Data.Maybe               (fromMaybe)
@@ -62,6 +62,8 @@ import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
                                                 , HString
                                                 )
                                 , WSEdit
+                                , WSPure
+                                , runPure
                                 )
 import WSEdit.Data.Algorithms   ( getCurrBracket, getCursor, getDisplayBounds
                                 , getOffset, getSelBounds
@@ -80,13 +82,13 @@ import qualified WSEdit.Buffer as B
 
 
 -- | Returns the display width of a given char in a given column.
-charWidth :: Int -> Char -> WSEdit Int
+charWidth :: Int -> Char -> WSPure Int
 charWidth n '\t'                           = (\w -> w - (n-1) `mod` w) . tabWidth <$> ask
 charWidth _ c | charClass c == Unprintable = return $ length (showHex (ord c) "") + 3
               | otherwise                  = return 1
 
 -- | Returns the display width of a given string starting at a given column.
-stringWidth :: Int -> String -> WSEdit Int
+stringWidth :: Int -> String -> WSPure Int
 stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n' + 1) c) $ n - 1
 
 
@@ -117,7 +119,7 @@ data CalcSnippet = CalcSnippet
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column. The first argument toggles the bracket
 --   format modifier.
-charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
+charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSPure Snippet
 charRep br hl pos n '\t' = do
     (r, _) <- getCursor
     st     <- get
@@ -178,7 +180,7 @@ charRep br hl pos _ ch = do
 
 -- | Returns the visual representation of a line with a given line number at a
 --   given horizontal offset.
-lineRep :: Int -> Int -> String -> WSEdit Image
+lineRep :: Int -> Int -> String -> WSPure Image
 lineRep lNo off str = do
     st     <- get
     maySel <- getSelBounds
@@ -192,7 +194,7 @@ lineRep lNo off str = do
         --   line chars with a
         --   ([Snippet], textual position, visual position, ccolumns left to skip)
         --   state.
-        f :: ([Snippet], Int, Int, Int) -> Char -> WSEdit ([Snippet], Int, Int, Int)
+        f :: ([Snippet], Int, Int, Int) -> Char -> WSPure ([Snippet], Int, Int, Int)
         f (im, tPos, vPos, toSkip) c = do
             i <- charRep
                     (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
@@ -274,10 +276,10 @@ lineRep lNo off str = do
 
 
 -- | Returns the textual position of the cursor in a line, given its visual one.
-visToTxtPos :: String -> Int -> WSEdit Int
+visToTxtPos :: String -> Int -> WSPure Int
 visToTxtPos = pos 1
     where
-        pos :: Int -> String -> Int -> WSEdit Int
+        pos :: Int -> String -> Int -> WSPure Int
         pos _   []     _            = return 1
         pos col _      c | col == c = return 1
         pos col _      c | col >  c = return 0
@@ -287,14 +289,14 @@ visToTxtPos = pos 1
 
 
 -- | Returns the visual position of the cursor in a line, given its textual one.
-txtToVisPos :: String -> Int -> WSEdit Int
+txtToVisPos :: String -> Int -> WSPure Int
 txtToVisPos txt n = (+1) <$> stringWidth 1 (take (n - 1) txt)
 
 
 
 -- | Returns the width of the line numbers column, based on the number of
 --   lines the file has.
-lineNoWidth :: WSEdit Int
+lineNoWidth :: WSPure Int
 lineNoWidth =  length
             .  show
             .  B.length
@@ -305,7 +307,7 @@ lineNoWidth =  length
 
 -- | Return the cursor's position on the display, given its position in the
 --   buffer.
-toCursorDispPos :: (Int, Int) -> WSEdit (Int, Int)
+toCursorDispPos :: (Int, Int) -> WSPure (Int, Int)
 toCursorDispPos (r, c) = do
     currLine <-  snd
               .  B.pos
@@ -320,18 +322,17 @@ toCursorDispPos (r, c) = do
 
 
 -- | Returns the number of rows, columns of text displayed.
-getViewportDimensions :: WSEdit (Int, Int)
+getViewportDimensions :: WSPure (Int, Int)
 getViewportDimensions = do
     (nRows, nCols) <- getDisplayBounds
-    lNoWidth <- lineNoWidth
-
+    lNoWidth       <- lineNoWidth
     return (nRows - 4, nCols - lNoWidth - 6)
 
 
 
 -- | Returns the number of (rows up, rows down), (cols left, cols right)
 --   the cursor is off screen by.
-cursorOffScreen :: WSEdit ((Int, Int), (Int, Int))
+cursorOffScreen :: WSPure ((Int, Int), (Int, Int))
 cursorOffScreen = do
     s <- get
 
@@ -340,9 +341,8 @@ cursorOffScreen = do
         (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
-    curC <- txtToVisPos currLn curC_
-
-    (maxR, maxC) <- getViewportDimensions
+    curC          <- txtToVisPos currLn curC_
+    (maxR, maxC)  <- getViewportDimensions
 
     return ( ( max 0 $ (1 + scrR) - curR
              , max 0 $ curR - (maxR + scrR)
@@ -357,7 +357,7 @@ cursorOffScreen = do
 
 
 -- | Creates the top border of the interface.
-makeHeader :: WSEdit Image
+makeHeader :: WSPure Image
 makeHeader = do
     d <- edDesign <$> ask
     lNoWidth <- lineNoWidth
@@ -394,15 +394,15 @@ makeHeader = do
 
 
 -- | Creates the left border of the interface.
-makeLineNos :: WSEdit Image
+makeLineNos :: WSPure Image
 makeLineNos = do
-    s <- get
-    d <- edDesign <$> ask
+    s        <- get
+    d        <- asks edDesign
     lNoWidth <- lineNoWidth
 
     (scrollRows, _) <- getOffset
     (r         , _) <- getCursor
-    (txtRows   , _)<- getViewportDimensions
+    (txtRows   , _) <- getViewportDimensions
 
     return $ vertCat
            $ map (mkLn s d lNoWidth r)
@@ -427,10 +427,10 @@ makeLineNos = do
 
 
 -- | Creates the bottom border of the interface.
-makeFooter :: WSEdit Image
+makeFooter :: WSPure Image
 makeFooter = do
     s <- get
-    d <- edDesign <$> ask
+    d <- asks edDesign
 
     lNoWidth <- lineNoWidth
 
@@ -493,7 +493,7 @@ makeFooter = do
 
 
 -- | Assembles the entire interface frame.
-makeFrame :: WSEdit Image
+makeFrame :: WSPure Image
 makeFrame = do
     h <- makeHeader
     l <- makeLineNos
@@ -503,7 +503,7 @@ makeFrame = do
 
 
 -- | Render the current text window.
-makeTextFrame :: WSEdit Image
+makeTextFrame :: WSPure Image
 makeTextFrame = do
     s <- get
     c <- ask
@@ -552,10 +552,10 @@ makeTextFrame = do
 
 
 -- | Render the background.
-makeBackground :: WSEdit Image
+makeBackground :: WSPure Image
 makeBackground = do
     conf <- ask
-    s <- get
+    s    <- get
 
     (nRows     , nCols     ) <- getViewportDimensions
     (scrollRows, scrollCols) <- getOffset
@@ -590,7 +590,7 @@ makeBackground = do
 
 
 -- | Render the scroll bar to the right.
-makeScrollbar :: WSEdit Image
+makeScrollbar :: WSPure Image
 makeScrollbar = do
     d <- edDesign <$> ask
     s <- get
@@ -657,7 +657,7 @@ makeScrollbar = do
 
 
 -- | Generates a badge over the top right corner.
-makeShittyBadge :: String -> WSEdit Image
+makeShittyBadge :: String -> WSPure Image
 makeShittyBadge str = do
     d         <- edDesign <$> ask
     (_, cols) <- getDisplayBounds
@@ -682,17 +682,17 @@ draw = do
     s <- get
     c <- ask
 
-    cursor <- getCursor >>= toCursorDispPos
-    ((ru, rd), (cl, cr)) <- cursorOffScreen
+    cursor <- runPure $ getCursor >>= toCursorDispPos
+    ((ru, rd), (cl, cr)) <- runPure $ cursorOffScreen
 
-    frame <- makeFrame
-    txt   <- makeTextFrame
-    bg    <- makeBackground
+    frame <- runPure makeFrame
+    txt   <- runPure makeTextFrame
+    bg    <- runPure makeBackground
 
-    scr   <- makeScrollbar
+    scr   <- runPure makeScrollbar
     bad   <- case badgeText s of
-                  Just str  -> makeShittyBadge $ " " ++ str ++ " "
-                  Nothing -> return emptyImage
+                  Just str -> runPure $ makeShittyBadge $ " " ++ str ++ " "
+                  Nothing  -> return emptyImage
 
     liftIO $ update (vtyObj c)
              Picture

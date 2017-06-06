@@ -58,7 +58,8 @@ import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
                                               , readOnly, replaceTabs
                                               )
                                    , WSEdit
-                                   , runWSEdit, version
+                                   , WSPure
+                                   , runPure, runWSEdit, version
                                    )
 import WSEdit.Data.Algorithms      ( catchEditor, chopHist, mapPast, popHist
                                    , setStatus, tryEditor
@@ -82,7 +83,7 @@ fqn = ("WSEdit.Control.Global." ++)
 
 -- | Crashes the editor. Used for debugging. Mapped to @Meta-.@, test it if you
 --   dare.
-simulateCrash :: WSEdit ()
+simulateCrash :: WSPure ()
 simulateCrash = error "Simulated crash."
 
 
@@ -183,7 +184,7 @@ quit :: WSEdit ()
 quit = do
     b <- changed <$> get
     if b
-       then setStatus "Unsaved changes: Ctrl-S to save, Ctrl-Meta-Q to ignore."
+       then runPure $ setStatus "Unsaved changes: Ctrl-S to save, Ctrl-Meta-Q to ignore."
        else forceQuit
 
 
@@ -232,45 +233,40 @@ save = refuseOnReadOnly $ do
     standby "Saving..."
 
     s <- get
+    c <- ask
 
-    if not (changed s)
-       then setStatus "No changes to save."
+    let
+        targetFName = if atomicSaves c
+                         then fname s ++ ".atomic"
+                         else fname s
 
-       else do
-            c <- ask
+    liftIO $ writeF targetFName (encoding c) (newlineMode c)
+           $ unlinesPlus
+           $ map snd
+           $ B.toList
+           $ edLines s
 
-            let
-                targetFName = if atomicSaves c
-                                 then fname s ++ ".atomic"
-                                 else fname s
+    b <- if atomicSaves c && wriCheck c
+            then doWriCheck
+            else return True
 
-            liftIO $ writeF targetFName (encoding c) (newlineMode c)
-                   $ unlinesPlus
-                   $ map snd
-                   $ B.toList
-                   $ edLines s
+    when (atomicSaves c && b) $ do
+        liftIO $ do
+            doesFileExist (fname s)
+                >>= flip when ( copyPermissions (fname s)
+                              $ fname s ++ ".atomic"
+                              )
 
-            b <- if atomicSaves c && wriCheck c
-                    then doWriCheck
-                    else return True
+            renameFile (fname s ++ ".atomic") (fname s)
 
-            when (atomicSaves c && b) $ do
-                liftIO $ do
-                    doesFileExist (fname s)
-                        >>= flip when ( copyPermissions (fname s)
-                                      $ fname s ++ ".atomic"
-                                      )
+    when (not (atomicSaves c) || b) $ runPure $ do
+        modify $ \s' -> s' { changed = False }
 
-                    renameFile (fname s ++ ".atomic") (fname s)
-
-            when (not (atomicSaves c) || b) $ do
-                modify $ \s' -> s' { changed = False }
-
-                setStatus $ "Saved "
-                             ++ show (B.length (edLines s))
-                             ++ " lines of "
-                             ++ fromMaybe "native" (encoding c)
-                             ++ " text."
+        setStatus $ "Saved "
+                     ++ show (B.length (edLines s))
+                     ++ " lines of "
+                     ++ fromMaybe "native" (encoding c)
+                     ++ " text."
 
     dictAddRec
 
@@ -413,7 +409,8 @@ load lS = alterState $ do
                                    else replaceTabs s
                 }
 
-            when lS $ setStatus
+            when lS $ runPure
+                    $ setStatus
                     $ case (b    , w    , mEnc   ) of
                            (True , True , Just e ) -> "Loaded "
                                                    ++ show (nLns)
@@ -443,7 +440,7 @@ load lS = alterState $ do
                                                       \and disk state."
 
             -- Move the cursor to where it should be placed.
-            uncurry moveCursor $ withPair dec dec $ loadPos s
+            runPure $ uncurry moveCursor $ withPair dec dec $ loadPos s
 
             when lS $ dictAddRec
 
@@ -458,15 +455,13 @@ load lS = alterState $ do
 
 
 -- | Toggle the replacement of tabs with spaces.
-toggleTabRepl :: WSEdit ()
-toggleTabRepl = do
-    s <- get
-    put $ s { replaceTabs = not $ replaceTabs s }
+toggleTabRepl :: WSPure ()
+toggleTabRepl = modify $ \s -> s { replaceTabs = not $ replaceTabs s }
 
 
 
 -- | Toggle insert / overwrite mode
-toggleInsOvr :: WSEdit ()
+toggleInsOvr :: WSPure ()
 toggleInsOvr = modify (\s -> s { overwrite = not $ overwrite s })
 
 
@@ -478,11 +473,11 @@ toggleReadOnly = alterState $ do
     if readOnly s
        then do
             b <- canWriteFile
-            if not b
-               then setStatus "Error: file is read-only."
-               else do
-                    put $ s { readOnly = False }
-                    fetchCursor
+            runPure $ if not b
+                        then setStatus "Error: file is read-only."
+                        else do
+                                put $ s { readOnly = False }
+                                fetchCursor
 
        else put $ s { readOnly  = True
                     , cursorPos = 1
@@ -496,7 +491,7 @@ toggleReadOnly = alterState $ do
 
 
 -- | Undo the last action as logged by 'alterBuffer'.
-undo :: WSEdit ()
+undo :: WSPure ()
 undo = refuseOnReadOnly
      $ alterState
      $ popHist >> validateCursor

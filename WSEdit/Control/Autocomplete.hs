@@ -10,7 +10,7 @@ module WSEdit.Control.Autocomplete
 import Control.Exception        (evaluate)
 import Control.Monad            (forM_, unless, when)
 import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put)
+import Control.Monad.RWS.Strict (ask, get, gets, modify, put)
 import Data.Char                (isSpace)
 import Data.List                (intercalate, isPrefixOf, stripPrefix)
 import Safe                     (lastDef)
@@ -21,12 +21,14 @@ import System.Directory         ( doesDirectoryExist, doesFileExist
 
 import WSEdit.Control.Base      (alterBuffer, standby)
 import WSEdit.Control.Text      (insertRaw)
-import WSEdit.Data              ( WSEdit
-                                , EdConfig (lineComment, tabWidth)
+import WSEdit.Data              ( EdConfig (lineComment, tabWidth)
                                 , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
                                           )
+                                , MonadEditor (runPure)
                                 , PathInfo (absPath)
+                                , WSEdit
+                                , WSPure
                                 , pathInfo
                                 )
 import WSEdit.Data.Algorithms   (fileMatch, setStatus)
@@ -144,7 +146,7 @@ dictAddRec = do
 
 
 -- | Lists all autocomplete possibilities into the status bar.
-listAutocomplete :: WSEdit ()
+listAutocomplete :: WSPure ()
 listAutocomplete = do
     s <- get
 
@@ -173,7 +175,7 @@ listAutocomplete = do
 
 
 -- | Inserts the longest common prefix of all autocomplete suggestions.
-applyAutocomplete :: WSEdit ()
+applyAutocomplete :: WSPure ()
 applyAutocomplete = do
     s <- get
 
@@ -199,9 +201,9 @@ applyAutocomplete = do
 
 -- | Tries to autocomplete the current word, or executes another action
 --   if impossible.
-completeOr :: WSEdit () -> WSEdit ()
+completeOr :: (MonadEditor m) => m () -> m ()
 completeOr a = do
-    b <- canComplete <$> get
+    b <- gets canComplete
     if b
-       then applyAutocomplete
+       then runPure applyAutocomplete
        else a

@@ -28,7 +28,9 @@ import WSEdit.Control.Selection    ( copy, deleteSelection, ifMarked
 import WSEdit.Control.Text         ( cleanse, delLeft, delRight, insertTab
                                    , smartHome, smartNewLine
                                    )
-import WSEdit.Data                 (Keymap)
+import WSEdit.Data                 ( Keymap
+                                   , runPure
+                                   )
 import WSEdit.Data.Algorithms      (clearMark)
 import WSEdit.Help                 (keymapHelp)
 
@@ -44,228 +46,228 @@ defaultKM =
            )
     , Nothing
     , Just ( EvKey (KChar 'u') [MCtrl]
-           , ( moveViewport (-10) 0
+           , ( runPure $ moveViewport (-10) 0
              , "Move Viewport up 10 lines."
              )
            )
     , Just ( EvKey (KChar 'd') [MCtrl]
-           , ( moveViewport 10 0
+           , ( runPure $ moveViewport 10 0
              , "Move Viewport down 10 lines."
              )
            )
     , Just ( EvKey (KChar 'l') [MCtrl]
-           , ( moveViewport 0 (-10)
+           , ( runPure $ moveViewport 0 (-10)
              , "Move Viewport left 10 columns."
              )
            )
     , Just ( EvKey (KChar 'r') [MCtrl]
-           , ( moveViewport 0 10
+           , ( runPure $ moveViewport 0 10
              , "Move Viewport right 10 columns."
              )
            )
     , Just ( EvKey (KChar 'u') [MMeta]
-           , ( moveViewport (-100) 0
+           , ( runPure $ moveViewport (-100) 0
              , "Move Viewport up 100 lines."
              )
            )
     , Just ( EvKey (KChar 'd') [MMeta]
-           , ( moveViewport 100 0
+           , ( runPure $ moveViewport 100 0
              , "Move Viewport down 100 lines."
              )
            )
     , Just ( EvKey (KChar 'l') [MMeta]
-           , ( moveViewport 0 (-100)
+           , ( runPure $ moveViewport 0 (-100)
              , "Move Viewport left 100 columns."
              )
            )
     , Just ( EvKey (KChar 'r') [MMeta]
-           , ( moveViewport 0 10
+           , ( runPure $ moveViewport 0 10
              , "Move Viewport right 100 columns."
              )
            )
     , Nothing
     , Just ( EvKey KUp []
-           , ( moveCursor (-1) 0 >> clearMark
+           , ( runPure $ moveCursor (-1) 0 >> clearMark
              , "Move Cursor up 1 line."
              )
            )
     , Just ( EvKey KDown []
-           , ( moveCursor 1 0 >> clearMark
+           , ( runPure $ moveCursor 1 0 >> clearMark
              , "Move Cursor down 1 line."
              )
            )
     , Just ( EvKey KLeft []
-           , ( moveCursor 0 (-1) >> clearMark
+           , ( runPure $ moveCursor 0 (-1) >> clearMark
              , "Move Cursor left 1 column."
              )
            )
     , Just ( EvKey KRight []
-           , ( moveCursor 0 1 >> clearMark
+           , ( runPure $ moveCursor 0 1 >> clearMark
              , "Move Cursor right 1 column."
              )
            )
     , Just ( EvKey KUp [MCtrl]
-           , ( moveCursor (-10) 0 >> clearMark
+           , ( runPure $ moveCursor (-10) 0 >> clearMark
              , "Move Cursor up 10 lines."
              )
            )
     , Just ( EvKey KDown [MCtrl]
-           , ( moveCursor 10 0 >> clearMark
+           , ( runPure $ moveCursor 10 0 >> clearMark
              , "Move Cursor down 10 lines."
              )
            )
     , Just ( EvKey KLeft [MCtrl]
-           , ( moveCursor 0 (-10) >> clearMark
+           , ( runPure $ moveCursor 0 (-10) >> clearMark
              , "Move Cursor left 10 columns."
              )
            )
     , Just ( EvKey KRight [MCtrl]
-           , ( moveCursor 0 10 >> clearMark
+           , ( runPure $ moveCursor 0 10 >> clearMark
              , "Move Cursor right 10 columns."
              )
            )
     , Just ( EvKey KUp [MMeta]
-           , ( moveCursor (-100) 0 >> clearMark
+           , ( runPure $ moveCursor (-100) 0 >> clearMark
              , "Move Cursor up 100 lines."
              )
            )
     , Just ( EvKey KDown [MMeta]
-           , ( moveCursor 100 0 >> clearMark
+           , ( runPure $ moveCursor 100 0 >> clearMark
              , "Move Cursor down 100 lines."
              )
            )
     , Just ( EvKey KLeft [MMeta]
-           , ( moveCursor 0 (-100) >> clearMark
+           , ( runPure $ moveCursor 0 (-100) >> clearMark
              , "Move Cursor left 100 columns."
              )
            )
     , Just ( EvKey KRight [MMeta]
-           , ( moveCursor 0 100 >> clearMark
+           , ( runPure $ moveCursor 0 100 >> clearMark
              , "Move Cursor right 100 columns."
              )
            )
     , Nothing
     , Just ( EvKey KHome []
-           , ( smartHome >> clearMark
+           , ( runPure $ smartHome >> clearMark
              , "Move Cursor to the start of the line (excluding leading whitespace)."
              )
            )
     , Just ( EvKey KEnd []
-           , ( moveCursorEnd >> clearMark
+           , ( runPure $ moveCursorEnd >> clearMark
              , "Move Cursor to the end of the line."
              )
            )
     , Just ( EvKey (KChar '@') [MCtrl]
-           , ( fetchCursor >> clearMark
+           , ( runPure $ fetchCursor >> clearMark
              , "Fetch cursor to the center of the viewport."
              )
            )
     , Nothing
     , Just ( EvKey KUp [MShift]
-           , ( initMark >> moveCursor (-1) 0
+           , ( runPure $ initMark >> moveCursor (-1) 0
              , "Move Cursor up 1 line, selecting text."
              )
            )
     , Just ( EvKey KDown [MShift]
-           , ( initMark >> moveCursor 1 0
+           , ( runPure $ initMark >> moveCursor 1 0
              , "Move Cursor down 1 line, selecting text."
              )
            )
     , Just ( EvKey KLeft [MShift]
-           , ( initMark >> moveCursor 0  (-1)
+           , ( runPure $ initMark >> moveCursor 0  (-1)
              , "Move Cursor left 1 column, selecting text."
              )
            )
     , Just ( EvKey KRight [MShift]
-           , ( initMark >> moveCursor 0 1
+           , ( runPure $ initMark >> moveCursor 0 1
              , "Move Cursor right 1 column, selecting text."
              )
            )
     , Just ( EvKey KHome [MShift]
-           , ( initMark >> smartHome
+           , ( runPure $ initMark >> smartHome
              , "Move Cursor to the start of the line (excluding leading whitespace), selecting text."
              )
            )
     , Just ( EvKey KEnd [MShift]
-           , ( initMark >> moveCursorEnd
+           , ( runPure $ initMark >> moveCursorEnd
              , "Move Cursor to the end of the line, selecting text."
              )
            )
     , Just ( EvKey KUp [MShift, MCtrl]
-           , ( initMark >> moveCursor (-10) 0
+           , ( runPure $ initMark >> moveCursor (-10) 0
              , "Move Cursor up 10 lines, selecting text."
              )
            )
     , Just ( EvKey KDown [MShift, MCtrl]
-           , ( initMark >> moveCursor 10 0
+           , ( runPure $ initMark >> moveCursor 10 0
              , "Move Cursor down 10 lines, selecting text."
              )
            )
     , Just ( EvKey KLeft [MShift, MCtrl]
-           , ( initMark >> moveCursor 0 (-10)
+           , ( runPure $ initMark >> moveCursor 0 (-10)
              , "Move Cursor left 10 columns, selecting text."
              )
            )
     , Just ( EvKey KRight [MShift, MCtrl]
-           , ( initMark >> moveCursor 0 10
+           , ( runPure $ initMark >> moveCursor 0 10
              , "Move Cursor right 10 columns, selecting text."
              )
            )
     , Just ( EvKey KEsc []
-           , ( clearMark
+           , ( runPure clearMark
              , "Unselect."
              )
            )
     , Nothing
     , Just ( EvKey (KChar 'y') [MCtrl]
-           , ( toggleJumpMark
+           , ( runPure toggleJumpMark
              , "Toggle a jump mark in the current line."
              )
            )
     , Just ( EvKey (KChar 'n') [MCtrl]
-           , ( forwardToMark
+           , ( runPure forwardToMark
              , "Advance to the next jump mark."
              )
            )
     , Just ( EvKey (KChar 'b') [MCtrl]
-           , ( backwardsToMark
+           , ( runPure backwardsToMark
              , "Go back to the previous jump mark."
              )
            )
     , Nothing
     , Just ( EvKey KBS []
-           , ( ifMarked deleteSelection delLeft >> clearMark
+           , ( runPure $ ifMarked deleteSelection delLeft >> clearMark
              , "Delete character left of the cursor."
              )
            )
     , Just (EvKey KDel []
-           , ( ifMarked deleteSelection delRight >> clearMark
+           , ( runPure $ ifMarked deleteSelection delRight >> clearMark
              , "Delete charcter under the cursor."
              )
            )
     , Just ( EvKey KIns []
-           , ( toggleInsOvr
+           , ( runPure toggleInsOvr
              , "Toggle insert / overwrite mode."
              )
            )
     , Nothing
     , Just ( EvKey (KChar '\t') []
-           , ( ifMarked indentSelection $ completeOr insertTab >> clearMark
+           , ( runPure $ ifMarked indentSelection $ completeOr insertTab >> clearMark
              , "Increase the indentation of the current selection OR apply autocomplete OR insert a tab."
              )
            )
     , Just ( EvKey (KChar 't') [MMeta, MCtrl]
-           , ( toggleTabRepl
+           , ( runPure toggleTabRepl
              , "Toggle tab replacement (tabs/spaces)."
              )
            )
     , Just ( EvKey KBackTab []
-           , ( ifMarked unindentSelection $ initMark >> unindentSelection >> clearMark
+           , ( runPure $ ifMarked unindentSelection $ initMark >> unindentSelection >> clearMark
              , "Unindent the current selection OR unindent the current line."
              )
            )
     , Just ( EvKey KEnter []
-           , ( smartNewLine >> clearMark
+           , ( runPure $ smartNewLine >> clearMark
              , "Create a new line with the same indentation as the current one."
              )
            )
@@ -276,17 +278,19 @@ defaultKM =
              )
            )
     , Just ( EvKey (KChar 'x') [MCtrl]
-           , ( copy >> deleteSelection >> clearMark
+           , ( copy >> runPure (deleteSelection >> clearMark)
              , "Cut current selection."
              )
            )
     , Just ( EvKey (KChar 'v') [MCtrl]
-           , ( ifMarked deleteSelection (return ()) >> paste >> clearMark
+           , ( ifMarked (runPure deleteSelection) (return ())
+                    >> paste
+                    >> runPure clearMark
              , "Paste."
              )
            )
     , Just ( EvKey (KChar 'f') [MCtrl]
-           , ( searchFor
+           , ( runPure searchFor
              , "Add the selection to the list of highlighted search terms, or pop \
                \the last one if the selection is empty."
              )
@@ -299,13 +303,13 @@ defaultKM =
            )
     , Nothing
     , Just ( EvKey (KChar 'z') [MCtrl]
-           , ( undo >> clearMark
+           , ( runPure $ undo >> clearMark
              , "Undo last action."
              )
            )
     , Nothing
     , Just ( EvKey (KChar 's') [MCtrl]
-           , ( cleanse >> save
+           , ( runPure cleanse >> save
              , "Remove trailing whitespace, ensure that the last line is empty,"
                 ++ " then save."
              )
@@ -322,7 +326,7 @@ defaultKM =
              )
            )
     , Just ( EvKey (KChar '.') [MMeta]
-           , ( simulateCrash
+           , ( runPure simulateCrash
              , "Crash the editor and create a state dump."
              )
            )
@@ -335,103 +339,103 @@ defaultKM =
 helpKM :: Keymap
 helpKM =
     [ Just ( EvKey (KChar 'u') [MCtrl]
-           , ( moveViewport (-10) 0
+           , ( runPure $ moveViewport (-10) 0
              , "Move Viewport up 10 lines."
              )
            )
     , Just ( EvKey (KChar 'd') [MCtrl]
-           , ( moveViewport 10 0
+           , ( runPure $ moveViewport 10 0
              , "Move Viewport down 10 lines."
              )
            )
     , Just ( EvKey (KChar 'l') [MCtrl]
-           , ( moveViewport 0 (-10)
+           , ( runPure $ moveViewport 0 (-10)
              , "Move Viewport left 10 columns."
              )
            )
     , Just ( EvKey (KChar 'r') [MCtrl]
-           , ( moveViewport 0 10
+           , ( runPure $ moveViewport 0 10
              , "Move Viewport right 10 columns."
              )
            )
     , Just ( EvKey (KChar 'u') [MMeta]
-           , ( moveViewport (-100) 0
+           , ( runPure $ moveViewport (-100) 0
              , "Move Viewport up 100 lines."
              )
            )
     , Just ( EvKey (KChar 'd') [MMeta]
-           , ( moveViewport 100 0
+           , ( runPure $ moveViewport 100 0
              , "Move Viewport down 100 lines."
              )
            )
     , Just ( EvKey (KChar 'l') [MMeta]
-           , ( moveViewport 0 (-100)
+           , ( runPure $ moveViewport 0 (-100)
              , "Move Viewport left 100 columns."
              )
            )
     , Just ( EvKey (KChar 'r') [MMeta]
-           , ( moveViewport 0 10
+           , ( runPure $ moveViewport 0 10
              , "Move Viewport right 100 columns."
              )
            )
     , Nothing
     , Just ( EvKey KUp []
-           , ( moveCursor (-1) 0 >> clearMark
+           , ( runPure $ moveCursor (-1) 0 >> clearMark
              , "Move Cursor up 1 line."
              )
            )
     , Just ( EvKey KDown []
-           , ( moveCursor 1 0 >> clearMark
+           , ( runPure $ moveCursor 1 0 >> clearMark
              , "Move Cursor down 1 line."
              )
            )
     , Just ( EvKey KLeft []
-           , ( moveCursor 0 (-1) >> clearMark
+           , ( runPure $ moveCursor 0 (-1) >> clearMark
              , "Move Cursor left 1 column."
              )
            )
     , Just ( EvKey KRight []
-           , ( moveCursor 0 1 >> clearMark
+           , ( runPure $ moveCursor 0 1 >> clearMark
              , "Move Cursor right 1 column."
              )
            )
     , Just ( EvKey KUp [MCtrl]
-           , ( moveCursor (-10) 0 >> clearMark
+           , ( runPure $ moveCursor (-10) 0 >> clearMark
              , "Move Cursor up 10 lines."
              )
            )
     , Just ( EvKey KDown [MCtrl]
-           , ( moveCursor 10 0 >> clearMark
+           , ( runPure $ moveCursor 10 0 >> clearMark
              , "Move Cursor down 10 lines."
              )
            )
     , Just ( EvKey KLeft [MCtrl]
-           , ( moveCursor 0 (-10) >> clearMark
+           , ( runPure $ moveCursor 0 (-10) >> clearMark
              , "Move Cursor left 10 columns."
              )
            )
     , Just ( EvKey KRight [MCtrl]
-           , ( moveCursor 0 10 >> clearMark
+           , ( runPure $ moveCursor 0 10 >> clearMark
              , "Move Cursor right 10 columns."
              )
            )
     , Just ( EvKey KUp [MMeta]
-           , ( moveCursor (-100) 0 >> clearMark
+           , ( runPure $ moveCursor (-100) 0 >> clearMark
              , "Move Cursor up 100 lines."
              )
            )
     , Just ( EvKey KDown [MMeta]
-           , ( moveCursor 100 0 >> clearMark
+           , ( runPure $ moveCursor 100 0 >> clearMark
              , "Move Cursor down 100 lines."
              )
            )
     , Just ( EvKey KLeft [MMeta]
-           , ( moveCursor 0 (-100) >> clearMark
+           , ( runPure $ moveCursor 0 (-100) >> clearMark
              , "Move Cursor left 100 columns."
              )
            )
     , Just ( EvKey KRight [MMeta]
-           , ( moveCursor 0 100 >> clearMark
+           , ( runPure $ moveCursor 0 100 >> clearMark
              , "Move Cursor right 100 columns."
              )
            )
@@ -462,7 +466,7 @@ helpKM =
              )
            )
     , Just ( EvKey (KChar '.') [MMeta]
-           , ( simulateCrash
+           , ( runPure simulateCrash
              , "Crash the editor and create a state dump."
              )
            )

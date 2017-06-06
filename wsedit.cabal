@@ -66,6 +66,8 @@ library
     -fwarn-missing-import-lists
     -fwarn-tabs
     -O2
+    -rtsopts
+    -prof
 
 executable wsedit
   hs-source-dirs:   exec/
@@ -81,3 +83,5 @@ executable wsedit
     -Wall
     -Werror
     -O2
+    -rtsopts
+    -prof
