@@ -1,5 +1,9 @@
 # v1.2.2
 
+## Fixes
+
+- Fixed another instance of the viewport not following the cursor correctly.
+
 ## Other Changes
 
 - Local config files are now parsed independently of the working directory:

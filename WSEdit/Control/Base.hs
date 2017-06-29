@@ -80,6 +80,7 @@ alterBuffer a = refuseOnReadOnly
              >> validateCursor
              >> alter
              >> a
+             >> validateCursor
 
 
 -- | Declares that an action will alter the text buffer or the cursor position.
