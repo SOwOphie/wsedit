@@ -15,6 +15,12 @@ These changes should make packaging `wsedit` a lot easier than it used to be.
      - disables `-O2` to speed up recompilations
      - creates a separate executable called `wsed-dev`
 
+### Additional, system-wide config location
+
+Placing files into `/etc/wsedit/` will also work now. I've also added a
+primitive `install_lang.sh` that takes care of that automatically while
+complying to the `$DESTDIR` convention.
+
 ## Fixes
 
 - Fixed another instance of the viewport not following the cursor correctly.

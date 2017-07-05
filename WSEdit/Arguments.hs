@@ -224,6 +224,9 @@ parseArguments (c, s) = do
         confDir :: String -> String
         confDir = (++ "/.config/wsedit/")
 
+        sysDir :: String
+        sysDir = "/etc/wsedit/"
+
         -- | User home directory -> global wsedit config file
         globC :: String -> String
         globC = (++ "/.config/wsedit.wsconf")
@@ -237,9 +240,8 @@ parseArguments (c, s) = do
 
             globConfs <- if not b
                             then return []
-                            else fmap (filter (isSuffixOf ".wsconf"))
-                               $ listDirectoryDeep
-                               $ confDir h
+                            else fmap (filter (isSuffixOf ".wsconf") . concat)
+                               $ mapM listDirectoryDeep [sysDir, confDir h]
 
             let locConfs = map ((</> ".local.wsconf") . joinPath)
                          $ filter (not . null)

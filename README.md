@@ -74,8 +74,10 @@ need your help to test some things for me.
 3.  Run `stack install`, the binary will be placed into `$HOME/.local/bin/`.
 4.  Either add `$HOME/.local/bin/` to your `$PATH` or copy/link/symlink the
     execuable where you actually want it.
-5.  Copy all relevant definitions from `lang/` into `$HOME/.config/wsedit`. Just
-    copying everything or symlinking the directory from the repo is fine too.
+5.  Run `./install_lang.sh`, as root if you want the definitions to be installed
+    system-wide. If your favourite language has no definitions available, you
+    can easily create them yourself, take a look at `lang/README.md` for
+    instructions.
 6.  Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
     Alternatively, you can view the keybinds with `F1`.
@@ -105,13 +107,10 @@ the `Troubleshooting` section further down below and see if it helps.
     the line `PATH="${PATH}:${HOME}/.local/bin"` to the file `~/.bashrc`. This
     file will be executed every time you open a shell, so you either need to
     re-open the terminal or run `source ~/.bashrc` to re-run it manually.
-9.  To get syntax highlighting, first create the folder `~/.config/wsedit/lang`
-    by running `mkdir -p ~/.config/wsedit/lang`. Then take a look at the
-    repository's `lang/` folder. Copy everything you need (or just everything,
-    it won't hurt) to the newly created folder using
-    `cp lang/* ~/.config/wsedit/lang`. If your favourite language has no
-    definitions available, you can easily create them yourself, take a look at
-    `lang/README.md` for instructions.
+9.  To get syntax highlighting, run `./install_lang.sh`. If you want them to be
+    installed for all users, run `sudo ./install_lang.sh` instead. If your
+    favourite language has no definitions available, you can easily create them
+    yourself, take a look at `lang/README.md` for instructions.
 10. Done! I recommend opening two terminals next to each other, running `wsedit`
     in one of them and looking up keybinds in the other one with `wsedit -hk`.
     Alternatively, you can view the keybinds with `F1`.
