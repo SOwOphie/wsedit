@@ -1,5 +1,20 @@
 # v1.2.2
 
+## Packaging Changes
+
+These changes should make packaging `wsedit` a lot easier than it used to be.
+
+### Adjusted build flags, added new development build flag
+
+- By default, `wsedit` will no longer be compiled using `-Werror`. This should
+  increase compiler compatibility both forwards and backwards.
+
+- Passing `--flag wsedit:dev` to stack will produce a development build. This:
+
+     - enables `-Werror`
+     - disables `-O2` to speed up recompilations
+     - creates a separate executable called `wsed-dev`
+
 ## Fixes
 
 - Fixed another instance of the viewport not following the cursor correctly.

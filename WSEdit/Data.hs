@@ -59,7 +59,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.2.2"
+version = "1.2.2.3"
 
 -- | Upstream URL.
 upstream :: String

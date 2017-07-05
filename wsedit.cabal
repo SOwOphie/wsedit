@@ -1,5 +1,5 @@
 name:          wsedit
-version:       1.2.2.2
+version:       1.2.2.3
 synopsis:      A simple terminal source code editor.
 description:
 homepage:      https://github.com/SirBoonami/wsedit
@@ -11,6 +11,10 @@ copyright:     2016 Felix Hirn
 category:      Development
 build-type:    Simple
 cabal-version: >=1.10
+
+flag dev
+  description: Build with development flags, call the executable wsed-dev.
+  default:     False
 
 library
   default-language: Haskell2010
@@ -61,11 +65,16 @@ library
 
   ghc-options:
     -Wall
-    -Werror
     -fwarn-incomplete-uni-patterns
     -fwarn-missing-import-lists
     -fwarn-tabs
-    -O2
+
+  if flag(dev)
+    ghc-options:
+      -Werror
+  else
+    ghc-options:
+      -O2
 
 executable wsed
   hs-source-dirs:   exec/
@@ -79,5 +88,28 @@ executable wsed
   ghc-options:
     -threaded
     -Wall
-    -Werror
     -O2
+
+  if flag(dev)
+    buildable: False
+  else
+    buildable: True
+
+executable wsed-dev
+  hs-source-dirs:   exec/
+  main-is:          Main.hs
+  default-language: Haskell2010
+
+  build-depends:
+    base   >= 4.7 && < 5,
+    wsedit
+
+  ghc-options:
+    -threaded
+    -Wall
+    -Werror
+
+  if flag(dev)
+    buildable: True
+  else
+    buildable: False
