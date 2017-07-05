@@ -11,6 +11,12 @@
   parse it if possible, descend into the folder leading to the opened file.
   Repeat for every folder along the way.
 
+- Due to this, the way file matching works has been adjusted. If no path prefix
+  is given, only the file name portion will be matched. Otherwise, the full path
+  is matched. Relative paths are relative to the parent folder of the config
+  file containing them, or to the current working directory if given via
+  command-line argument. For examples, see `wsed -hc`.
+
 # v1.2.1
 
 This release doesn't contain any big features, but lots of small improvements

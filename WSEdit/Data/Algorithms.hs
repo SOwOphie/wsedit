@@ -23,6 +23,7 @@ module WSEdit.Data.Algorithms
     , catchEditor
     , tryEditor
     , fileMatch
+    , canonicalPath
     , currLineLen
     ) where
 
@@ -30,7 +31,6 @@ module WSEdit.Data.Algorithms
 import Control.Exception        (SomeException, evaluate, try)
 import Control.Monad.IO.Class   (liftIO)
 import Control.Monad.RWS.Strict (ask, get, modify, put, runRWST)
-import Data.List                (isPrefixOf, isSuffixOf)
 import Data.Maybe               (fromMaybe)
 import Data.Tuple               (swap)
 import Graphics.Vty             ( Vty (outputIface)
@@ -39,17 +39,22 @@ import Graphics.Vty             ( Vty (outputIface)
 import Safe                     ( fromJustNote, headMay, headNote, initNote
                                 , lastNote, tailNote
                                 )
-import System.FilePath          (isRelative)
+import System.Directory         ( canonicalizePath
+                                , withCurrentDirectory
+                                )
+import System.FilePath          ( addTrailingPathSeparator , takeDirectory
+                                , takeFileName
+                                )
 
-import WSEdit.Util              (unlinesPlus, withSnd)
+import WSEdit.Util              (matchGlob, unlinesPlus, withSnd)
 import WSEdit.Data              ( WSEdit
                                 , EdConfig (histSize, vtyObj)
                                 , EdState ( bracketCache, changed, cursorPos
                                           , edLines, markPos, history
                                           , scrollOffset, status
                                           )
-                                , FileMatch (ExactName, PrefSuf)
-                                , PathInfo (absPath, relPath)
+                                , CanonicalPath (CanonicalPath)
+                                , FileMatch (FileMatch)
                                 )
 
 import qualified WSEdit.Buffer as B
@@ -341,21 +346,27 @@ tryEditor a = catchEditor (Right <$> a) (return . Left)
 
 
 
+-- | Given a base directory for relative paths, canonicalize a path.
+canonicalPath :: Maybe FilePath -> FilePath -> IO CanonicalPath
+canonicalPath  Nothing    f = fmap CanonicalPath
+                            $ canonicalizePath f
+
+canonicalPath (Just base) f = withCurrentDirectory
+                                (takeDirectory $ addTrailingPathSeparator base)
+                            $ canonicalPath Nothing f
+
+
+
 -- | Returns whether the argument block's selector is satisfied by the given
 --   file.
-fileMatch :: FileMatch -> PathInfo -> Bool
-fileMatch match file =
-    case match of
-         ExactName s   -> if isRelative s
-                             then s == relPath file
-                             else s == absPath file
-
-         PrefSuf s1 s2 -> if isRelative s1
-                             then s1 `isPrefixOf` relPath file
-                               && s2 `isSuffixOf` relPath file
-
-                             else s1 `isPrefixOf` absPath file
-                               && s2 `isSuffixOf` absPath file
+fileMatch :: FileMatch -> CanonicalPath -> Bool
+fileMatch (FileMatch s) (CanonicalPath c) =
+    case s of
+         _       | '/' `notElem` s -> matchGlob s $ takeFileName c
+         ('/':_)                   -> matchGlob s                c
+         _                         -> error
+                                    $ "fileMatch: illegal relative pattern: "
+                                   ++ s
 
 
 

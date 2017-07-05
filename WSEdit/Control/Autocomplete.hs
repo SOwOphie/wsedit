@@ -26,10 +26,8 @@ import WSEdit.Data              ( WSEdit
                                 , EdState ( buildDict, canComplete, cursorPos
                                           , dict, edLines, fname, readOnly
                                           )
-                                , PathInfo (absPath)
-                                , pathInfo
                                 )
-import WSEdit.Data.Algorithms   (fileMatch, setStatus)
+import WSEdit.Data.Algorithms   (canonicalPath, fileMatch, setStatus)
 import WSEdit.Util              ( findInStr, getKeywordAtCursor
                                 , linesPlus, longestCommonPrefix, readEncFile
                                 , unlinesPlus, wordsPlus
@@ -47,12 +45,12 @@ dictAdd f = do
     s <- get
     c <- ask
 
-    fI <- liftIO $ pathInfo   f
-    tI <- liftIO $ pathInfo $ fname s
+    fI <- liftIO $ canonicalPath Nothing   f
+    tI <- liftIO $ canonicalPath Nothing $ fname s
 
     let
         depths = map snd
-               $ filter ( maybe (absPath fI == absPath tI)
+               $ filter ( maybe (fI == tI)
                                 (flip fileMatch fI)
                         . fst
                         )

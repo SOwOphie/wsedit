@@ -9,36 +9,41 @@ module WSEdit.Arguments.Parser
     ) where
 
 
-import Data.Maybe                    (catMaybes)
-import Text.ParserCombinators.Parsec ( Parser
-                                     , anyChar, char, choice, digit, endBy, eof
-                                     , many, many1, newline, noneOf, oneOf
-                                     , option, optional, sepBy, sepEndBy, spaces
-                                     , string, try
-                                     , (<|>), (<?>)
-                                     )
+import Control.Monad         (liftM2)
+import Data.Maybe            (catMaybes)
+import Text.Parsec           ( Parsec
+                             , anyChar, char, choice, digit, endBy, eof
+                             , getState, many , many1, newline, noneOf, oneOf
+                             , option, optional , sepBy, sepEndBy, spaces
+                             , string, try
+                             , (<|>), (<?>)
+                             )
+import System.FilePath       ((</>))
 
-import WSEdit.Arguments.Data         ( ArgBlock (ArgBlock, abMatch, abArg)
-                                     , Argument (..)
-                                        -- not listing those off one by one
-                                     )
-import WSEdit.Data                   ( FileMatch (ExactName, PrefSuf)
-                                     , Stability ()
-                                     )
+import WSEdit.Arguments.Data ( ArgBlockProto (ArgBlockProto, abpMatch, abpArg)
+                             , Argument (..)
+                             -- not listing those off one by one
+                             , FileMatchProto (FileQualifier, PathQualifier)
+                             )
+import WSEdit.Data           (Stability ())
+
+
+
+type WSParser = Parsec String FilePath
 
 
 
 -- | Parses all command-line arguments.
-configCmd :: Parser [Argument]
+configCmd :: WSParser [Argument]
 configCmd = ( fmap concat
               $ try
               $ sequence
-              [ option [] $                 configOption `endBy` spaces'
-              ,                             fmap return (specialSetFile)
+              [ option [] $                  configOption `endBy` spaces'
+              ,                              fmap return (specialSetFile)
               , option [] $ try $ spaces' >> fmap return (specialSetVPos)
               , option [] $ try $ spaces' >> fmap return (specialSetHPos)
               , option [] $ try $ spaces' >> configOption `sepBy` spaces'
-              ,                             eof >> return []
+              ,                              eof >> return []
               ]
             ) <|> (
               configOption `sepBy` spaces' <* eof
@@ -47,46 +52,46 @@ configCmd = ( fmap concat
 
 
 -- | Parses an entire config file.
-configFile :: Parser [ArgBlock]
+configFile :: WSParser [ArgBlockProto]
 configFile =  (fmap catMaybes (many1 configElem <* eof))
           <|> (spaces >> eof >> return [])
           <?> "config file"
 
 
-configElem :: Parser (Maybe ArgBlock)
-configElem =  (fmap Just configStAlone      )
+configElem :: WSParser (Maybe ArgBlockProto)
+configElem =  (commentLine >> return Nothing)
+          <|> (fmap Just configStAlone      )
           <|> (fmap Just configBlock        )
-          <|> (commentLine >> return Nothing)
 
-configStAlone :: Parser ArgBlock
+configStAlone :: WSParser ArgBlockProto
 configStAlone = (do
     q <- try $ qualifier <* char ':'
     spaces'
     arg <- configOption
     many1 newline
 
-    return ArgBlock
-        { abMatch = q
-        , abArg   = [arg]
+    return ArgBlockProto
+        { abpMatch = q
+        , abpArg   = [arg]
         }
     ) <?> "standalone config instruction"
 
-configBlock :: Parser ArgBlock
+configBlock :: WSParser ArgBlockProto
 configBlock = (do
-    q <- try qualifier
+    q <- try $ qualifier
 
     many1 newline
     args <- (spaces' >> configOption) `sepEndBy` newline
     many newline
 
-    return ArgBlock
-        { abMatch = q
-        , abArg   = args
+    return ArgBlockProto
+        { abpMatch = q
+        , abpArg   = args
         }
     ) <?> "config instruction block"
 
 
-commentLine :: Parser String
+commentLine :: WSParser String
 commentLine = (do
     try $ do
         optional spaces'
@@ -98,24 +103,27 @@ commentLine = (do
     ) <?> "comment"
 
 
-qualifier :: Parser FileMatch
-qualifier =  prefSufQualifier
-         <|> exactQualifier
+qualifier :: WSParser FileMatchProto
+qualifier =  fileQualifier
+         <|> pathQualifier
          <?> "file qualifier"
 
-prefSufQualifier :: Parser FileMatch
-prefSufQualifier = (do
-    prf <- try $ many (noneOf "\n*:") <* char '*'
-    PrefSuf prf <$> many (noneOf "\n*:")
-    ) <?> "prefix/suffix match file qualifier"
+fileQualifier :: WSParser FileMatchProto
+fileQualifier = fmap FileQualifier
+              $ try
+              $ many1 (noneOf "/\n:")
 
-exactQualifier :: Parser FileMatch
-exactQualifier =  (ExactName <$> try (many1 $ noneOf "\n*:"))
-              <?> "exact match file qualifier"
+pathQualifier :: WSParser FileMatchProto
+pathQualifier = try $ liftM2 PathQualifier
+                        getState
+                        (many (noneOf "\n:"))
+
+pathName :: WSParser FilePath
+pathName = liftM2 (</>) getState word
 
 
 
-configOption :: Parser Argument
+configOption :: WSParser Argument
 configOption = (choice
     [ autocompAdd
     , autocompAddSelf
@@ -214,43 +222,43 @@ debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 debugWriOff       = try (string "-yi" ) >> return DebugWRIOff
 debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
-autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt                           }
-displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet <$> word                              }
-editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer                           }
-editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer                           }
-editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer                           }
-fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word                              }
-generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word                              }
-generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word                              }
-langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word                              }
-langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word                              }
-langEscOAdd       = do { try $ string "-leo"; spaces'; LangEscOAdd     <$> word                              }
-langEscODel       = do { try $ string "-leO"; spaces'; LangEscODel     <$> word                              }
-langEscSAdd       = do { try $ string "-les"; spaces'; LangEscSAdd     <$> word                              }
-langEscSDel       = do { try $ string "-leS"; spaces'; LangEscSDel     <$> word                              }
-langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word                              }
-langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word                              }
-metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> word                              }
-debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab                              }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt  }
+displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet <$> word     }
+editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer  }
+editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer  }
+editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer  }
+fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word     }
+generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word     }
+generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word     }
+langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word     }
+langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word     }
+langEscOAdd       = do { try $ string "-leo"; spaces'; LangEscOAdd     <$> word     }
+langEscODel       = do { try $ string "-leO"; spaces'; LangEscODel     <$> word     }
+langEscSAdd       = do { try $ string "-les"; spaces'; LangEscSAdd     <$> word     }
+langEscSDel       = do { try $ string "-leS"; spaces'; LangEscSDel     <$> word     }
+langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word     }
+langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word     }
+metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> pathName }
+debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab     }
 
-autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> qualifier }
-langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word      }
-langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word      }
-langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word      }
-langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word      }
-langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word      }
-langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word      }
-langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word      }
-langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word      }
-langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word      }
-langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word      }
+autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> qualifier}
+langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }
+langBracketDel    = do { try $ string "-lB" ; spaces'; s <- word   ; spaces'; LangBracketDel s <$> word     }
+langCommBlkAdd    = do { try $ string "-lcb"; spaces'; s <- word   ; spaces'; LangCommBlkAdd s <$> word     }
+langCommBlkDel    = do { try $ string "-lcB"; spaces'; s <- word   ; spaces'; LangCommBlkDel s <$> word     }
+langStrChrAdd     = do { try $ string "-lsc"; spaces'; s <- word   ; spaces'; LangStrChrAdd  s <$> word     }
+langStrChrDel     = do { try $ string "-lsC"; spaces'; s <- word   ; spaces'; LangStrChrDel  s <$> word     }
+langStrMLAdd      = do { try $ string "-lsm"; spaces'; s <- word   ; spaces'; LangStrMLAdd   s <$> word     }
+langStrMLDel      = do { try $ string "-lsM"; spaces'; s <- word   ; spaces'; LangStrMLDel   s <$> word     }
+langStrRegAdd     = do { try $ string "-lsr"; spaces'; s <- word   ; spaces'; LangStrRegAdd  s <$> word     }
+langStrRegDel     = do { try $ string "-lsR"; spaces'; s <- word   ; spaces'; LangStrRegDel  s <$> word     }
 
 specialSetFile    = SpecialSetFile <$> word
 specialSetVPos    = SpecialSetVPos <$> integer
 specialSetHPos    = SpecialSetHPos <$> integer
 
 
-stab :: Parser Stability
+stab :: WSParser Stability
 stab  = read <$> (  try (string "Prototype")
                 <|> try (string "WIP"      )
                 <|> try (string "RC"       )

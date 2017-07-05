@@ -40,6 +40,7 @@ module WSEdit.Util
     , readEncFile
     , combineAttrs
     , iff
+    , matchGlob
     ) where
 
 
@@ -552,3 +553,19 @@ combineAttrs a b = Attr
 iff :: Bool -> (a -> a) -> a -> a
 iff True  f = f
 iff False _ = id
+
+
+
+
+
+-- | Test if a glob matches a string.
+matchGlob :: String -> String -> Bool
+matchGlob    []          []                 = True
+matchGlob    ('\\':p:ps) (s:ss) | p == s    = matchGlob ps ss
+matchGlob    ('?'   :ps) (_:ss)             = matchGlob ps ss
+matchGlob    ['*']       _                  = True
+matchGlob px@('*' :p:ps) (s:ss) | p == s    = matchGlob ps ss
+                                           || matchGlob px ss
+                                | otherwise = matchGlob px ss
+matchGlob    (     p:ps) (s:ss) | p == s    = matchGlob ps ss
+matchGlob    _           _                  = False

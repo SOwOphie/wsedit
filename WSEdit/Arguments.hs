@@ -7,64 +7,59 @@ module WSEdit.Arguments
     ) where
 
 
-import Control.Monad                 (foldM, unless, when)
-import Control.Monad.IO.Class        (liftIO)
-import Data.Default                  (def)
-import Data.Either                   (lefts, rights)
-import Data.List                     ( delete, inits, isSuffixOf, nub, null
-                                     , (\\)
-                                     )
-import Data.Maybe                    (catMaybes, fromMaybe)
-import Safe                          (lastMay, maximumDef, readMay)
-import System.Directory              ( doesDirectoryExist, doesFileExist
-                                     , getHomeDirectory
-                                     )
-import System.Environment            (getArgs)
-import System.FilePath               ( joinPath, splitPath, takeDirectory
-                                     , (</>)
-                                     )
-import System.IO                     ( Newline (CRLF, LF)
-                                     , NewlineMode (NewlineMode)
-                                     , universalNewlineMode
-                                     )
-import Text.ParserCombinators.Parsec (parse)
-import Text.Show.Pretty              (ppShow)
+import Control.Monad           (foldM, unless, when)
+import Control.Monad.IO.Class  (liftIO)
+import Data.Default            (def)
+import Data.Either             (lefts, rights)
+import Data.List               ( delete, inits, isSuffixOf, nub, null
+                               , (\\)
+                               )
+import Data.Maybe              (catMaybes, fromMaybe)
+import Safe                    (lastMay, maximumDef, readMay)
+import System.Directory        ( doesDirectoryExist, doesFileExist
+                               , getHomeDirectory
+                               )
+import System.Environment      (getArgs)
+import System.FilePath         ( joinPath, splitPath, takeDirectory
+                               , (</>)
+                               )
+import System.IO               ( Newline (CRLF, LF)
+                               , NewlineMode (NewlineMode)
+                               , universalNewlineMode
+                               )
+import Text.Parsec             (runP)
+import Text.Show.Pretty        (ppShow)
 
-import WSEdit.Arguments.Data         ( ArgBlock (ArgBlock, abMatch, abArg)
-                                     , Argument (..)
-                                        -- not listing all those off one by one
-                                     )
-import WSEdit.Arguments.Parser       (configCmd, configFile)
-import WSEdit.Control.Base           (standby)
-import WSEdit.Control.Global         (quitComplain)
-import WSEdit.Data                   ( EdConfig ( atomicSaves, blockComment
-                                                , brackets, chrDelim, drawBg
-                                                , dumpEvents, edDesign, encoding
-                                                , escapeO, escapeS, initJMarks
-                                                , keymap, keywords, lineComment
-                                                , mStrDelim, newlineMode
-                                                , purgeOnClose, strDelim
-                                                , tabWidth, vtyObj, wriCheck
-                                                )
-                                     , EdState ( EdState, badgeText, buildDict
-                                               , detectTabs, fname, loadPos
-                                               , readOnly, replaceTabs
-                                               , searchTerms
-                                               )
-                                     , PathInfo (absPath)
-                                     , Stability (Release)
-                                     , brightTheme, pathInfo, runWSEdit
-                                     , stability, upstream
-                                     )
-import WSEdit.Data.Algorithms        (fileMatch)
-import WSEdit.Data.Pretty            (unPrettyEdConfig)
-import WSEdit.Help                   ( confHelp, keymapHelp, usageHelp
-                                     , versionHelp
-                                     )
-import WSEdit.Util                   ( linesPlus, mayReadFile, listDirectoryDeep
-                                     , readEncFile , unlinesPlus, withFst
-                                     , withSnd
-                                     )
+import WSEdit.Arguments.Data   ( ArgBlock (ArgBlock, abMatch, abArg)
+                               , Argument (..)
+                               -- not listing all those off one by one
+                               , unProtoAB, unProtoFM
+                               )
+import WSEdit.Arguments.Parser (configCmd, configFile)
+import WSEdit.Control.Base     (standby)
+import WSEdit.Control.Global   (quitComplain)
+import WSEdit.Data             ( CanonicalPath (CanonicalPath, getCanonicalPath)
+                               , EdConfig ( atomicSaves, blockComment, brackets
+                                          , chrDelim, drawBg, dumpEvents
+                                          , edDesign, encoding, escapeO, escapeS
+                                          , initJMarks, keymap, keywords
+                                          , lineComment, mStrDelim, newlineMode
+                                          , purgeOnClose, strDelim, tabWidth
+                                          , vtyObj, wriCheck
+                                          )
+                               , EdState ( EdState, badgeText, buildDict
+                                         , detectTabs, fname, loadPos, readOnly
+                                         , replaceTabs, searchTerms
+                                         )
+                               , Stability (Release)
+                               , brightTheme, runWSEdit, stability, upstream
+                               )
+import WSEdit.Data.Algorithms  (canonicalPath, fileMatch)
+import WSEdit.Data.Pretty      (unPrettyEdConfig)
+import WSEdit.Help             (confHelp, keymapHelp, usageHelp, versionHelp)
+import WSEdit.Util             ( linesPlus, mayReadFile, listDirectoryDeep
+                               , readEncFile , unlinesPlus, withFst, withSnd
+                               )
 
 
 
@@ -97,7 +92,7 @@ parseArguments (c, s) = do
 
     -- parse them
     let
-        parsedArgs  = parse configCmd "command line"
+        parsedArgs  = runP configCmd "" "command line"
                     $ fancyUnwords args
 
     -- errors in command line arguments?
@@ -133,27 +128,31 @@ parseArguments (c, s) = do
                      Just f  -> do
 
                         -- Read and parse config files
-                        files <- readConfigFiles =<< liftIO (pathInfo f)
+                        files <- readConfigFiles =<< liftIO (canonicalPath Nothing f)
 
                         let
-                            parsedFiles = map (\(p, x) -> parse configFile
-                                                                (absPath p)
-                                                                x
+                            parsedFiles = map (\(p, x) -> runP configFile
+                                                               (takeDirectory $ getCanonicalPath p)
+                                                               (getCanonicalPath p)
+                                                               x
                                               ) files
-
-                            -- list of successfully parsed options from files
-                            -- only (!)
-                            parsedSuccF = concat $ rights $ parsedFiles
 
                             -- list of all parse errors, regardless of source
                             parseErrors = lefts parsedFiles
                                        ++ lefts [parsedArgs]
 
+                        -- list of successfully parsed options from files
+                        -- only (!)
+                        parsedSuccF <- mapM unProtoAB
+                                     $ concat
+                                     $ rights
+                                     $ parsedFiles
+
                         -- Assemble all the file names to match against. This
                         -- includes the file we just obtained as well as all
                         -- names provided by -mi given in command line
                         -- parameters.
-                        finf <- mapM pathInfo
+                        finf <- mapM (canonicalPath Nothing)
                              $ f : catMaybes (map (\case
                                                         MetaInclude n -> Just n
                                                         _             -> Nothing
@@ -231,8 +230,8 @@ parseArguments (c, s) = do
 
 
         -- | Read in all config files.
-        readConfigFiles :: PathInfo -> IO [(PathInfo, String)]
-        readConfigFiles p = do
+        readConfigFiles :: CanonicalPath -> IO [(CanonicalPath, String)]
+        readConfigFiles (CanonicalPath p) = do
             h <- getHomeDirectory
             b <- doesDirectoryExist $ confDir h
 
@@ -243,14 +242,14 @@ parseArguments (c, s) = do
                                $ confDir h
 
             let locConfs = map ((</> ".local.wsconf") . joinPath)
+                         $ filter (not . null)
                          $ inits
                          $ splitPath
-                         $ takeDirectory
-                         $ absPath p
+                         $ takeDirectory p
 
             mapM (\n -> do
-                            i <- pathInfo    n
-                            x <- mayReadFile n
+                            i <- canonicalPath Nothing n
+                            x <- mayReadFile   n
                             return (i, fromMaybe "" x)
                  ) $ globConfs ++ [globC h] ++ locConfs
 
@@ -313,9 +312,9 @@ parseArguments (c, s) = do
 
 -- | Given some files to match against as well as a bunch of argument blocks,
 --   return a list of arguments that should be active.
-selectArgs :: [PathInfo] -> [ArgBlock] -> IO [Argument]
+selectArgs :: [CanonicalPath] -> [ArgBlock] -> IO [Argument]
 selectArgs files args = do
-    files' <- mapM pathInfo
+    files' <- mapM (canonicalPath Nothing)
             $ catMaybes
             $ map (\case { MetaInclude s -> Just s; _ -> Nothing })
             $ concatMap abArg
@@ -330,14 +329,15 @@ selectArgs files args = do
     where
         -- | Returns whether the argument block's selector is satisfied by any
         --   of the given files.
-        appliesTo :: [PathInfo] -> ArgBlock -> Bool
+        appliesTo :: [CanonicalPath] -> ArgBlock -> Bool
         appliesTo fs (ArgBlock { abMatch = m }) = any (fileMatch m) fs
 
 
 
 -- | Applies an argument to a config/state pair.
 applyArg :: (EdConfig, EdState) -> Argument -> IO (EdConfig, EdState)
-applyArg (c, s) (AutocompAdd     n f) = return (c, s { buildDict   = (Just f , n) : buildDict s })
+applyArg (c, s) (AutocompAdd     n f) = unProtoFM f >>= \f' -> return (c, s { buildDict   = (Just f', n) : buildDict s })
+
 applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, n) : buildDict s })
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })
 applyArg (c, s)  DisplayBadgeOff      = return (c, s { badgeText   = Nothing                    })

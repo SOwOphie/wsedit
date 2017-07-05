@@ -1,12 +1,18 @@
 module WSEdit.Arguments.Data
     ( ArgBlock (..)
+    , ArgBlockProto (..)
     , Argument (..)
+    , FileMatchProto (..)
+    , unProtoFM
+    , unProtoAB
     ) where
 
 
-import WSEdit.Data ( FileMatch ()
-                   , Stability ()
-                   )
+import WSEdit.Data            ( FileMatch (FileMatch)
+                              , Stability ()
+                              , getCanonicalPath
+                              )
+import WSEdit.Data.Algorithms (canonicalPath)
 
 
 
@@ -17,10 +23,40 @@ data ArgBlock = ArgBlock
     }
     deriving (Eq, Read, Show)
 
+-- | ArgBlock prototype.
+data ArgBlockProto = ArgBlockProto
+    { abpMatch :: FileMatchProto
+    , abpArg   :: [Argument]
+    }
+    deriving (Eq, Read, Show)
+
+
+
+-- | File match prototype.
+data FileMatchProto = FileQualifier FilePath
+                        -- ^ Only match file name
+                    | PathQualifier FilePath FilePath
+                        -- ^ Match full path #2 relative to base #1
+    deriving (Eq, Read, Show)
+
+
+unProtoFM :: FileMatchProto -> IO FileMatch
+unProtoFM (FileQualifier      f) =  return $ FileMatch f
+unProtoFM (PathQualifier base f) =  FileMatch . getCanonicalPath
+                                <$> canonicalPath (Just base) f
+
+unProtoAB :: ArgBlockProto -> IO ArgBlock
+unProtoAB abp = do
+    fm <- unProtoFM $ abpMatch abp
+    return ArgBlock
+        { abMatch = fm
+        , abArg   = abpArg abp
+        }
+
 
 
 -- | Argument type.
-data Argument = AutocompAdd     (Maybe Int) FileMatch
+data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | AutocompAddSelf (Maybe Int)
               | AutocompOff
 

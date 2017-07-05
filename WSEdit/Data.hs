@@ -24,8 +24,7 @@ module WSEdit.Data
     , runIn
     , Keymap
     , HighlightMode (..)
-    , PathInfo (..)
-    , pathInfo
+    , CanonicalPath (..)
     , FileMatch (..)
     ) where
 
@@ -43,10 +42,6 @@ import Graphics.Vty             ( Attr
                                 , white, withBackColor, withForeColor, withStyle
                                 , yellow
                                 )
-import System.Directory         ( canonicalizePath
-                                , makeRelativeToCurrentDirectory
-                                )
-import System.FilePath          (normalise)
 import System.IO                (NewlineMode, universalNewlineMode)
 
 import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
@@ -64,7 +59,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.2.1"
+version = "1.2.2.2"
 
 -- | Upstream URL.
 upstream :: String
@@ -83,7 +78,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = RC
+stability = Prototype
 
 
 
@@ -648,27 +643,12 @@ data HighlightMode = HNone
 
 
 
--- | Useful format for file paths.
-data PathInfo = PathInfo
-    { absPath :: FilePath
-    , relPath :: FilePath
-    }
+-- | Absolute path with all symlinks resolved.
+newtype CanonicalPath = CanonicalPath { getCanonicalPath :: FilePath }
     deriving (Eq, Read, Show)
-
--- | Takes a path and creates a 'PathInfo'.
-pathInfo :: FilePath -> IO PathInfo
-pathInfo path = do
-    a <- canonicalizePath path
-    r <- makeRelativeToCurrentDirectory path
-
-    return PathInfo
-        { absPath = a
-        , relPath = normalise r
-        }
 
 
 
 -- | Match type, whether to match the entire name or just prefix and suffix.
-data FileMatch = ExactName String
-               | PrefSuf   String String
+newtype FileMatch = FileMatch String
     deriving (Eq, Read, Show)
