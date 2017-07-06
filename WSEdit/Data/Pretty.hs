@@ -9,28 +9,67 @@ module WSEdit.Data.Pretty
      , prettyKeymap
      ) where
 
-import Graphics.Vty      (Attr, Event, Vty)
-import System.IO         (NewlineMode)
+import Graphics.Vty
+    ( Attr
+    , Event
+    , Vty
+    )
+import System.IO
+    ( NewlineMode
+    )
 
-import WSEdit.Data       ( EdConfig ( EdConfig, atomicSaves, blockComment
-                                    , brackets, chrDelim, drawBg, dumpEvents
-                                    , edDesign, encoding, escapeO, escapeS
-                                    , histSize, initJMarks, keymap, keywords
-                                    , lineComment, mStrDelim, newlineMode
-                                    , purgeOnClose, strDelim, tabWidth
-                                    , vtyObj, wriCheck
-                                    )
-                         , EdDesign ( EdDesign, dBGChar, dBGFormat, dBrMod
-                                    , dCharStyles, dColChar, dColNoFormat
-                                    , dColNoInterval, dCurrLnMod, dFrameFormat
-                                    , dHLStyles, dJumpMarkFmt, dLineNoFormat
-                                    , dLineNoInterv, dStatusFormat, dTabExt
-                                    , dTabStr
-                                    )
-                         , HighlightMode
-                         , Keymap
-                         )
-import WSEdit.Util       (CharClass, withSnd)
+import WSEdit.Data
+    ( EdConfig
+        ( EdConfig
+        , atomicSaves
+        , blockComment
+        , brackets
+        , chrDelim
+        , drawBg
+        , dumpEvents
+        , edDesign
+        , encoding
+        , escapeO
+        , escapeS
+        , histSize
+        , initJMarks
+        , keymap
+        , keywords
+        , lineComment
+        , mStrDelim
+        , newlineMode
+        , purgeOnClose
+        , strDelim
+        , tabWidth
+        , vtyObj
+        , wriCheck
+        )
+    , EdDesign
+        ( EdDesign
+        , dBGChar
+        , dBGFormat
+        , dBrMod
+        , dCharStyles
+        , dColChar
+        , dColNoFormat
+        , dColNoInterval
+        , dCurrLnMod
+        , dFrameFormat
+        , dHLStyles
+        , dJumpMarkFmt
+        , dLineNoFormat
+        , dLineNoInterv
+        , dStatusFormat
+        , dTabExt
+        , dTabStr
+        )
+    , HighlightMode
+    , Keymap
+    )
+import WSEdit.Util
+    ( CharClass
+    , withSnd
+    )
 
 
 

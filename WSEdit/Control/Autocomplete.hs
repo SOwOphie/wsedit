@@ -7,32 +7,85 @@ module WSEdit.Control.Autocomplete
     ) where
 
 
-import Control.Exception        (evaluate)
-import Control.Monad            (forM_, unless, when)
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.Char                (isSpace)
-import Data.List                (intercalate, isPrefixOf, stripPrefix)
-import Safe                     (lastDef)
-import System.FilePath          (splitPath, (</>))
-import System.Directory         ( doesDirectoryExist, doesFileExist
-                                , listDirectory
-                                )
+import Control.Exception
+    ( evaluate
+    )
+import Control.Monad
+    ( forM_
+    , unless
+    , when
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    )
+import Data.Char
+    ( isSpace
+    )
+import Data.List
+    ( intercalate
+    , isPrefixOf
+    , stripPrefix
+    )
+import Safe
+    ( lastDef
+    )
+import System.FilePath
+    ( splitPath
+    , (</>)
+    )
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , listDirectory
+    )
 
-import WSEdit.Control.Base      (alterBuffer, standby)
-import WSEdit.Control.Text      (insertRaw)
-import WSEdit.Data              ( WSEdit
-                                , EdConfig (lineComment, tabWidth)
-                                , EdState ( buildDict, canComplete, cursorPos
-                                          , dict, edLines, fname, readOnly
-                                          )
-                                )
-import WSEdit.Data.Algorithms   (canonicalPath, fileMatch, setStatus)
-import WSEdit.Util              ( findInStr, getKeywordAtCursor
-                                , linesPlus, longestCommonPrefix, readEncFile
-                                , unlinesPlus, wordsPlus
-                                )
-import WSEdit.WordTree          (addWord, complete)
+import WSEdit.Control.Base
+    ( alterBuffer
+    , standby
+    )
+import WSEdit.Control.Text
+    ( insertRaw
+    )
+import WSEdit.Data
+    ( WSEdit
+    , EdConfig
+        ( lineComment
+        , tabWidth
+        )
+    , EdState
+        ( buildDict
+        , canComplete
+        , cursorPos
+        , dict
+        , edLines
+        , fname
+        , readOnly
+        )
+    )
+import WSEdit.Data.Algorithms
+    ( canonicalPath
+    , fileMatch
+    , setStatus
+    )
+import WSEdit.Util
+    ( findInStr
+    , getKeywordAtCursor
+    , linesPlus
+    , longestCommonPrefix
+    , readEncFile
+    , unlinesPlus
+    , wordsPlus
+    )
+import WSEdit.WordTree
+    ( addWord
+    , complete
+    )
 
 import qualified WSEdit.Buffer as B
 

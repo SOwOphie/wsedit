@@ -55,13 +55,35 @@ module WSEdit.Buffer
     ) where
 
 
-import Control.DeepSeq (NFData)
-import Data.Hashable   (Hashable, hash, hashWithSalt)
-import Data.Maybe      (fromMaybe)
-import GHC.Generics    (Generic)
-import Safe            (fromJustNote, headMay, headNote, lastMay, tailNote)
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Hashable
+    ( Hashable
+    , hash
+    , hashWithSalt
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import GHC.Generics
+    ( Generic
+    )
+import Safe
+    ( fromJustNote
+    , headMay
+    , headNote
+    , lastMay
+    , tailNote
+    )
 
-import Prelude hiding (last, length, map, mapM, mapM_)
+import Prelude hiding
+    ( last
+    , length
+    , map
+    , mapM
+    , mapM_
+    )
 
 import qualified Data.List as L
 import qualified Prelude   as P

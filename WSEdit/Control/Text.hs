@@ -14,24 +14,52 @@ module WSEdit.Control.Text
 
 
 
-import Control.Monad               (when)
-import Control.Monad.RWS.Strict    (ask, get, modify)
-import Data.Char                   (isSpace)
-import Safe                        (fromJustNote)
+import Control.Monad
+    ( when
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    )
+import Data.Char
+    ( isSpace
+    )
+import Safe
+    ( fromJustNote
+    )
 
-import WSEdit.Control.Base         (alterBuffer, alterState, moveCursor
-                                   , moveCursorHome, refuseOnReadOnly
-                                   , validateCursor
-                                   )
-import WSEdit.Data                 ( WSEdit
-                                   , EdConfig (tabWidth)
-                                   , EdState ( cursorPos, edLines, overwrite
-                                             , replaceTabs
-                                             )
-                                   )
-import WSEdit.Data.Algorithms      (getCursor)
-import WSEdit.Output               (stringWidth)
-import WSEdit.Util                 (delN, withPair, withSnd)
+import WSEdit.Control.Base
+    ( alterBuffer
+    , alterState
+    , moveCursor
+    , moveCursorHome
+    , refuseOnReadOnly
+    , validateCursor
+    )
+import WSEdit.Data
+    ( WSEdit
+    , EdConfig
+        ( tabWidth
+        )
+    , EdState
+        ( cursorPos
+        , edLines
+        , overwrite
+        , replaceTabs
+        )
+    )
+import WSEdit.Data.Algorithms
+    ( getCursor
+    )
+import WSEdit.Output
+    ( stringWidth
+    )
+import WSEdit.Util
+    ( delN
+    , withPair
+    , withSnd
+    )
 
 import qualified WSEdit.Buffer as B
 

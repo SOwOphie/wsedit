@@ -1,6 +1,8 @@
 module Main where
 
-import WSEdit (start)
+import WSEdit
+    ( start
+    )
 
 main :: IO ()
 main = start

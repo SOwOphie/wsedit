@@ -6,50 +6,99 @@ module WSEdit.Data
     ( version
     , upstream
     , licenseVersion
-    , Stability (..)
+    , Stability
+        (..)
     , stability
-    , FmtParserState (..)
+    , FmtParserState
+        (..)
     , BracketStack
     , RangeCacheElem
     , RangeCache
     , BracketCacheElem
     , BracketCache
-    , EdState (..)
-    , EdConfig (..)
+    , EdState
+        (..)
+    , EdConfig
+        (..)
     , mkDefConfig
-    , EdDesign (..)
+    , EdDesign
+        (..)
     , brightTheme
     , WSEdit
     , runWSEdit
     , runIn
     , Keymap
-    , HighlightMode (..)
-    , CanonicalPath (..)
-    , FileMatch (..)
+    , HighlightMode
+        (..)
+    , CanonicalPath
+        (..)
+    , FileMatch
+        (..)
     ) where
 
 
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (RWST, runRWST)
-import Data.Default             (Default (def))
-import Graphics.Vty             ( Attr
-                                , Event ()
-                                , Vty ()
-                                , black, blue, bold, brightBlack, brightGreen
-                                , brightMagenta, brightRed, brightWhite
-                                , brightYellow, cyan, green, defAttr
-                                , green, magenta, red, reverseVideo, underline
-                                , white, withBackColor, withForeColor, withStyle
-                                , yellow
-                                )
-import System.IO                (NewlineMode, universalNewlineMode)
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( RWST
+    , runRWST
+    )
+import Data.Default
+    ( Default
+        ( def
+        )
+    )
+import Graphics.Vty
+    ( Attr
+    , Event
+        ()
+    , Vty
+        ()
+    , black
+    , blue
+    , bold
+    , brightBlack
+    , brightGreen
+    , brightMagenta
+    , brightRed
+    , brightWhite
+    , brightYellow
+    , cyan
+    , green
+    , defAttr
+    , green
+    , magenta
+    , red
+    , reverseVideo
+    , underline
+    , white
+    , withBackColor
+    , withForeColor
+    , withStyle
+    , yellow
+    )
+import System.IO
+    ( NewlineMode
+    , universalNewlineMode
+    )
 
-import WSEdit.Util              (CharClass ( Bracket, Digit, Lower, Operator
-                                           , Special, Unprintable, Upper
-                                           , Whitesp
-                                           )
-                                )
-import WSEdit.WordTree          (WordTree, empty)
+import WSEdit.Util
+    ( CharClass
+        ( Bracket
+        , Digit
+        , Lower
+        , Operator
+        , Special
+        , Unprintable
+        , Upper
+        , Whitesp
+        )
+    )
+import WSEdit.WordTree
+    ( WordTree
+    , empty
+    )
 
 import qualified WSEdit.Buffer as B
 

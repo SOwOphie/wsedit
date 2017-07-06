@@ -1,18 +1,28 @@
 module WSEdit.Arguments.Data
-    ( ArgBlock (..)
-    , ArgBlockProto (..)
-    , Argument (..)
-    , FileMatchProto (..)
+    ( ArgBlock
+        (..)
+    , ArgBlockProto
+        (..)
+    , Argument
+        (..)
+    , FileMatchProto
+        (..)
     , unProtoFM
     , unProtoAB
     ) where
 
 
-import WSEdit.Data            ( FileMatch (FileMatch)
-                              , Stability ()
-                              , getCanonicalPath
-                              )
-import WSEdit.Data.Algorithms (canonicalPath)
+import WSEdit.Data
+    ( FileMatch
+        ( FileMatch
+        )
+    , Stability
+        ()
+    , getCanonicalPath
+    )
+import WSEdit.Data.Algorithms
+    ( canonicalPath
+    )
 
 
 

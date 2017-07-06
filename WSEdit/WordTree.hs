@@ -1,5 +1,6 @@
 module WSEdit.WordTree
-    ( WordTree (..)
+    ( WordTree
+        (..)
     , empty
     , addWord
     , fromList
@@ -8,8 +9,12 @@ module WSEdit.WordTree
     ) where
 
 
-import Data.List  (sort)
-import Data.Maybe (catMaybes)
+import Data.List
+    ( sort
+    )
+import Data.Maybe
+    ( catMaybes
+    )
 
 
 

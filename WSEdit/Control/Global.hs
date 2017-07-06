@@ -19,58 +19,140 @@ module WSEdit.Control.Global
     ) where
 
 
-import Control.DeepSeq             (force)
-import Control.Exception           (SomeException, evaluate, try)
-import Control.Monad               (when)
-import Control.Monad.IO.Class      (liftIO)
-import Control.Monad.RWS.Strict    (ask, get, modify, put)
-import Data.Function               (on)
-import Data.Maybe                  (fromMaybe, isJust)
-import Graphics.Vty                (Vty (shutdown))
-import Safe                        (fromJustNote, headDef)
-import System.Directory            ( copyPermissions, doesFileExist
-                                   , getHomeDirectory, getPermissions
-                                   , makeRelativeToCurrentDirectory, removeFile
-                                   , renameFile, writable
-                                   )
-import System.Exit                 (exitFailure)
-import System.IO                   ( IOMode (AppendMode, WriteMode)
-                                   , NewlineMode
-                                   , hPutStr, hSetEncoding, hSetNewlineMode
-                                   , mkTextEncoding, universalNewlineMode
-                                   , withFile
-                                   )
-import Text.Show.Pretty            (ppShow)
+import Control.DeepSeq
+    ( force
+    )
+import Control.Exception
+    ( SomeException
+    , evaluate
+    , try
+    )
+import Control.Monad
+    ( when
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    )
+import Data.Function
+    ( on
+    )
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    )
+import Graphics.Vty
+    ( Vty
+        ( shutdown
+        )
+    )
+import Safe
+    ( fromJustNote
+    , headDef
+    )
+import System.Directory
+    ( copyPermissions
+    , doesFileExist
+    , getHomeDirectory
+    , getPermissions
+    , makeRelativeToCurrentDirectory
+    , removeFile
+    , renameFile
+    , writable
+    )
+import System.Exit
+    ( exitFailure
+    )
+import System.IO
+    ( IOMode
+        ( AppendMode
+        , WriteMode
+        )
+    , NewlineMode
+    , hPutStr
+    , hSetEncoding
+    , hSetNewlineMode
+    , mkTextEncoding
+    , universalNewlineMode
+    , withFile
+    )
+import Text.Show.Pretty
+    ( ppShow
+    )
 
-import WSEdit.Control.Autocomplete (dictAddRec)
-import WSEdit.Control.Base         ( alterState, askConfirm, fetchCursor
-                                   , moveCursor, refuseOnReadOnly, standby
-                                   , validateCursor
-                                   )
-import WSEdit.Data                 ( EdConfig ( atomicSaves, encoding
-                                              , initJMarks, newlineMode
-                                              , purgeOnClose, vtyObj, wriCheck
-                                              )
-                                   , EdState  ( changed, continue, cursorPos
-                                              , detectTabs, dict, edLines
-                                              , exitMsg, fname, lastEvent
-                                              , loadPos, markPos, overwrite
-                                              , readOnly, replaceTabs
-                                              )
-                                   , WSEdit
-                                   , runWSEdit, version
-                                   )
-import WSEdit.Data.Algorithms      ( catchEditor, chopHist, mapPast, popHist
-                                   , setStatus, tryEditor
-                                   )
-import WSEdit.Data.Pretty          (prettyEdConfig)
-import WSEdit.Output               (drawExitFrame)
-import WSEdit.Util                 ( linesPlus, readEncFile, unlinesPlus
-                                   , withFst, withPair
-                                   )
-import WSEdit.WordTree             (empty)
+import WSEdit.Control.Autocomplete
+    ( dictAddRec
+    )
+import WSEdit.Control.Base
+    ( alterState
+    , askConfirm
+    , fetchCursor
+    , moveCursor
+    , refuseOnReadOnly
+    , standby
+    , validateCursor
+    )
+import WSEdit.Data
+    ( EdConfig
+        ( atomicSaves
+        , encoding
+        , initJMarks
+        , newlineMode
+        , purgeOnClose
+        , vtyObj
+        , wriCheck
+        )
+    , EdState
+        ( changed
+        , continue
+        , cursorPos
+        , detectTabs
+        , dict
+        , edLines
+        , exitMsg
+        , fname
+        , lastEvent
+        , loadPos
+        , markPos
+        , overwrite
+        , readOnly
+        , replaceTabs
+    )
+    , WSEdit
+    , runWSEdit
+    , version
+    )
+import WSEdit.Data.Algorithms
+    ( catchEditor
+    , chopHist
+    , mapPast
+    , popHist
+    , setStatus
+    , tryEditor
+    )
+import WSEdit.Data.Pretty
+    ( prettyEdConfig
+    )
+import WSEdit.Output
+    ( drawExitFrame
+    )
+import WSEdit.Util
+    ( linesPlus
+    , readEncFile
+    , unlinesPlus
+    , withFst
+    , withPair
+    )
+import WSEdit.WordTree
+    ( empty
+    )
 
-import qualified WSEdit.Buffer        as B
+import qualified WSEdit.Buffer as B
 
 
 fqn :: String -> String

@@ -3,34 +3,85 @@ module WSEdit.Keymaps
     ) where
 
 
-import Graphics.Vty   ( Event (EvKey)
-                      , Key ( KBackTab, KBS, KChar, KDel, KDown, KEnd, KEnter
-                            , KEsc, KFun, KHome, KIns, KLeft, KRight, KUp
-                            )
-                      , Modifier (MCtrl, MMeta, MShift)
-                      )
+import Graphics.Vty
+    ( Event
+        ( EvKey
+        )
+    , Key
+        ( KBackTab
+        , KBS
+        , KChar
+        , KDel
+        , KDown
+        , KEnd
+        , KEnter
+        , KEsc
+        , KFun
+        , KHome
+        , KIns
+        , KLeft
+        , KRight
+        , KUp
+        )
+    , Modifier
+        ( MCtrl
+        , MMeta
+        , MShift
+        )
+    )
 
-import WSEdit.Control.Autocomplete (completeOr)
-import WSEdit.Control.Base         ( fetchCursor, moveCursor, moveCursorEnd
-                                   , moveViewport, showText
-                                   )
-import WSEdit.Control.Global       ( forceQuit, quit, save, simulateCrash
-                                   , toggleInsOvr, toggleReadOnly, toggleTabRepl
-                                   , undo
-                                   )
-import WSEdit.Control.Marks        ( backwardsToMark, forwardToMark
-                                   , toggleJumpMark
-                                   )
-import WSEdit.Control.Selection    ( copy, deleteSelection, ifMarked
-                                   , indentSelection, initMark, paste, searchFor
-                                   , unindentSelection
-                                   )
-import WSEdit.Control.Text         ( cleanse, delLeft, delRight, insertTab
-                                   , smartHome, smartNewLine
-                                   )
-import WSEdit.Data                 (Keymap)
-import WSEdit.Data.Algorithms      (clearMark)
-import WSEdit.Help                 (keymapHelp)
+import WSEdit.Control.Autocomplete
+    ( completeOr
+    )
+import WSEdit.Control.Base
+    ( fetchCursor
+    , moveCursor
+    , moveCursorEnd
+    , moveViewport
+    , showText
+    )
+import WSEdit.Control.Global
+    ( forceQuit
+    , quit
+    , save
+    , simulateCrash
+    , toggleInsOvr
+    , toggleReadOnly
+    , toggleTabRepl
+    , undo
+    )
+import WSEdit.Control.Marks
+    ( backwardsToMark
+    , forwardToMark
+    , toggleJumpMark
+    )
+import WSEdit.Control.Selection
+    ( copy
+    , deleteSelection
+    , ifMarked
+    , indentSelection
+    , initMark
+    , paste
+    , searchFor
+    , unindentSelection
+    )
+import WSEdit.Control.Text
+    ( cleanse
+    , delLeft
+    , delRight
+    , insertTab
+    , smartHome
+    , smartNewLine
+    )
+import WSEdit.Data
+    ( Keymap
+    )
+import WSEdit.Data.Algorithms
+    ( clearMark
+    )
+import WSEdit.Help
+    ( keymapHelp
+    )
 
 
 

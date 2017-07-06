@@ -5,13 +5,27 @@ module WSEdit.Control.Marks
     ) where
 
 
-import Control.Monad.RWS.Strict (get, modify)
+import Control.Monad.RWS.Strict
+    ( get
+    , modify
+    )
 
-import WSEdit.Control.Base      (moveCursor, moveCursorHome, refuseOnReadOnly)
-import WSEdit.Data              ( EdState (edLines, searchTerms)
-                                , WSEdit
-                                )
-import WSEdit.Util              (findInStr, withFst)
+import WSEdit.Control.Base
+    ( moveCursor
+    , moveCursorHome
+    , refuseOnReadOnly
+    )
+import WSEdit.Data
+    ( EdState
+        ( edLines
+        , searchTerms
+        )
+    , WSEdit
+    )
+import WSEdit.Util
+    ( findInStr
+    , withFst
+    )
 
 import qualified WSEdit.Buffer as B
 

@@ -18,60 +18,144 @@ module WSEdit.Output
     , drawExitFrame
     ) where
 
-import Control.Monad            (foldM)
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get)
-import Data.Char                (ord)
-import Data.Ix                  (inRange)
-import Data.Maybe               (fromMaybe)
-import Data.Tuple               (swap)
-import Graphics.Vty             ( Attr ( Attr, attrBackColor, attrForeColor
-                                       , attrStyle
-                                       )
-                                , Background (ClearBackground)
-                                , Cursor (Cursor, NoCursor)
-                                , Image
-                                , MaybeDefault (KeepCurrent)
-                                , Picture ( Picture, picBackground, picCursor
-                                          , picLayers
-                                          )
-                                , char, cropBottom, cropRight, defAttr
-                                , emptyImage, horizCat, pad, picForImage
-                                , reverseVideo, string, update, vertCat
-                                , withStyle
-                                , (<|>), (<->)
-                                )
-import Numeric                  (showHex)
-import Safe                     (atDef, lookupJustDef)
+import Control.Monad
+    ( foldM
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    )
+import Data.Char
+    ( ord
+    )
+import Data.Ix
+    ( inRange
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Tuple
+    ( swap
+    )
+import Graphics.Vty
+    ( Attr
+        ( Attr
+        , attrBackColor
+        , attrForeColor
+        , attrStyle
+        )
+    , Background
+        ( ClearBackground
+        )
+    , Cursor
+        ( Cursor
+        , NoCursor
+        )
+    , Image
+    , MaybeDefault
+        ( KeepCurrent
+        )
+    , Picture
+        ( Picture
+        , picBackground
+        , picCursor
+        , picLayers
+        )
+    , char
+    , cropBottom
+    , cropRight
+    , defAttr
+    , emptyImage
+    , horizCat
+    , pad
+    , picForImage
+    , reverseVideo
+    , string
+    , update
+    , vertCat
+    , withStyle
+    , (<|>)
+    , (<->)
+    )
+import Numeric
+    ( showHex
+    )
+import Safe
+    ( atDef
+    , lookupJustDef
+    )
 
-import WSEdit.Data              ( EdConfig (drawBg, edDesign, tabWidth, vtyObj)
-                                , EdDesign ( dBGChar, dBGFormat, dBrMod
-                                           , dCharStyles, dColChar, dColNoFormat
-                                           , dColNoInterval, dCurrLnMod
-                                           , dFrameFormat, dHLStyles
-                                           , dLineNoFormat, dLineNoInterv
-                                           , dJumpMarkFmt, dStatusFormat
-                                           , dTabExt, dTabStr
-                                           )
-                                , EdState ( badgeText, changed, edLines, fname
-                                          , markPos, overwrite, rangeCache
-                                          , readOnly, replaceTabs, scrollOffset
-                                          , status
-                                          )
-                                , HighlightMode ( HError, HNone, HSelected
-                                                , HString
-                                                )
-                                , WSEdit
-                                )
-import WSEdit.Data.Algorithms   ( getCurrBracket, getCursor, getDisplayBounds
-                                , getOffset, getSelBounds
-                                )
-import WSEdit.Util              ( CharClass ( Bracket, Lower, Special
-                                            , Unprintable, Whitesp
-                                            )
-                                , charClass, combineAttrs, iff, lookupBy
-                                , padLeft, padRight
-                                )
+import WSEdit.Data
+    ( EdConfig
+        ( drawBg
+        , edDesign
+        , tabWidth
+        , vtyObj
+        )
+    , EdDesign
+        ( dBGChar
+        , dBGFormat
+        , dBrMod
+        , dCharStyles
+        , dColChar
+        , dColNoFormat
+        , dColNoInterval
+        , dCurrLnMod
+        , dFrameFormat
+        , dHLStyles
+        , dLineNoFormat
+        , dLineNoInterv
+        , dJumpMarkFmt
+        , dStatusFormat
+        , dTabExt
+        , dTabStr
+        )
+    , EdState
+        ( badgeText
+        , changed
+        , edLines
+        , fname
+        , markPos
+        , overwrite
+        , rangeCache
+        , readOnly
+        , replaceTabs
+        , scrollOffset
+        , status
+        )
+    , HighlightMode
+        ( HError
+        , HNone
+        , HSelected
+        , HString
+        )
+    , WSEdit
+    )
+import WSEdit.Data.Algorithms
+    ( getCurrBracket
+    , getCursor
+    , getDisplayBounds
+    , getOffset
+    , getSelBounds
+    )
+import WSEdit.Util
+    ( CharClass
+        ( Bracket
+        , Lower
+        , Special
+        , Unprintable
+        , Whitesp
+        )
+    , charClass
+    , combineAttrs
+    , iff
+    , lookupBy
+    , padLeft
+    , padRight
+    )
 
 import qualified WSEdit.Buffer as B
 

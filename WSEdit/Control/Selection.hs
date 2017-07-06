@@ -12,32 +12,79 @@ module WSEdit.Control.Selection
     ) where
 
 
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.List                (stripPrefix)
-import Data.Maybe               (fromMaybe, isJust)
-import Safe                     (headMay, headNote, initNote, lastNote)
-import System.Directory         (getHomeDirectory)
-import System.Hclip             (getClipboard, setClipboard)
-import System.Posix.Files       ( fileMode, getFileStatus, intersectFileModes
-                                , ownerModes, setFileMode
-                                )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    )
+import Data.List
+    ( stripPrefix
+    )
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    )
+import Safe
+    ( headMay
+    , headNote
+    , initNote
+    , lastNote
+    )
+import System.Directory
+    ( getHomeDirectory
+    )
+import System.Hclip
+    ( getClipboard
+    , setClipboard
+    )
+import System.Posix.Files
+    ( fileMode
+    , getFileStatus
+    , intersectFileModes
+    , ownerModes
+    , setFileMode
+    )
 
-import WSEdit.Control.Base      ( alterBuffer, alterState, moveCursor
-                                , moveCursorHome, refuseOnReadOnly
-                                )
-import WSEdit.Data              ( EdConfig (tabWidth)
-                                , EdState (cursorPos, edLines, fullRebdReq
-                                          , markPos, replaceTabs, searchTerms
-                                          )
-                                , WSEdit
-                                )
-import WSEdit.Data.Algorithms   ( clearMark, delSelection, getMark, getCursor
-                                , getSelection, setMark, setStatus
-                                )
-import WSEdit.Util              ( checkClipboardSupport, linesPlus, mayReadFile
-                                , withSnd
-                                )
+import WSEdit.Control.Base
+    ( alterBuffer
+    , alterState
+    , moveCursor
+    , moveCursorHome
+    , refuseOnReadOnly
+    )
+import WSEdit.Data
+    ( EdConfig
+        ( tabWidth
+        )
+    , EdState
+        ( cursorPos
+        , edLines
+        , fullRebdReq
+        , markPos
+        , replaceTabs
+        , searchTerms
+        )
+    , WSEdit
+    )
+import WSEdit.Data.Algorithms
+    ( clearMark
+    , delSelection
+    , getMark
+    , getCursor
+    , getSelection
+    , setMark
+    , setStatus
+    )
+import WSEdit.Util
+    ( checkClipboardSupport
+    , linesPlus
+    , mayReadFile
+    , withSnd
+    )
 
 import qualified WSEdit.Buffer as B
 

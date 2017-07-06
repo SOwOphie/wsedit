@@ -9,23 +9,57 @@ module WSEdit.Arguments.Parser
     ) where
 
 
-import Control.Monad         (liftM2)
-import Data.Maybe            (catMaybes)
-import Text.Parsec           ( Parsec
-                             , anyChar, char, choice, digit, endBy, eof
-                             , getState, many , many1, newline, noneOf, oneOf
-                             , option, optional , sepBy, sepEndBy, spaces
-                             , string, try
-                             , (<|>), (<?>)
-                             )
-import System.FilePath       ((</>))
+import Control.Monad
+    ( liftM2
+    )
+import Data.Maybe
+    ( catMaybes
+    )
+import Text.Parsec
+    ( Parsec
+    , anyChar
+    , char
+    , choice
+    , digit
+    , endBy
+    , eof
+    , getState
+    , many
+    , many1
+    , newline
+    , noneOf
+    , oneOf
+    , option
+    , optional
+    , sepBy
+    , sepEndBy
+    , spaces
+    , string
+    , try
+    , (<|>)
+    , (<?>)
+    )
+import System.FilePath
+    ( (</>)
+    )
 
-import WSEdit.Arguments.Data ( ArgBlockProto (ArgBlockProto, abpMatch, abpArg)
-                             , Argument (..)
-                             -- not listing those off one by one
-                             , FileMatchProto (FileQualifier, PathQualifier)
-                             )
-import WSEdit.Data           (Stability ())
+import WSEdit.Arguments.Data
+    ( ArgBlockProto
+        ( ArgBlockProto
+        , abpMatch
+        , abpArg
+        )
+    , Argument
+        (..) -- not listing those off one by one
+    , FileMatchProto
+        ( FileQualifier
+        , PathQualifier
+        )
+    )
+import WSEdit.Data
+    ( Stability
+        ()
+    )
 
 
 

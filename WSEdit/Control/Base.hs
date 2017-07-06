@@ -18,41 +18,106 @@ module WSEdit.Control.Base
     ) where
 
 
-import Control.Exception          (SomeException)
-import Control.Monad              (unless, when)
-import Control.Monad.IO.Class     (liftIO)
-import Control.Monad.RWS.Strict   (ask, get, modify, put)
-import Control.Monad.Trans.Either (EitherT (EitherT, runEitherT))
-import Data.Char                  (isSpace, toLower)
-import Data.Default               (def)
-import Data.Maybe                 (catMaybes, fromMaybe)
-import Graphics.Vty               ( Event (EvKey, EvResize)
-                                  , Key (KChar)
-                                  , nextEvent
-                                  )
-import Safe                       (maximumDef)
+import Control.Exception
+    ( SomeException
+    )
+import Control.Monad
+    ( unless
+    , when
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    )
+import Control.Monad.Trans.Either
+    ( EitherT
+        ( EitherT
+        , runEitherT
+        )
+    )
+import Data.Char
+    ( isSpace
+    , toLower
+    )
+import Data.Default
+    ( def
+    )
+import Data.Maybe
+    ( catMaybes
+    , fromMaybe
+    )
+import Graphics.Vty
+    ( Event
+        ( EvKey
+        , EvResize
+        )
+    , Key
+        ( KChar
+        )
+    , nextEvent
+    )
+import Safe
+    ( maximumDef
+    )
 
-import WSEdit.Data                ( EdConfig (keymap, vtyObj)
-                                  , EdState  ( badgeText, canComplete, continue
-                                             , cursorPos, edLines, rangeCache
-                                             , readOnly, scrollOffset, status
-                                             , wantsPos
-                                             )
-                                  , FmtParserState (PNothing)
-                                  , HighlightMode (HSearch)
-                                  , Keymap
-                                  , WSEdit
-                                  , mkDefConfig
-                                  , runIn
-                                  )
-import WSEdit.Data.Algorithms     ( alter, currLineLen, getCursor, getOffset
-                                  , setCursor, setStatus, setOffset, tryEditor
-                                  )
-import WSEdit.Output              ( cursorOffScreen, draw, getViewportDimensions
-                                  , stringWidth, txtToVisPos, visToTxtPos
-                                  )
-import WSEdit.Renderer            (rebuildAll)
-import WSEdit.Util                (linesPlus, withPair)
+import WSEdit.Data
+    ( EdConfig
+        ( keymap
+        , vtyObj
+        )
+    , EdState
+        ( badgeText
+        , canComplete
+        , continue
+        , cursorPos
+        , edLines
+        , rangeCache
+        , readOnly
+        , scrollOffset
+        , status
+        , wantsPos
+        )
+    , FmtParserState
+        ( PNothing
+        )
+    , HighlightMode
+        ( HSearch
+        )
+    , Keymap
+    , WSEdit
+    , mkDefConfig
+    , runIn
+    )
+import WSEdit.Data.Algorithms
+    ( alter
+    , currLineLen
+    , getCursor
+    , getOffset
+    , setCursor
+    , setStatus
+    , setOffset
+    , tryEditor
+    )
+import WSEdit.Output
+    ( cursorOffScreen
+    , draw
+    , getViewportDimensions
+    , stringWidth
+    , txtToVisPos
+    , visToTxtPos
+    )
+import WSEdit.Renderer
+    ( rebuildAll
+    )
+import WSEdit.Util
+    ( linesPlus
+    , withPair
+    )
 
 import qualified WSEdit.Buffer as B
 

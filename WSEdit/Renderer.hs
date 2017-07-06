@@ -3,39 +3,86 @@ module WSEdit.Renderer
     ) where
 
 
-import Control.Monad            (foldM)
-import Control.Monad.RWS.Strict (ask, get, modify, put)
-import Data.Ix                  (inRange)
-import Data.List                (nubBy, sort, sortOn)
-import Data.Maybe               (fromMaybe)
-import Data.Ord                 (Down (Down))
-import Safe                     (headDef)
+import Control.Monad
+    ( foldM
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    )
+import Data.Ix
+    ( inRange
+    )
+import Data.List
+    ( nubBy
+    , sort
+    , sortOn
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Ord
+    ( Down
+        ( Down
+        )
+    )
+import Safe
+    ( headDef
+    )
 
-import WSEdit.Data              ( BracketCache
-                                , BracketCacheElem
-                                , BracketStack
-                                , EdConfig ( brackets, chrDelim, blockComment
-                                           , escapeO, escapeS, keywords
-                                           , mStrDelim, lineComment, strDelim
-                                           )
-                                , EdState ( bracketCache, edLines, fullRebdReq
-                                          , rangeCache, scrollOffset
-                                          , searchTerms, tokenCache
-                                          )
-                                , HighlightMode ( HComment, HError, HKeyword
-                                                , HSearch, HString
-                                                )
-                                , RangeCache
-                                , RangeCacheElem
-                                , FmtParserState ( PNothing, PBComment
-                                                 , PLnString, PMLString
-                                                 )
-                                , WSEdit
-                                )
-import WSEdit.Output            (getViewportDimensions)
-import WSEdit.Util              ( findInStr, findIsolated, withFst, withPair
-                                , withSnd
-                                )
+import WSEdit.Data
+    ( BracketCache
+    , BracketCacheElem
+    , BracketStack
+    , EdConfig
+        ( brackets
+        , chrDelim
+        , blockComment
+        , escapeO
+        , escapeS
+        , keywords
+        , mStrDelim
+        , lineComment
+        , strDelim
+        )
+    , EdState
+        ( bracketCache
+        , edLines
+        , fullRebdReq
+        , rangeCache
+        , scrollOffset
+        , searchTerms
+        , tokenCache
+        )
+    , HighlightMode
+        ( HComment
+        , HError
+        , HKeyword
+        , HSearch
+        , HString
+        )
+    , RangeCache
+    , RangeCacheElem
+    , FmtParserState
+        ( PNothing
+        , PBComment
+        , PLnString
+        , PMLString
+        )
+    , WSEdit
+    )
+import WSEdit.Output
+    ( getViewportDimensions
+    )
+import WSEdit.Util
+    ( findInStr
+    , findIsolated
+    , withFst
+    , withPair
+    , withSnd
+    )
 
 import qualified WSEdit.Buffer as B
 

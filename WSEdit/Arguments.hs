@@ -7,59 +7,159 @@ module WSEdit.Arguments
     ) where
 
 
-import Control.Monad           (foldM, unless, when)
-import Control.Monad.IO.Class  (liftIO)
-import Data.Default            (def)
-import Data.Either             (lefts, rights)
-import Data.List               ( delete, inits, isSuffixOf, nub, null
-                               , (\\)
-                               )
-import Data.Maybe              (catMaybes, fromMaybe)
-import Safe                    (lastMay, maximumDef, readMay)
-import System.Directory        ( doesDirectoryExist, doesFileExist
-                               , getHomeDirectory
-                               )
-import System.Environment      (getArgs)
-import System.FilePath         ( joinPath, splitPath, takeDirectory
-                               , (</>)
-                               )
-import System.IO               ( Newline (CRLF, LF)
-                               , NewlineMode (NewlineMode)
-                               , universalNewlineMode
-                               )
-import Text.Parsec             (runP)
-import Text.Show.Pretty        (ppShow)
+import Control.Monad
+    ( foldM
+    , unless
+    , when
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Data.Default
+    ( def
+    )
+import Data.Either
+    ( lefts
+    , rights
+    )
+import Data.List
+    ( delete
+    , inits
+    , isSuffixOf
+    , nub
+    , null
+    , (\\)
+    )
+import Data.Maybe
+    ( catMaybes
+    , fromMaybe
+    )
+import Safe
+    ( lastMay
+    , maximumDef
+    , readMay
+    )
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , getHomeDirectory
+    )
+import System.Environment
+    ( getArgs
+    )
+import System.FilePath
+    ( joinPath
+    , splitPath
+    , takeDirectory
+    , (</>)
+    )
+import System.IO
+    ( Newline
+        ( CRLF
+        , LF
+        )
+    , NewlineMode
+        ( NewlineMode
+        )
+    , universalNewlineMode
+    )
+import Text.Parsec
+    ( runP
+    )
+import Text.Show.Pretty
+    ( ppShow
+    )
 
-import WSEdit.Arguments.Data   ( ArgBlock (ArgBlock, abMatch, abArg)
-                               , Argument (..)
-                               -- not listing all those off one by one
-                               , unProtoAB, unProtoFM
-                               )
-import WSEdit.Arguments.Parser (configCmd, configFile)
-import WSEdit.Control.Base     (standby)
-import WSEdit.Control.Global   (quitComplain)
-import WSEdit.Data             ( CanonicalPath (CanonicalPath, getCanonicalPath)
-                               , EdConfig ( atomicSaves, blockComment, brackets
-                                          , chrDelim, drawBg, dumpEvents
-                                          , edDesign, encoding, escapeO, escapeS
-                                          , initJMarks, keymap, keywords
-                                          , lineComment, mStrDelim, newlineMode
-                                          , purgeOnClose, strDelim, tabWidth
-                                          , vtyObj, wriCheck
-                                          )
-                               , EdState ( EdState, badgeText, buildDict
-                                         , detectTabs, fname, loadPos, readOnly
-                                         , replaceTabs, searchTerms
-                                         )
-                               , Stability (Release)
-                               , brightTheme, runWSEdit, stability, upstream
-                               )
-import WSEdit.Data.Algorithms  (canonicalPath, fileMatch)
-import WSEdit.Data.Pretty      (unPrettyEdConfig)
-import WSEdit.Help             (confHelp, keymapHelp, usageHelp, versionHelp)
-import WSEdit.Util             ( linesPlus, mayReadFile, listDirectoryDeep
-                               , readEncFile , unlinesPlus, withFst, withSnd
-                               )
+import WSEdit.Arguments.Data
+    ( ArgBlock
+        ( ArgBlock
+        , abMatch
+        , abArg
+        )
+    , Argument
+        (..) -- not listing all those off one by one
+    , unProtoAB
+    , unProtoFM
+    )
+import WSEdit.Arguments.Parser
+    ( configCmd
+    , configFile
+    )
+import WSEdit.Control.Base
+    ( standby
+    )
+import WSEdit.Control.Global
+    ( quitComplain
+    )
+import WSEdit.Data
+    ( CanonicalPath
+        ( CanonicalPath
+        , getCanonicalPath
+        )
+    , EdConfig
+        ( atomicSaves
+        , blockComment
+        , brackets
+        , chrDelim
+        , drawBg
+        , dumpEvents
+        , edDesign
+        , encoding
+        , escapeO
+        , escapeS
+        , initJMarks
+        , keymap
+        , keywords
+        , lineComment
+        , mStrDelim
+        , newlineMode
+        , purgeOnClose
+        , strDelim
+        , tabWidth
+        , vtyObj
+        , wriCheck
+        )
+    , EdState
+        ( EdState
+        , badgeText
+        , buildDict
+        , detectTabs
+        , fname
+        , loadPos
+        , readOnly
+        , replaceTabs
+        , searchTerms
+        )
+    , Stability
+        ( Release
+        )
+    , brightTheme
+    , runWSEdit
+    , stability
+    , upstream
+    )
+import WSEdit.Data.Algorithms
+    ( canonicalPath
+    , fileMatch
+    )
+import WSEdit.Data.Pretty
+    ( unPrettyEdConfig
+    )
+import WSEdit.Help
+    ( confHelp
+    , keymapHelp
+    , usageHelp
+    , versionHelp
+    )
+import WSEdit.Util
+    ( linesPlus
+    , mayReadFile
+    , listDirectoryDeep
+    , readEncFile
+    , unlinesPlus
+    , withFst
+    , withSnd
+    )
 
 
 

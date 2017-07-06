@@ -28,34 +28,79 @@ module WSEdit.Data.Algorithms
     ) where
 
 
-import Control.Exception        (SomeException, evaluate, try)
-import Control.Monad.IO.Class   (liftIO)
-import Control.Monad.RWS.Strict (ask, get, modify, put, runRWST)
-import Data.Maybe               (fromMaybe)
-import Data.Tuple               (swap)
-import Graphics.Vty             ( Vty (outputIface)
-                                , displayBounds
-                                )
-import Safe                     ( fromJustNote, headMay, headNote, initNote
-                                , lastNote, tailNote
-                                )
-import System.Directory         ( canonicalizePath
-                                , withCurrentDirectory
-                                )
-import System.FilePath          ( addTrailingPathSeparator , takeDirectory
-                                , takeFileName
-                                )
+import Control.Exception
+    ( SomeException
+    , evaluate
+    , try
+    )
+import Control.Monad.IO.Class
+    ( liftIO
+    )
+import Control.Monad.RWS.Strict
+    ( ask
+    , get
+    , modify
+    , put
+    , runRWST
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Tuple
+    ( swap
+    )
+import Graphics.Vty
+    ( Vty
+        ( outputIface
+        )
+    , displayBounds
+    )
+import Safe
+    ( fromJustNote
+    , headMay
+    , headNote
+    , initNote
+    , lastNote
+    , tailNote
+    )
+import System.Directory
+    ( canonicalizePath
+    , withCurrentDirectory
+    )
+import System.FilePath
+    ( addTrailingPathSeparator
+    , takeDirectory
+    , takeFileName
+    )
 
-import WSEdit.Util              (matchGlob, unlinesPlus, withSnd)
-import WSEdit.Data              ( WSEdit
-                                , EdConfig (histSize, vtyObj)
-                                , EdState ( bracketCache, changed, cursorPos
-                                          , edLines, markPos, history
-                                          , scrollOffset, status
-                                          )
-                                , CanonicalPath (CanonicalPath)
-                                , FileMatch (FileMatch)
-                                )
+import WSEdit.Util
+    ( matchGlob
+    , unlinesPlus
+    , withSnd
+    )
+import WSEdit.Data
+    ( WSEdit
+    , EdConfig
+        ( histSize
+        , vtyObj
+        )
+    , EdState
+        ( bracketCache
+        , changed
+        , cursorPos
+        , edLines
+        , markPos
+        , history
+        , scrollOffset
+        , status
+        )
+    , CanonicalPath
+        ( CanonicalPath
+        )
+    , FileMatch
+        ( FileMatch
+        )
+    )
 
 import qualified WSEdit.Buffer as B
 

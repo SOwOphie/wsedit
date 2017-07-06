@@ -8,22 +8,67 @@ module WSEdit.Help
     ) where
 
 
-import Data.Char          (toUpper)
-import Data.List          (delete, sortOn)
-import Data.Maybe         (catMaybes)
-import Data.Ord           (Down (Down))
-import Graphics.Vty       ( Button (BLeft, BMiddle, BRight)
-                          , Event (EvKey, EvMouseDown)
-                          , Key (KBackTab, KBS, KChar, KFun)
-                          , Modifier (MCtrl, MMeta, MShift)
-                          )
-import Safe               (lastDef, maximumNote)
+import Data.Char
+    ( toUpper
+    )
+import Data.List
+    ( delete
+    , sortOn
+    )
+import Data.Maybe
+    ( catMaybes
+    )
+import Data.Ord
+    ( Down
+        ( Down
+        )
+    )
+import Graphics.Vty
+    ( Button
+        ( BLeft
+        , BMiddle
+        , BRight
+        )
+    , Event
+        ( EvKey
+        , EvMouseDown
+        )
+    , Key
+        ( KBackTab
+        , KBS
+        , KChar
+        , KFun
+        )
+    , Modifier
+        ( MCtrl
+        , MMeta
+        , MShift
+        )
+    )
+import Safe
+    ( lastDef
+    , maximumNote
+    )
 
-import WSEdit.Data        (Keymap, licenseVersion, stability, upstream, version)
-import WSEdit.Data.Pretty (prettyKeymap)
-import WSEdit.Util        ( chunkWords, padRight, rotateR, unlinesPlus, withFst
-                          , withN, withSnd
-                          )
+import WSEdit.Data
+    ( Keymap
+    , licenseVersion
+    , stability
+    , upstream
+    , version
+    )
+import WSEdit.Data.Pretty
+    ( prettyKeymap
+    )
+import WSEdit.Util
+    ( chunkWords
+    , padRight
+    , rotateR
+    , unlinesPlus
+    , withFst
+    , withN
+    , withSnd
+    )
 
 
 

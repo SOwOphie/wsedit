@@ -22,7 +22,8 @@ module WSEdit.Util
     , timed
     , mayReadFile
     , listDirectoryDeep
-    , CharClass (..)
+    , CharClass
+        (..)
     , charClass
     , isIdentifierChar
     , isIdentifier
@@ -45,31 +46,98 @@ module WSEdit.Util
 
 
 
-import Control.DeepSeq    (NFData, force)
-import Codec.Text.Detect  (detectEncodingName)
-import Control.Exception  (SomeException, evaluate, try)
-import Data.Char          (chr, isAlphaNum, isControl, isMark, isPrint)
-import Data.List          (inits, intercalate, intersect, tails)
-import Data.Maybe         (isJust)
-import Data.Time.Clock    (diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
-import Graphics.Vty       ( Attr (Attr, attrStyle, attrForeColor, attrBackColor)
-                          , MaybeDefault (Default, KeepCurrent,SetTo)
-                          )
-import Safe               (foldl1Note, headMay, lastDef, lastNote)
-import System.Directory   ( doesDirectoryExist, doesFileExist, getHomeDirectory
-                          , listDirectory
-                          )
-import System.Environment (lookupEnv)
-import System.Exit        (ExitCode (ExitSuccess))
-import System.Info        (os)
-import System.IO          ( IOMode (ReadMode)
-                          , hSetEncoding, hSetNewlineMode, mkTextEncoding
-                          , universalNewlineMode, char8, withFile
-                          )
-import System.IO.Strict   (hGetContents)
-import System.IO.Unsafe   (unsafePerformIO)
-import System.Process     (readProcessWithExitCode)
-import Text.Show.Pretty   (ppShow)
+import Control.DeepSeq
+    ( NFData
+    , force
+    )
+import Codec.Text.Detect
+    ( detectEncodingName
+    )
+import Control.Exception
+    ( SomeException
+    , evaluate
+    , try
+    )
+import Data.Char
+    ( chr
+    , isAlphaNum
+    , isControl
+    , isMark
+    , isPrint
+    )
+import Data.List
+    ( inits
+    , intercalate
+    , intersect
+    , tails
+    )
+import Data.Maybe
+    ( isJust
+    )
+import Data.Time.Clock
+    ( diffTimeToPicoseconds
+    , diffUTCTime
+    , getCurrentTime
+    )
+import Graphics.Vty
+    ( Attr
+        ( Attr
+        , attrStyle
+        , attrForeColor
+        , attrBackColor
+        )
+    , MaybeDefault
+        ( Default
+        , KeepCurrent
+        , SetTo
+        )
+    )
+import Safe
+    ( foldl1Note
+    , headMay
+    , lastDef
+    , lastNote
+    )
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , getHomeDirectory
+    , listDirectory
+    )
+import System.Environment
+    ( lookupEnv
+    )
+import System.Exit
+    ( ExitCode
+        ( ExitSuccess
+        )
+    )
+import System.Info
+    ( os
+    )
+import System.IO
+    ( IOMode
+        ( ReadMode
+        )
+    , hSetEncoding
+    , hSetNewlineMode
+    , mkTextEncoding
+    , universalNewlineMode
+    , char8
+    , withFile
+    )
+import System.IO.Strict
+    ( hGetContents
+    )
+import System.IO.Unsafe
+    ( unsafePerformIO
+    )
+import System.Process
+    ( readProcessWithExitCode
+    )
+import Text.Show.Pretty
+    ( ppShow
+    )
 
 import qualified Data.ByteString.Lazy as S
 
