@@ -9,11 +9,16 @@ These changes should make packaging `wsedit` a lot easier than it used to be.
 - By default, `wsedit` will no longer be compiled using `-Werror`. This should
   increase compiler compatibility both forwards and backwards.
 
+- Debugging functions will no longer be compiled in by default. Therefore, the
+  `time` package is no longer required.
+
 - Passing `--flag wsedit:dev` to stack will produce a development build. This:
 
      - enables `-Werror`
      - disables `-O2` to speed up recompilations
      - creates a separate executable called `wsed-dev`
+     - enables debugging functions
+     - pulls in `time` again
 
 ### Additional, system-wide config location
 

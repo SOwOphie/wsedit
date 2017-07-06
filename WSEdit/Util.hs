@@ -18,8 +18,10 @@ module WSEdit.Util
     , rotateR
     , chunk
     , chunkWords
+#ifdef dev
     , dump
     , timed
+#endif
     , mayReadFile
     , listDirectoryDeep
     , CharClass
@@ -46,16 +48,20 @@ module WSEdit.Util
 
 
 
+#ifdef dev
 import Control.DeepSeq
     ( NFData
     , force
     )
+#endif
 import Codec.Text.Detect
     ( detectEncodingName
     )
 import Control.Exception
     ( SomeException
+#ifdef dev
     , evaluate
+#endif
     , try
     )
 import Data.Char
@@ -74,11 +80,13 @@ import Data.List
 import Data.Maybe
     ( isJust
     )
+#ifdef dev
 import Data.Time.Clock
     ( diffTimeToPicoseconds
     , diffUTCTime
     , getCurrentTime
     )
+#endif
 import Graphics.Vty
     ( Attr
         ( Attr
@@ -101,7 +109,9 @@ import Safe
 import System.Directory
     ( doesDirectoryExist
     , doesFileExist
+#ifdef dev
     , getHomeDirectory
+#endif
     , listDirectory
     )
 import System.Environment
@@ -129,15 +139,19 @@ import System.IO
 import System.IO.Strict
     ( hGetContents
     )
+#ifdef dev
 import System.IO.Unsafe
     ( unsafePerformIO
     )
+#endif
 import System.Process
     ( readProcessWithExitCode
     )
+#ifdef dev
 import Text.Show.Pretty
     ( ppShow
     )
+#endif
 
 import qualified Data.ByteString.Lazy as S
 
@@ -260,6 +274,7 @@ chunkWords n s  =
         x:xs
 
 
+#ifdef dev
 -- | Appends the given string as well as a pretty-printed 'show' of the second
 --   parameter to the file @dmp@ in the current working directory. Occasionally
 --   crashes on weird I/O race conditions. Use for debugging purposes only.
@@ -295,6 +310,7 @@ timed s a = unsafePerformIO $ do
 
     return a'
 
+#endif
 
 
 -- | Attempt to read a file, or return 'Nothing' if it fails.

@@ -212,8 +212,8 @@ bail mayComp s = do
                 ]
 
         liftIO $ writeFile (h ++ "/CRASH-DUMP")
-               $ "WSEDIT " ++ version ++ " CRASH LOG\n\
-                 \Error message: " ++ (headDef "" $ lines s)
+               $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+              ++ "Error message: " ++ (headDef "" $ lines s)
                     ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
               ++ "\nLast recorded event: "
                     ++ fromMaybe "-" (fmap show $ lastEvent st)
@@ -388,15 +388,15 @@ save = refuseOnReadOnly $ do
                                            )
                                $ emergencySave
 
-                        let m = "The Write-Read identity check failed.\n\n\
-                                \Your saved file would have been corrupted and \
-                                \got reset to the last save, your changes have \
-                                \been dumped to $HOME/CRASH-RESCUE using your \
-                                \system's native encoding.\n\n\
-                                \This isssue is probably due to the use of a \
-                                \non-standard text encoding. Encoding \
-                                \irregularities are a known issue, please try \
-                                \using a different setting for the time being."
+                        let m = "The Write-Read identity check failed.\n\n"
+                             ++ "Your saved file would have been corrupted and "
+                             ++ "got reset to the last save, your changes have "
+                             ++ "been dumped to $HOME/CRASH-RESCUE using your "
+                             ++ "system's native encoding.\n\n"
+                             ++ "This isssue is probably due to the use of a "
+                             ++ "non-standard text encoding. Encoding "
+                             ++ "irregularities are a known issue, please try "
+                             ++ "using a different setting for the time being."
 
                         modify (\s'' -> s'' { continue = False
                                             , exitMsg  = Just m
@@ -444,29 +444,29 @@ load lS = alterState $ do
                        askConfirm
                            ( "The file you're about to load is very long ("
                           ++ show nLns
-                          ++ " lines). WSEdit is not built for handling huge \
-                             \files, loading might take up to a few minutes \
-                             \and editing will be slow. Continue anyways?"
+                          ++ " lines). WSEdit is not built for handling huge "
+                          ++ "files, loading might take up to a few minutes "
+                          ++ "and editing will be slow. Continue anyways?"
                            )
 
                  | nLine > 1000     ->
                        askConfirm
-                           ( "The file you're about to load contains very long \
-                             \lines ("
+                           ( "The file you're about to load contains very long "
+                          ++ "lines ("
                           ++ show nLine
-                          ++ " characters). WSEdit is not built for handling \
-                             \these, loading might take up to a few minutes \
-                             \and editing will be slow. Continue anyways?"
+                          ++ " characters). WSEdit is not built for handling "
+                          ++ "these, loading might take up to a few minutes "
+                          ++ "and editing will be slow. Continue anyways?"
                            )
 
                  | nChrs > 10000000 ->
                        askConfirm
                            ( "The file you're about to load is very large ("
                           ++ show nChrs
-                          ++ " characters). WSEdit is not built for handling \
-                             \huge files, loading might take up to a few \
-                             \minutes and editing will be slow. Continue \
-                             \anyways?"
+                          ++ " characters). WSEdit is not built for handling "
+                          ++ "huge files, loading might take up to a few "
+                          ++ "minutes and editing will be slow. Continue "
+                          ++ "anyways?"
                            )
 
                  | otherwise        -> return True
@@ -505,24 +505,24 @@ load lS = alterState $ do
 
                            (True , False, Just e ) -> "Warning: "
                                                    ++ e
-                                                   ++ " file not writable, \
-                                                      \opening in read-only \
-                                                      \mode ..."
+                                                   ++ " file not writable, "
+                                                   ++ "opening in read-only "
+                                                   ++ "mode ..."
 
-                           (True , _    , Nothing) -> "Warning: unknown \
-                                                      \character encoding, \
-                                                      \opening raw..."
+                           (True , _    , Nothing) -> "Warning: unknown "
+                                                   ++ "character encoding, "
+                                                   ++ "opening raw..."
 
                            (False, True , _      ) -> "Warning: file "
                                                    ++ p'
-                                                   ++ " not found, creating on \
-                                                      \save ..."
+                                                   ++ " not found, creating on "
+                                                   ++ "save ..."
 
-                           (False, False, _      ) -> "Warning: cannot create \
-                                                      \file "
+                           (False, False, _      ) -> "Warning: cannot create "
+                                                   ++ "file "
                                                    ++ p'
-                                                   ++ " , check permissions \
-                                                      \and disk state."
+                                                   ++ " , check permissions "
+                                                   ++ "and disk state."
 
             -- Move the cursor to where it should be placed.
             uncurry moveCursor $ withPair dec dec $ loadPos s
