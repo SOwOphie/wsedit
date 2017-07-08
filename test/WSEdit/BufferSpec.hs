@@ -37,8 +37,8 @@ spec = do
                         B.length (fromJust $ B.fromList l) == length (l :: [Int])
 
             it "can be converted into a list" $
-                property $ \l ->
-                    B.fromList (B.toList l) == Just (B.toFirst l :: B.Buffer Int)
+                property $ \b ->
+                    B.fromList (B.toList b) == Just (B.toFirst b :: B.Buffer Int)
 
         describe "Creation" $ do
             describe "singleton" $ it "creates a singleton element" $
@@ -46,10 +46,27 @@ spec = do
                     B.length (B.singleton (x :: Int)) == 1
 
         describe "Accessors" $ do
-            todo "pos"
-            todo "currPos"
-            todo "prefLength"
-            todo "sufLength"
+            describe "pos" $ it "returns the currently focused element" $
+                property $ \l ->
+                    not (null l) ==> withListPos (l :: [Int]) $
+                        \pos -> property $
+                            B.pos (B.moveTo pos $ fromJust $ B.fromList l)
+                               == (l !! pos)
+
+            describe "currPos" $ it "returns the number of elements before the current position" $
+                property $ \b ->
+                    withBufPos (b :: B.Buffer Int) $ \pos -> property $
+                        B.currPos (B.moveTo pos b) == pos
+
+            describe "prefLength" $ it "is an alias for currPos" $
+                property $ \b ->
+                    B.currPos b == B.prefLength (b :: B.Buffer Int)
+
+            describe "sufLength" $ it "returns the number of items after the current position" $
+                property $ \b -> property $
+                    B.length b - B.prefLength b - 1
+                        == B.sufLength (b :: B.Buffer Int)
+
             todo "left"
             todo "right"
             todo "atMay"
@@ -97,11 +114,32 @@ spec = do
 
         describe "Misc" $ do
             describe "sub" $ it "extracts a sublist" $
-                property $ \l -> MkProperty $ do
-                    a <- choose (0, B.length l)
-                    b <- choose (0, B.length l)
-                    unProperty $ and [0 <= a, a <= b, b <= B.length l] ==>
-                        B.sub a b l == drop a (take (b + 1) $ B.toList (l :: B.Buffer Int))
+                property     $ \b ->
+                withBufPos b $ \x ->
+                withBufPos b $ \y ->
+                    x <= y ==>
+                        drop x (take (y + 1) $ B.toList (b :: B.Buffer Int))
+                            == B.sub x y b
 
             todo "diffZone"
             todo "resembles"
+
+
+
+
+
+withListPos :: [a] -> (Int -> Property) -> Property
+withListPos l f = MkProperty $ do
+    pos <- choose (0, length l - 1)
+    unProperty
+        $ counterexample ("Index " ++ show pos)
+        $ f pos
+
+
+
+withBufPos :: B.Buffer a -> (Int -> Property) -> Property
+withBufPos b f = MkProperty $ do
+    pos <- choose (0, B.length b - 1)
+    unProperty
+        $ counterexample ("Index " ++ show pos)
+        $ f pos
