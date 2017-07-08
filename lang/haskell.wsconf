@@ -27,6 +27,17 @@
 #                                                                              #
 # Keywords                                                                     #
 *.hs
+	-lk #define
+	-lk #elif
+	-lk #else
+	-lk #endif
+	-lk #if
+	-lk #ifdef
+	-lk #ifndef
+	-lk #include
+	-lk #line
+	-lk #pragma
+	-lk #undef
 	-lk as
 	-lk case
 	-lk of
