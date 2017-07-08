@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.2.5"
+version = "1.2.2.6"
 
 -- | Upstream URL.
 upstream :: String
@@ -285,7 +285,11 @@ instance Default EdState where
         , continue     = True
         , exitMsg      = Nothing
         , status       = ""
+#ifndef dev
         , badgeText    = Nothing
+#else
+        , badgeText    = Just "!!! DEVELOPMENT BUILD !!!"
+#endif
         , lastEvent    = Nothing
 
         , buildDict    = []

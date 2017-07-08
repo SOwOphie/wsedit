@@ -121,7 +121,9 @@ import WSEdit.Data
         )
     , EdState
         ( EdState
+#ifndef dev
         , badgeText
+#endif
         , buildDict
         , detectTabs
         , fname
@@ -441,8 +443,7 @@ applyArg :: (EdConfig, EdState) -> Argument -> IO (EdConfig, EdState)
 applyArg (c, s) (AutocompAdd     n f) = unProtoFM f >>= \f' -> return (c, s { buildDict   = (Just f', n) : buildDict s })
 
 applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, n) : buildDict s })
-applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })
-applyArg (c, s)  DisplayBadgeOff      = return (c, s { badgeText   = Nothing                    })
+
 applyArg (c, s)  AutocompOff          = return (c, s { buildDict   = []                         })
 
 applyArg (c, s)  EditorTabModeSpc     = return (c, s { replaceTabs = True
@@ -520,3 +521,10 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
+#ifndef dev
+applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })
+applyArg (c, s)  DisplayBadgeOff      = return (c, s { badgeText   = Nothing                    })
+#else
+applyArg (c, s) (DisplayBadgeSet _  ) = return (c, s)
+applyArg (c, s)  DisplayBadgeOff      = return (c, s)
+#endif
