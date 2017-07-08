@@ -1,6 +1,5 @@
 .stack-work/
 CRASH-*
 dmp
-src/
 .hpc/
 *.tix
