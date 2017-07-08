@@ -19,6 +19,7 @@ These changes should make packaging `wsedit` a lot easier than it used to be.
      - creates a separate executable called `wsed-dev`
      - enables debugging functions
      - pulls in `time` again
+     - sets the badge text to "!!! DEVELOPMENT BUILD !!!"
 
 ### Additional, system-wide config location
 
