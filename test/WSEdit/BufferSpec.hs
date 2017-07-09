@@ -22,6 +22,11 @@ instance (Arbitrary a, Hashable a) => Arbitrary (B.Buffer a) where
 
 
 
+type B = B.Buffer Int
+type L = [Int]
+
+
+
 spec :: Spec
 spec = do
     describe "Buffer" $ do
@@ -29,16 +34,16 @@ spec = do
             it "can be created from a list" $
                 property $ \l ->
                     not (null l) ==>
-                        fmap B.toList (B.fromList l) == Just (l :: [Int])
+                        fmap B.toList (B.fromList l) == Just (l :: L)
 
             it "creates a list with the same length" $
                 property $ \l ->
                     not (null l) ==>
-                        B.length (fromJust $ B.fromList l) == length (l :: [Int])
+                        B.length (fromJust $ B.fromList l) == length (l :: L)
 
             it "can be converted into a list" $
                 property $ \b ->
-                    B.fromList (B.toList b) == Just (B.toFirst b :: B.Buffer Int)
+                    B.fromList (B.toList b) == Just (B.toFirst b :: B)
 
         describe "Creation" $ do
             describe "singleton" $ it "creates a singleton element" $
@@ -48,31 +53,77 @@ spec = do
         describe "Accessors" $ do
             describe "pos" $ it "returns the currently focused element" $
                 property $ \l ->
-                    not (null l) ==> withListPos (l :: [Int]) $
+                    not (null l) ==> withListPos (l :: L) $
                         \pos -> property $
                             B.pos (B.moveTo pos $ fromJust $ B.fromList l)
                                == (l !! pos)
 
             describe "currPos" $ it "returns the number of elements before the current position" $
                 property $ \b ->
-                    withBufPos (b :: B.Buffer Int) $ \pos -> property $
+                    withBufPos (b :: B) $ \pos -> property $
                         B.currPos (B.moveTo pos b) == pos
 
             describe "prefLength" $ it "is an alias for currPos" $
                 property $ \b ->
-                    B.currPos b == B.prefLength (b :: B.Buffer Int)
+                    B.currPos b == B.prefLength (b :: B)
 
             describe "sufLength" $ it "returns the number of items after the current position" $
                 property $ \b -> property $
                     B.length b - B.prefLength b - 1
-                        == B.sufLength (b :: B.Buffer Int)
+                        == B.sufLength (b :: B)
 
-            todo "left"
-            todo "right"
-            todo "atMay"
-            todo "atDef"
-            todo "first"
-            todo "last"
+            describe "left" $ do
+                it "returns the element left of the current position if it exists" $
+                    property $ \b ->
+                        B.currPos b > 0 ==>
+                            B.left (b :: B) == Just (B.toList b !! (B.currPos b - 1))
+
+                it "returns Nothing if there is no left element" $
+                    property $ \b ->
+                        B.left (B.toFirst b :: B) == Nothing
+
+            describe "right" $ do
+                it "returns the element right of the current position if it exists" $
+                    property $ \b ->
+                        B.currPos b < (B.length b - 1) ==>
+                            B.right (b :: B) == Just (B.toList b !! (B.currPos b + 1))
+
+                it "returns Nothing if there is no right element" $
+                    property $ \b ->
+                        B.right (B.toLast b :: B) == Nothing
+
+            describe "atMay" $ do
+                it "returns the element at the given index if it exists" $
+                    property $ \b ->
+                        withBufPos (b :: B) $ \pos -> property $
+                            B.atMay b pos == Just (B.toList b !! pos)
+
+                it "returns Nothing if the index is invalid" $
+                    property $ \b ->
+                        withInvalidBufPos (b :: B) $ \pos -> property $
+                            B.atMay b pos == Nothing
+
+            describe "atDef" $ do
+                it "returns the element at the given index if it exists" $
+                    property $ \b d ->
+                        withBufPos (b :: B) $ \pos -> property $
+                            B.atDef d b pos == (B.toList b !! pos)
+
+                it "returns a default if the index is invalid" $
+                    property $ \b d ->
+                        withInvalidBufPos (b :: B) $ \pos -> property $
+                            B.atDef d b pos == d
+
+            describe "first" $ do
+                it "returns the first value in the buffer" $
+                    property $ \b ->
+                        B.first (b :: B) == head (B.toList b)
+
+            describe "last" $ do
+                it "returns the last value in the buffer" $
+                    property $ \b ->
+                        B.last (b :: B) == last (B.toList b)
+
 
         describe "Movement" $ do
             todo "move"
@@ -140,6 +191,17 @@ withListPos l f = MkProperty $ do
 withBufPos :: B.Buffer a -> (Int -> Property) -> Property
 withBufPos b f = MkProperty $ do
     pos <- choose (0, B.length b - 1)
+    unProperty
+        $ counterexample ("Index " ++ show pos)
+        $ f pos
+
+
+
+withInvalidBufPos :: B.Buffer a -> (Int -> Property) -> Property
+withInvalidBufPos b f = MkProperty $ do
+    pos <- oneof [ choose (-1 * B.length b, -1            )
+                 , choose (     B.length b, B.length b * 2)
+                 ]
     unProperty
         $ counterexample ("Index " ++ show pos)
         $ f pos
