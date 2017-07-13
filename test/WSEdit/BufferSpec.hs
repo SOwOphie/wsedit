@@ -126,12 +126,75 @@ spec = do
 
 
         describe "Movement" $ do
-            todo "move"
-            todo "moveTo"
-            todo "forward"
-            todo "backward"
-            todo "toFirst"
-            todo "toLast"
+            describe "move" $ do
+                it "moves the buffer position relatively" $
+                    property $ \b ->
+                        withBufPos (b :: B) $ \p -> property $
+                            B.currPos (B.move (p - B.currPos b) b) == p
+
+                it "silently stops at the end of the buffer" $
+                    property $ \b ->
+                        withInvalidBufPos (b :: B) $ \p -> property $
+                            B.currPos (B.move (p - B.currPos b) b)
+                                == (if (p > 0) then B.length b - 1 else 0)
+
+                it "does not alter the buffer contents in any way" $
+                    property $ \b ->
+                        withMaybeValidBufPos (b :: B) $ \p -> property $
+                            B.toList (B.move (p - B.currPos b) b) == B.toList b
+
+            describe "moveTo" $ do
+                it "moves the buffer position absolutely" $
+                    property $ \b ->
+                        withBufPos (b :: B) $ \p -> property $
+                            B.currPos (B.moveTo p b) == p
+
+                it "silently stops at the end of the buffer" $
+                    property $ \b ->
+                        withInvalidBufPos (b :: B) $ \p -> property $
+                            B.currPos (B.moveTo p b)
+                                == (if (p > 0) then B.length b - 1 else 0)
+
+                it "does not alter the buffer contents in any way" $
+                    property $ \b ->
+                        withMaybeValidBufPos (b :: B) $ \p -> property $
+                            B.toList (B.moveTo p b) == B.toList b
+
+                it "directly corresponds to a move command" $
+                    property $ \b p -> B.move   (p - B.currPos b) (b :: B)
+                                    == B.moveTo  p                 b
+
+            describe "forward" $ do
+                it "advances to the next buffer position if it exists" $
+                    property $ \b ->
+                        B.sufLength (b :: B) > 0 ==> property $
+                            B.forward b == Just (B.move 1 b)
+
+                it "returns Nothing if the buffer is at the last position" $
+                    property $ \b ->
+                        B.forward (B.moveTo (B.length b - 1) (b :: B))
+                            == Nothing
+
+            describe "backward" $ do
+                it "rewinds to the previous buffer position if it exists" $
+                    property $ \b ->
+                        B.prefLength (b :: B) > 0 ==> property $
+                            B.backward b == Just (B.move (-1) b)
+
+                it "returns Nothing if the buffer is at the first position" $
+                    property $ \b ->
+                        B.backward (B.moveTo 0 (b :: B))
+                            == Nothing
+
+            describe "toFirst" $ do
+                it "rewinds the buffer to the first position" $
+                    property $ \b ->
+                        B.toFirst b == B.moveTo 0 (b :: B)
+
+            describe "toLast" $ do
+                it "advances the buffer to the last position" $
+                    property $ \b ->
+                        B.toLast b == B.moveTo (B.length b - 1) (b :: B)
 
         describe "Modifiers" $ do
             describe "Insert" $ do
@@ -205,3 +268,11 @@ withInvalidBufPos b f = MkProperty $ do
     unProperty
         $ counterexample ("Index " ++ show pos)
         $ f pos
+
+
+
+withMaybeValidBufPos :: B.Buffer a -> (Int -> Property) -> Property
+withMaybeValidBufPos b f = MkProperty $ oneof $ map unProperty
+    [ withBufPos        b f
+    , withInvalidBufPos b f
+    ]
