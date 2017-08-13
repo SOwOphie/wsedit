@@ -13,12 +13,14 @@ module WSEdit.Arguments.Data
 
 
 import WSEdit.Data
-    ( FileMatch
-        ( FileMatch
+    ( CanonicalPath
+        ()
+    , FileMatch
+        ( MatchFilename
+        , MatchPath
         )
     , Stability
         ()
-    , getCanonicalPath
     )
 import WSEdit.Data.Algorithms
     ( canonicalPath
@@ -33,7 +35,7 @@ data ArgBlock = ArgBlock
     }
     deriving (Eq, Read, Show)
 
--- | ArgBlock prototype.
+-- | ArgBlock prototype. Can be transformed to an `ArgBlock` using IO.
 data ArgBlockProto = ArgBlockProto
     { abpMatch :: FileMatchProto
     , abpArg   :: [Argument]
@@ -42,17 +44,17 @@ data ArgBlockProto = ArgBlockProto
 
 
 
--- | File match prototype.
+-- | File match prototype. Can be transformed to a `FileMatch` using IO.
 data FileMatchProto = FileQualifier FilePath
                         -- ^ Only match file name
-                    | PathQualifier FilePath FilePath
+                    | PathQualifier CanonicalPath FilePath
                         -- ^ Match full path #2 relative to base #1
     deriving (Eq, Read, Show)
 
 
 unProtoFM :: FileMatchProto -> IO FileMatch
-unProtoFM (FileQualifier      f) =  return $ FileMatch f
-unProtoFM (PathQualifier base f) =  FileMatch . getCanonicalPath
+unProtoFM (FileQualifier      f) =  return $ MatchFilename f
+unProtoFM (PathQualifier base f) =  MatchPath
                                 <$> canonicalPath (Just base) f
 
 unProtoAB :: ArgBlockProto -> IO ArgBlock

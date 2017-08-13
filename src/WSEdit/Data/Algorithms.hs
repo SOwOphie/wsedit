@@ -96,9 +96,11 @@ import WSEdit.Data
         )
     , CanonicalPath
         ( CanonicalPath
+        , getCanonicalPath
         )
     , FileMatch
-        ( FileMatch
+        ( MatchFilename
+        , MatchPath
         )
     )
 
@@ -392,26 +394,25 @@ tryEditor a = catchEditor (Right <$> a) (return . Left)
 
 
 -- | Given a base directory for relative paths, canonicalize a path.
-canonicalPath :: Maybe FilePath -> FilePath -> IO CanonicalPath
+canonicalPath :: Maybe CanonicalPath -> FilePath -> IO CanonicalPath
 canonicalPath  Nothing    f = fmap CanonicalPath
                             $ canonicalizePath f
 
 canonicalPath (Just base) f = withCurrentDirectory
-                                (takeDirectory $ addTrailingPathSeparator base)
+                                ( takeDirectory
+                                $ addTrailingPathSeparator
+                                $ getCanonicalPath base
+                                )
                             $ canonicalPath Nothing f
 
 
 
--- | Returns whether the argument block's selector is satisfied by the given
---   file.
+-- | Matches a `FileMatch` against a `CanonicalPath`.
 fileMatch :: FileMatch -> CanonicalPath -> Bool
-fileMatch (FileMatch s) (CanonicalPath c) =
-    case s of
-         _       | '/' `notElem` s -> matchGlob s $ takeFileName c
-         ('/':_)                   -> matchGlob s                c
-         _                         -> error
-                                    $ "fileMatch: illegal relative pattern: "
-                                   ++ s
+fileMatch f (CanonicalPath c) =
+    case f of
+         MatchFilename s -> matchGlob                   s  $ takeFileName c
+         MatchPath     p -> matchGlob (getCanonicalPath p)                c
 
 
 

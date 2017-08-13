@@ -702,6 +702,7 @@ newtype CanonicalPath = CanonicalPath { getCanonicalPath :: FilePath }
 
 
 
--- | Match type, whether to match the entire name or just prefix and suffix.
-newtype FileMatch = FileMatch String
+-- | File pattern to match against.
+data FileMatch = MatchFilename FilePath
+               | MatchPath     CanonicalPath
     deriving (Eq, Read, Show)

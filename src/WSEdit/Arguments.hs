@@ -42,6 +42,7 @@ import Safe
 import System.Directory
     ( doesDirectoryExist
     , doesFileExist
+    , getCurrentDirectory
     , getHomeDirectory
     )
 import System.Environment
@@ -191,10 +192,11 @@ parseArguments (c, s) = do
 
     -- read arguments and files
     args  <- getArgs
+    cwd   <- getCurrentDirectory >>= canonicalPath Nothing
 
     -- parse them
     let
-        parsedArgs  = runP configCmd "" "command line"
+        parsedArgs  = runP configCmd cwd "command line"
                     $ fancyUnwords args
 
     -- errors in command line arguments?
@@ -234,7 +236,10 @@ parseArguments (c, s) = do
 
                         let
                             parsedFiles = map (\(p, x) -> runP configFile
-                                                               (takeDirectory $ getCanonicalPath p)
+                                                               ( CanonicalPath
+                                                               $ takeDirectory
+                                                               $ getCanonicalPath p
+                                                               )
                                                                (getCanonicalPath p)
                                                                x
                                               ) files

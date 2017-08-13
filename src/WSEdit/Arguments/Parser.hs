@@ -57,13 +57,16 @@ import WSEdit.Arguments.Data
         )
     )
 import WSEdit.Data
-    ( Stability
+    ( CanonicalPath
+        ( getCanonicalPath
+        )
+    , Stability
         ()
     )
 
 
 
-type WSParser = Parsec String FilePath
+type WSParser = Parsec String CanonicalPath
 
 
 
@@ -143,8 +146,8 @@ qualifier =  fileQualifier
          <?> "file qualifier"
 
 fileQualifier :: WSParser FileMatchProto
-fileQualifier = fmap FileQualifier
-              $ try
+fileQualifier = try
+              $ fmap FileQualifier
               $ many1 (noneOf "/\n:")
 
 pathQualifier :: WSParser FileMatchProto
@@ -153,7 +156,7 @@ pathQualifier = try $ liftM2 PathQualifier
                         (many (noneOf "\n:"))
 
 pathName :: WSParser FilePath
-pathName = liftM2 (</>) getState word
+pathName = liftM2 (</>) (getCanonicalPath <$> getState) word
 
 
 

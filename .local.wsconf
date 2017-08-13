@@ -3,5 +3,5 @@
 
 *.hs
 	-ad 0 *.hs
-	-ad * WSEdit/Data.hs
+	-ad * src/WSEdit/Data.hs
 	-as *
