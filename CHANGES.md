@@ -31,6 +31,8 @@ complying to the `$DESTDIR` convention.
 
 - Fixed another instance of the viewport not following the cursor correctly.
 
+- Fixed a config errors with paths containing subdirectories.
+
 ## Other Changes
 
 - Local config files are now parsed independently of the working directory:

@@ -141,11 +141,14 @@ test-suite spec
 
   other-modules:
     Base,
-    WSEdit.BufferSpec
+    WSEdit.BufferSpec,
+    WSEdit.Arguments.ParserSpec,
+    WSEdit.Data.AlgorithmsSpec
 
   build-depends:
     base,
     hashable,
     hspec,
+    parsec,
     QuickCheck,
     wsedit

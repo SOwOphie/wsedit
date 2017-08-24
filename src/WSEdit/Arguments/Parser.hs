@@ -4,8 +4,10 @@
                 #-}
 
 module WSEdit.Arguments.Parser
-    ( configCmd
+    ( WSParser
+    , configCmd
     , configFile
+    , qualifier
     ) where
 
 
@@ -141,19 +143,13 @@ commentLine = (do
 
 
 qualifier :: WSParser FileMatchProto
-qualifier =  fileQualifier
-         <|> pathQualifier
-         <?> "file qualifier"
+qualifier = do
+    s <- try $ many1 $ noneOf "\n:"
+    p <- getState
+    return $ if '/' `elem` s
+                then PathQualifier p s
+                else FileQualifier   s
 
-fileQualifier :: WSParser FileMatchProto
-fileQualifier = try
-              $ fmap FileQualifier
-              $ many1 (noneOf "/\n:")
-
-pathQualifier :: WSParser FileMatchProto
-pathQualifier = try $ liftM2 PathQualifier
-                        getState
-                        (many (noneOf "\n:"))
 
 pathName :: WSParser FilePath
 pathName = liftM2 (</>) (getCanonicalPath <$> getState) word
