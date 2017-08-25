@@ -24,8 +24,8 @@ how `wsedit` works, except some small quirks here and there maybe.
   request on GitHub =).
 
 * __Character class highlighting__: This will colour your text by character
-  class (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...),
-  supplementing the already mentioned syntax highlighting quite nicely and
+  class (e.g. operators -> yellow, brackets -> brown, numbers -> red, ...).
+  This supplements the already mentioned syntax highlighting quite nicely and
   provides a base-line readability boost if no highlighting rules have been set.
 
 * __Simple configuration interface via config files__: Not really much to say
@@ -118,19 +118,22 @@ the `Troubleshooting` section further down below and see if it helps.
 
 ## Bugs / Crashes and how to report them properly
 
-`wsedit` is written with a focus on limiting bug severity and protecting your
-data in case of failure rather than on extensive test suites. For now, I have
-completely ditched the concept of automated testing in favour of some run-time
-sanity checks as well as sophisticated exception handlers, making data loss
-almost impossible to occur. I believe this approach is superior for two reasons:
+### A general note on the stability of `wsedit`
 
- * It makes much better use of my limited time.
- * Even with test suites of absolutely monstrous proportions you will never
-   catch all the bugs.
+Up until v1.2.2, the focus of `wsedit` has been fleshing out its feature set
+rather than making sure it works in every fringe condition. The protection
+against bugs consisted of:
 
-However, this does not mean that `wsedit` is full of bugs. There will be some,
-but since I use `wsedit` for everything myself, you can rest assured that
-nothing critical will stay in the code for too long.
+- routines to rescue your changes in case of a crash,
+- protection against file corruption on save,
+- requiring explicit user consent to run builds with low estimated stability
+
+As a certain point of main-feature-completeness has now been reached, the
+focus is shifting towards (among other things) creating an automated test
+harness. This is a lot of tedious, sometimes very difficult work and will
+therefore take some time, but it will hopefully pay off by uncovering hidden
+bugs and preventing regressions (which have previously been haunting some
+components).
 
 Please submit every kind of weird behaviour you encounter as an
 [issue on GitHub](https://github.com/SirBoonami/wsedit/issues/new). If possible,
@@ -150,8 +153,8 @@ The editor main loop runs inside an exception handler that will do the following
 
 The state dump is of great importance to fixing the bug. However, it contains
 all active configuration as well as the entire file you edited when the crash
-happened. Make sure you're okay with that becoming public before uploading it.
-Also, please don't provide a modified dump file, as any changes made will throw
+happened. Make sure you are okay with that becoming public before uploading it.
+Also, please do not provide a modified dump file, as any changes made will throw
 off the caching system.
 
 ### Non-fatal bugs
@@ -171,8 +174,8 @@ Deactivate the `-db` switch.
 
   * Disable `-db` if it is active.
   * Performance is highly dependant on your terminal emulator. I can personally
-    recommend `sakura`, `xterm` and to a lesser degree also `rxvt-unicode` if
-    you really hate yourself.
+    recommend `termite`, `sakura`, `xterm` and to a lesser degree also
+    `rxvt-unicode` if you really hate yourself.
 
 ### The build fails with some obscure error message
 
