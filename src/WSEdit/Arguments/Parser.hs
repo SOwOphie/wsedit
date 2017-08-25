@@ -4,10 +4,11 @@
                 #-}
 
 module WSEdit.Arguments.Parser
-    ( WSParser
-    , configCmd
+    ( configCmd
     , configFile
+    , WSParser
     , qualifier
+    , escWord
     ) where
 
 
@@ -313,4 +314,4 @@ wildInt    =  try (char '*' >> return Nothing)
 
 word       = escWord <|> simpleWord <?> "word"
 simpleWord = many1 singleChar
-escWord    = try (char '"') >> many1 (noneOf "\"\n") <* char '"'
+escWord    = try (char '"') >> many1 (escChar <|> noneOf "\"\n") <* char '"'

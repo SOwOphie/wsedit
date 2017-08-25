@@ -8,7 +8,6 @@ These changes should make packaging `wsedit` a lot easier than it used to be.
 
 - By default, `wsedit` will no longer be compiled using `-Werror`. This should
   increase compiler compatibility both forwards and backwards.
-
 - Debugging functions will no longer be compiled in by default. Therefore, the
   `time` package is no longer required.
 
@@ -30,8 +29,9 @@ complying to the `$DESTDIR` convention.
 ## Fixes
 
 - Fixed another instance of the viewport not following the cursor correctly.
-
-- Fixed a config errors with paths containing subdirectories.
+- Fixed a config parse error with paths containing subdirectories.
+- Made it possible to include escaped quotes inside quoted options, e.g.
+  `-lk "this\"is\"stupid\"but\"works\"now"`
 
 ## Other Changes
 
@@ -39,7 +39,6 @@ complying to the `$DESTDIR` convention.
   Starting from the file system root ("/"), check for a ".local.wsconf" file,
   parse it if possible, descend into the folder leading to the opened file.
   Repeat for every folder along the way.
-
 - Due to this, the way file matching works has been adjusted. If no path prefix
   is given, only the file name portion will be matched. Otherwise, the full path
   is matched. Relative paths are relative to the parent folder of the config

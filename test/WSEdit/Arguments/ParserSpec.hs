@@ -9,13 +9,15 @@ import WSEdit.Data
 import WSEdit.Arguments.Data
 import WSEdit.Arguments.Parser
 
+import Base
+
 
 
 testBase :: CanonicalPath
 testBase = CanonicalPath "/usr"
 
 testParser :: WSParser a -> String -> Either ParseError a
-testParser p = runP p testBase "Test string"
+testParser p = runP (p <* eof) testBase "Test string"
 
 
 spec :: SpecWith ()
@@ -35,3 +37,20 @@ spec = do
             property $
                 testParser qualifier "/usr/local/test.file"
                     `shouldBe` Right (PathQualifier testBase "/usr/local/test.file")
+
+    describe "escWord" $ do
+        it "parses a simple string" $
+            property $
+                testParser escWord "\"test\""
+                    `shouldBe` Right "test"
+
+        it "correctly handles escaped quotes" $
+            property $
+                testParser escWord "\"\\\"quote\\\"\""
+                    `shouldBe` Right "\"quote\""
+
+        it "fails to parse a nonterminated string" $
+            property $ isLeft $ testParser escWord "\"wrong"
+
+        it "fails to parse a string with a quote inside" $
+            property $ isLeft $ testParser escWord "\"also\"wrong\""
