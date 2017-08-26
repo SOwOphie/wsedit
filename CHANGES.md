@@ -44,6 +44,8 @@ complying to the `$DESTDIR` convention.
   is matched. Relative paths are relative to the parent folder of the config
   file containing them, or to the current working directory if given via
   command-line argument. For examples, see `wsed -hc`.
+- Improved the text rendering algorithm for `-h*`. It now prioritizes small
+  words instead of large ones for additional padding.
 
 # v1.2.1
 

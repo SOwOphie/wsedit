@@ -9,19 +9,16 @@ module WSEdit.Help
 
 
 import Data.Char
-    ( toUpper
+    ( isAlphaNum
+    , toUpper
     )
 import Data.List
     ( delete
+    , genericLength
     , sortOn
     )
 import Data.Maybe
     ( catMaybes
-    )
-import Data.Ord
-    ( Down
-        ( Down
-        )
     )
 import Graphics.Vty
     ( Button
@@ -46,7 +43,8 @@ import Graphics.Vty
         )
     )
 import Safe
-    ( lastDef
+    ( headDef
+    , lastDef
     , maximumNote
     )
 
@@ -63,11 +61,9 @@ import WSEdit.Data.Pretty
 import WSEdit.Util
     ( chunkWords
     , padRight
-    , rotateR
     , unlinesPlus
     , withFst
     , withN
-    , withSnd
     )
 
 
@@ -81,6 +77,7 @@ fqn = ("WSEdit.Help." ++)
 renderText :: Int -> [String] -> String
 renderText nCols = unlinesPlus . map (renderLine nCols)
     where
+        -- | Split a string into words plus the amount of spaces preceding it.
         spl :: String -> [(Int, String)]
         spl []       = []
         spl (' ':xs) = case spl xs of
@@ -88,10 +85,13 @@ renderText nCols = unlinesPlus . map (renderLine nCols)
                             []     -> []
 
         spl ( x :xs) = case spl xs of
-                            (r:rs) | fst r == 0 -> withSnd (x:) r : rs
-                            l                   -> (0, [x]) : l
+                            (r:rs) | fst r == 0 -> (0,  x : snd r) : rs
+                            l                   -> (0, [x]       ) : l
 
 
+        -- | Given a list of indices, the total number of spaces to insert and
+        --   the output of `spl`, keep increasing the preceding number of spaces
+        --   in the order given by the list.
         padBy :: [Int] -> Int -> [(Int, String)] -> [(Int, String)]
         padBy (x:xs) n l | n > 0     = padBy xs (n-1) $ withN x (withFst (+1)) l
                          | otherwise = l
@@ -99,28 +99,43 @@ renderText nCols = unlinesPlus . map (renderLine nCols)
 
 
         renderLine :: Int -> String -> String
-        renderLine n s | length s > n = "[!!!] " ++ s ++ " [!!!]"
-                       | otherwise    =
+        renderLine n s | length      s >  n   = "[!!!] " ++ s ++ " [!!!]"
+                       | lastDef '.' s == ' ' = "[ ! ] " ++ s ++ " [ ! ]"
+                       | otherwise            =
                         let
                             sp     = spl s
-                            maxPad = sum ( map fst
-                                         $ filter ((== 1) . fst) sp
-                                         )
 
+                            maxPad = 2
+
+                            -- | indices of spaces egligible for expansion,
+                            --   ordered by some preference rating
                             lenPrm = map fst
-                                   $ sortOn (Down . snd . snd)
-                                   $ filter ((== 1) . fst . snd)
+                                   $ sortOn snd
+                                   $ map (\ (i, ((_, s1), (_, s2)))
+                                         -> (i, sqrt (genericLength s1)
+                                              + sqrt (genericLength s2)
+                                                :: Double
+                                            )
+                                         )
+                                   $ filter (\(_, ((_, s1), (l, s2))) -> l == 1
+                                                                      && s1 /= ""
+                                                                      && (  isAlphaNum (headDef '.' s1)
+                                                                         || isAlphaNum (headDef '.' s2)
+                                                                         )
+                                            )
                                    $ zip [0..]
-                                   $ zipWith (\(_, s1) (m, s2) -> (m, length s1
-                                                                    + length s2
-                                                                  )
-                                             ) (rotateR sp) sp
+                                   $ zip ((0, "") : init sp) sp
+
+                            draft  = if null lenPrm
+                                        then sp
+                                        else padBy (cycle lenPrm) (n - length s) sp
 
                         in
-                            if n - length s > maxPad || lastDef '.' s == '.'
+                            if lastDef '.' s `elem` ".:!?"
+                                || n - length s > maxPad * length lenPrm
                                then s
                                else concatMap (\(m, w) -> replicate m ' ' ++ w)
-                                  $ padBy (cycle lenPrm) (n - length s) sp
+                                        draft
 
 
 
@@ -135,13 +150,16 @@ keymapHelp km =
                               $ catMaybes $ prettyKeymap km
                               )
     in
-        "Some terminals are a bit weird when it comes to telling Meta-<something> and\n"
-     ++ "Ctrl-Meta-<something> apart. If one doesn't work, try the other. If none work,\n"
-     ++ "please open an issue on GitHub and don't forget to add which terminal emulator\n"
-     ++ "you're using.\n\n"
-     ++ "-*- Keymap -*-\n\n"
-     ++ renderText 80
-        ( map (uncurry (++))
+        renderText 80
+      $ [ "Some terminals are a bit weird when it comes to telling Meta-<something> and"
+        , "Ctrl-Meta-<something> apart. If one doesn't work, try the other. If none work,"
+        , "please open an issue on GitHub and don't forget to add which terminal emulator"
+        , "you're using."
+        , ""
+        , "-*- Keymap -*-"
+        , ""
+        ]
+     ++ ( map (uncurry (++))
         $ concatMap (\case
             Nothing     -> [("",""), ("","")]
             Just (e, s) ->
@@ -268,7 +286,10 @@ confHelp = renderText 80
 --   is about 250 lines long.
 usageHelp :: String
 usageHelp = renderText 80
-    [ "Usage: wsedit [-s] [<arguments>] [filename [line no. [column no.]]]"
+    [ "Usage:"
+    , "  wsedit [<arguments>] <filename> [line-no. [column-no.]] [<arguments>]"
+    , "  wsedit [<arguments>] -ocg [<arguments>]"
+    , "  wsedit [<arguments>] -ocl [<arguments>]"
     , ""
     , ""
     , "For information on how to set these options permanently, see \"wsedit -hc\"."
@@ -292,7 +313,7 @@ usageHelp = renderText 80
     , "  -A              Disable dictionary building."
     , ""
     , "                  With dictionary building enabled, wsedit will scan all files"
-    , "                  and directories under the current working directory, except "
+    , "                  and directories under the current working directory, except"
     , "                  hidden ones (file name starting with a period). Every"
     , "                  matching file will be read, and a dictionary will be built"
     , "                  from all words from lines at depth n (either n tabs or"
@@ -309,7 +330,7 @@ usageHelp = renderText 80
     , "  -db             Fill the background with black dots. Relies on your"
     , "                  default background being similar, but distinct from colour 0"
     , "                  (usually black). Slows down the editor noticably and may make"
-    , "                  the cursor invisible at the end of each line, depending on "
+    , "                  the cursor invisible at the end of each line, depending on"
     , "                  how your terminal renders the cursor on black foreground and"
     , "                  default background."
     , ""
@@ -336,7 +357,7 @@ usageHelp = renderText 80
     , "  -ej <n>         Initialize a jump mark at line <n>."
     , "  -eJ <n>         Remove the jump mark at line <n>."
     , ""
-    , "                  See \"wsedit -hc\"."
+    , "                  See \"wsed -hk\" --> \"Ctrl-N\"."
     , ""
     , ""
     , ""
@@ -346,7 +367,7 @@ usageHelp = renderText 80
     , "  -eT             Automagically detect the opened file's indentation pattern,"
     , "                  assume spaces for new files."
     , ""
-    , "                  See also \"wsedit -hk\" --> \"Ctrl-Meta-Tab\"."
+    , "                  See also \"wsed -hk\" --> \"Ctrl-Meta-T\"."
     , ""
     , ""
     , ""
@@ -364,9 +385,9 @@ usageHelp = renderText 80
     , "                  wherever available."
     , "                  Disabling atomic saves also disables the write-read identity"
     , "                  check, a feature designed to prevent data corruption due to"
-    , "                  incorrect / buggy file encodings. USING  -fe  ALONGSIDE  -fa"
-    , "                  RESULTS IN A SIGNIFICANT CHANCE OF DATA LOSS, YOU HAVE BEEN"
-    , "                  WARNED!"
+    , "                  incorrect / buggy file encodings."
+    , "                  USING -fe ALONGSIDE -fa RESULTS IN A SIGNIFICANT CHANCE OF"
+    , "                  DATA LOSS, YOU HAVE BEEN WARNED!"
     , ""
     , ""
     , ""
@@ -393,7 +414,7 @@ usageHelp = renderText 80
     , "  -gh <s>         Search for <s> and highlight every occurence in bright red."
     , "  -gH <s>         Remove <s> from the search terms list."
     , ""
-    , "                  See also \"wsedit -hk\" --> \"Ctrl-F\"."
+    , "                  See also \"wsed -hk\" --> \"Ctrl-F\"."
     , ""
     , ""
     , ""
@@ -401,7 +422,7 @@ usageHelp = renderText 80
     , "                  permissions)."
     , "  -gR             Open file in read-write mode."
     , ""
-    , "                  See also \"wsedit -hk\" --> \"Ctrl-Meta-R\"."
+    , "                  See also \"wsed -hk\" --> \"Ctrl-Meta-R\"."
     , ""
     , ""
     , ""
@@ -506,7 +527,7 @@ usageHelp = renderText 80
     , "  -ocg            Open global configuration file (~/.config/wsedit.wsconf)."
     , "  -ocl            Open local configuration file (./.local.wsconf)."
     , ""
-    , "                  See \"wsedit -hc\"."
+    , "                  See \"wsed -hc\"."
     , ""
     , ""
     , ""
