@@ -49,6 +49,7 @@ module WSEdit.Buffer
     , withNRight
     , append
     , prepend
+    , zip
     , map
     , mapM
     , mapM_
@@ -83,6 +84,7 @@ import Prelude hiding
     , map
     , mapM
     , mapM_
+    , zip
     )
 
 import qualified Data.List as L
@@ -189,11 +191,11 @@ diffZone a b =
         ovSA = L.length (suffix a) - sLen
         ovSB = L.length (suffix b) - sLen
 
-        ps = zip (drop ovPA $ prefix a)
-                 (drop ovPB $ prefix b)
+        ps = L.zip (drop ovPA $ prefix a)
+                   (drop ovPB $ prefix b)
 
-        ss = zip (drop ovSA $ suffix a)
-                 (drop ovSB $ suffix b)
+        ss = L.zip (drop ovSA $ suffix a)
+                   (drop ovSB $ suffix b)
     in
         (ovPA + L.length (takeWhile df ps), ovSA + L.length (takeWhile df ss))
     where
@@ -534,6 +536,17 @@ prepend :: (Hashable a) => a -> Buffer a -> Buffer a
 prepend x b = b { prefix  = newHashList $ P.map snd (prefix b) ++ [x]
                 , prefLen = prefLen b + 1
                 }
+
+
+
+-- | Zip a list and a buffer together. Tries to preserve the current buffer
+--   position.
+zip :: (Hashable a, Hashable b) => [a] -> Buffer b -> Buffer (a, b)
+zip l b = moveTo (currPos b)
+        $ fromJustNote (fqn "zip")
+        $ fromList
+        $ L.zip l
+        $ toList b
 
 
 

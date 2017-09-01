@@ -104,12 +104,12 @@ insertRaw s = refuseOnReadOnly $ modify (ins s) >> validateCursor
 -- | Inserts a tab character or the equivalent amount of spaces.
 insertTab :: WSEdit ()
 insertTab = alterBuffer $ do
-    b <- replaceTabs <$> get
-    c <- cursorPos <$> get
+    b      <- replaceTabs <$> get
+    (r, c) <- getCursor
 
     -- Column the tab will sit in
     n <- (edLines <$> get)
-     >>= (stringWidth 1 . take (c - 1) . snd . B.pos)
+     >>= (stringWidth r 1 . take (c - 1) . snd . B.pos)
 
     w <- tabWidth <$> ask
 

@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.2.9"
+version = "1.2.2.10"
 
 -- | Upstream URL.
 upstream :: String
@@ -127,7 +127,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = WIP
+stability = Prototype
 
 
 
@@ -192,6 +192,10 @@ data EdState = EdState
 
     , fullRebdReq  :: Bool
         -- ^ Gets set when a full cache rebuild is required.
+
+    , elTabCache   :: Maybe (B.Buffer [(Int, Int)])
+        -- ^ Lookup "table" for additional tab padding length when elastic
+        --   tabstops are enabled. `Nothing` if disabled.
 
 
     , cursorPos    :: Int
@@ -275,6 +279,7 @@ instance Default EdState where
         , rangeCache   = []
         , bracketCache = []
         , fullRebdReq  = False
+        , elTabCache   = Nothing
 
         , cursorPos    = 1
         , loadPos      = (1, 1)

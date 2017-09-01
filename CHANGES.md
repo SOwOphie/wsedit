@@ -1,5 +1,12 @@
 # v1.2.2
 
+## New Features
+
+### Elastic Tabstops
+
+`wsedit` now supports Elastic Tabstops as introduced on
+http://nickgravgaard.com/elastic-tabstops/ . Enable via `-el`.
+
 ## Packaging Changes
 
 These changes should make packaging `wsedit` a lot easier than it used to be.

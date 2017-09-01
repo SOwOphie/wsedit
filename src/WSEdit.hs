@@ -31,6 +31,7 @@ import WSEdit.Data                 ( EdConfig ( dumpEvents, encoding, keymap
                                    , mkDefConfig, runWSEdit
                                    )
 import WSEdit.Data.Algorithms      (catchEditor, setStatus)
+import WSEdit.ElasticTabstops      (rebuildTabCache)
 import WSEdit.Keymaps              (defaultKM)
 import WSEdit.Renderer             (rebuildAll)
 import WSEdit.Output               (draw, drawExitFrame)
@@ -87,6 +88,7 @@ start = do
                  >>= flip when (do
                                     standby "Building initial rendering cache..."
                                     rebuildAll Nothing
+                                    rebuildTabCache
                                     mainLoop
                                )
                    )
@@ -133,6 +135,7 @@ mainLoop = do
 
     flip catchEditor errHdlRenderer $ do
         rebuildAll $ Just s
+        rebuildTabCache
 
         when (dumpEvents c) $ do
             st <- get

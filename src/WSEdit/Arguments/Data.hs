@@ -89,6 +89,8 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | EditorIndSet    Int
               | EditorJumpMAdd  Int
               | EditorJumpMDel  Int
+              | EditorElTabsOn
+              | EditorElTabsOff
               | EditorTabModeSpc
               | EditorTabModeTab
               | EditorTabModeAuto

@@ -167,7 +167,8 @@ moveViewport r c = do
     let maxRow = subtract 1 $ B.length $ edLines s
 
     maxCol <- fmap ((subtract 1) . maximumDef 2)
-            $ mapM (stringWidth 1 . snd)
+            $ mapM (\(l, (_, t)) -> stringWidth l 1 t)
+            $ zip [scrollRows..]
             $ B.sub scrollRows (scrollRows + txtRows - 1)
             $ edLines s
 
@@ -223,7 +224,7 @@ moveCursor r c = alterState $ do
                 targetLn = snd $ B.atDef (undefined, "") lns $ tLnNo - 1
 
             -- Current visual cursor offset (amount of columns)
-            vPos <- txtToVisPos currLn currC
+            vPos <- txtToVisPos currLn currR currC
 
             -- Targeted visual cursor offset
             tPos <- case wantsPos s of
@@ -234,7 +235,7 @@ moveCursor r c = alterState $ do
                     return vPos
 
             -- Resulting textual cursor offset (amount of characters)
-            newC <- visToTxtPos targetLn tPos
+            newC <- visToTxtPos targetLn tLnNo tPos
             setCursor (tLnNo, newC)
 
         -- | Horizontal portion of the movement

@@ -1,5 +1,5 @@
 name:          wsedit
-version:       1.2.2.9
+version:       1.2.2.10
 synopsis:      A simple terminal source code editor.
 description:
 homepage:      https://github.com/SirBoonami/wsedit
@@ -40,6 +40,7 @@ library
     WSEdit.Data,
     WSEdit.Data.Algorithms,
     WSEdit.Data.Pretty,
+    WSEdit.ElasticTabstops,
     WSEdit.Help,
     WSEdit.Keymaps,
     WSEdit.Output,
@@ -63,6 +64,7 @@ library
     safe             >= 0.3.9  && < 1,
     parsec           >= 3.1.11 && < 4,
     process          >= 1.2.3  && < 2,
+    split            >= 0.2.3  && < 1,
     strict           >= 0.3.2  && < 1,
     transformers     >= 0.4.2  && < 1,
     unix             >= 2.7    && < 3,

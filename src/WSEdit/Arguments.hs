@@ -127,6 +127,7 @@ import WSEdit.Data
 #endif
         , buildDict
         , detectTabs
+        , elTabCache
         , fname
         , loadPos
         , readOnly
@@ -163,6 +164,8 @@ import WSEdit.Util
     , withFst
     , withSnd
     )
+
+import qualified WSEdit.Buffer as B
 
 
 
@@ -448,19 +451,17 @@ applyArg :: (EdConfig, EdState) -> Argument -> IO (EdConfig, EdState)
 applyArg (c, s) (AutocompAdd     n f) = unProtoFM f >>= \f' -> return (c, s { buildDict   = (Just f', n) : buildDict s })
 
 applyArg (c, s) (AutocompAddSelf n  ) = return (c, s { buildDict   = (Nothing, n) : buildDict s })
-
 applyArg (c, s)  AutocompOff          = return (c, s { buildDict   = []                         })
-
+applyArg (c, s)  EditorElTabsOn       = return (c, s { elTabCache  = B.fromList [[]]            })
+applyArg (c, s)  EditorElTabsOff      = return (c, s { elTabCache  = Nothing                    })
 applyArg (c, s)  EditorTabModeSpc     = return (c, s { replaceTabs = True
                                                      , detectTabs  = False
                                                      }
                                                )
-
 applyArg (c, s)  EditorTabModeTab     = return (c, s { replaceTabs = False
                                                      , detectTabs  = False
                                                      }
                                                )
-
 applyArg (c, s)  EditorTabModeAuto    = return (c, s { detectTabs  = True                         })
 applyArg (c, s) (GeneralHighlAdd w  ) = return (c, s { searchTerms = w : delete w (searchTerms s) })
 applyArg (c, s) (GeneralHighlDel w  ) = return (c, s { searchTerms =     delete w (searchTerms s) })

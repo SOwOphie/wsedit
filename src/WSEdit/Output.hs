@@ -3,7 +3,9 @@
            #-}
 
 module WSEdit.Output
-    ( charWidth
+    ( charWidthRaw
+    , charWidth
+    , stringWidthRaw
     , stringWidth
     , charRep
     , lineRep
@@ -26,7 +28,9 @@ import Control.Monad.IO.Class
     )
 import Control.Monad.RWS.Strict
     ( ask
+    , asks
     , get
+    , gets
     )
 import Data.Char
     ( ord
@@ -117,6 +121,7 @@ import WSEdit.Data
         ( badgeText
         , changed
         , edLines
+        , elTabCache
         , fname
         , markPos
         , overwrite
@@ -164,14 +169,28 @@ import qualified WSEdit.Buffer as B
 
 
 -- | Returns the display width of a given char in a given column.
-charWidth :: Int -> Char -> WSEdit Int
-charWidth n '\t'                           = (\w -> w - (n-1) `mod` w) . tabWidth <$> ask
-charWidth _ c | charClass c == Unprintable = return $ length (showHex (ord c) "") + 3
-              | otherwise                  = return 1
+charWidthRaw :: Int -> Char -> WSEdit Int
+charWidthRaw n '\t'                           = (\w -> w - (n-1) `mod` w) <$> asks tabWidth
+charWidthRaw _ c | charClass c == Unprintable = return $ length (showHex (ord c) "") + 3
+                 | otherwise                  = return 1
+
+charWidth :: Int -> Int -> Char -> WSEdit Int
+charWidth r n '\t' = do
+    t <- asks tabWidth
+    gets elTabCache >>= \case
+        Nothing -> charWidthRaw n '\t'
+        Just c  -> do
+            l    <- gets (snd . flip (B.atDef (False, "")) (r-1) . edLines)
+            tPos <- visToTxtPos l r n
+            return $ maybe 0 (+t) $ lookup tPos $ B.atDef [] c $ r - 1
+charWidth _ n c    = charWidthRaw n c
 
 -- | Returns the display width of a given string starting at a given column.
-stringWidth :: Int -> String -> WSEdit Int
-stringWidth n = foldM (\n' c -> (+ n') <$> charWidth (n' + 1) c) $ n - 1
+stringWidthRaw :: Int -> String -> WSEdit Int
+stringWidthRaw n = foldM (\n' c -> (+ n') <$> charWidthRaw (n' + 1) c) $ n - 1
+
+stringWidth :: Int -> Int -> String -> WSEdit Int
+stringWidth r n = foldM (\n' c -> (+ n') <$> charWidth r (n' + 1) c) $ n - 1
 
 
 
@@ -201,17 +220,18 @@ data CalcSnippet = CalcSnippet
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column. The first argument toggles the bracket
 --   format modifier.
-charRep :: Bool -> HighlightMode -> (Int, Int) -> Int -> Char -> WSEdit Snippet
-charRep br hl pos n '\t' = do
-    (r, _) <- getCursor
-    st     <- get
-    conf   <- ask
+charRep :: Bool -> HighlightMode -> (Int, Int) -> Char -> WSEdit Snippet
+charRep br hl pos '\t' = do
+    (r, _)    <- getCursor
+    st        <- get
+    conf      <- ask
+    dispWidth <- charWidth (fst pos) (snd pos) '\t'
 
     let
-        d       = edDesign   conf
-        currSty = dCurrLnMod d
-        tW      = tabWidth conf
-        extTab  = padLeft tW (dTabExt d) $ dTabStr d
+        maxTabWidth = 1023
+        d           = edDesign   conf
+        currSty     = dCurrLnMod d
+        extTab      = padLeft maxTabWidth (dTabExt d) $ dTabStr d
 
     return $ Snippet
         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
@@ -221,10 +241,10 @@ charRep br hl pos n '\t' = do
                           HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
                           _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
 
-        , sStr     =  drop (length extTab - (tW - (n-1) `mod` tW)) extTab
+        , sStr     =  drop (length extTab - dispWidth) extTab
         }
 
-charRep br hl pos _ ' ' = do
+charRep br hl pos ' ' = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
@@ -239,7 +259,7 @@ charRep br hl pos _ ' ' = do
         , sStr     = " "
         }
 
-charRep br hl pos _ ch = do
+charRep br hl pos ch = do
     (r, _) <- getCursor
     st     <- get
     d      <- edDesign <$> ask
@@ -274,7 +294,7 @@ lineRep lNo off str = do
 
         -- | Folding helper, renders `Char`s into `Snippet`s. Folds over the
         --   line chars with a
-        --   ([Snippet], textual position, visual position, ccolumns left to skip)
+        --   ([Snippet], textual position, visual position, columns left to skip)
         --   state.
         f :: ([Snippet], Int, Int, Int) -> Char -> WSEdit ([Snippet], Int, Int, Int)
         f (im, tPos, vPos, toSkip) c = do
@@ -285,8 +305,7 @@ lineRep lNo off str = do
                           (_            , Just s)                                          -> s
                           _                       | otherwise                              -> HNone
                     )
-                    (lNo, tPos)
-                    vPos
+                    (lNo, vPos)
                     c
 
             return $ if
@@ -302,7 +321,7 @@ lineRep lNo off str = do
                                               , toSkip - length (sStr i)
                                               )
 
-    (r,_ ,_ ,_) <- foldM f ([], 1, 1, off) str
+    (r,_,_,_) <- foldM f ([], 1, 1, off) str
 
     return $ horizCat
            $ map (\CalcSnippet { csActual = a, csStr = b } -> string a b)
@@ -357,22 +376,24 @@ lineRep lNo off str = do
 
 
 
--- | Returns the textual position of the cursor in a line, given its visual one.
-visToTxtPos :: String -> Int -> WSEdit Int
+-- | Returns the textual position of the cursor in a line, given the line number
+--   and its visual position.
+visToTxtPos :: String -> Int -> Int -> WSEdit Int
 visToTxtPos = pos 1
     where
-        pos :: Int -> String -> Int -> WSEdit Int
-        pos _   []     _            = return 1
-        pos col _      c | col == c = return 1
-        pos col _      c | col >  c = return 0
-        pos col (x:xs) c            = do
-            w <- charWidth col x
-            (+ 1) <$> pos (col + w) xs c
+        pos :: Int -> String -> Int -> Int -> WSEdit Int
+        pos _   []     _ _            = return 1
+        pos col _      _ c | col == c = return 1
+        pos col _      _ c | col >  c = return 0
+        pos col (x:xs) r c            = do
+            w <- charWidth r col x
+            (+ 1) <$> pos (col + w) xs r c
 
 
--- | Returns the visual position of the cursor in a line, given its textual one.
-txtToVisPos :: String -> Int -> WSEdit Int
-txtToVisPos txt n = (+1) <$> stringWidth 1 (take (n - 1) txt)
+-- | Returns the visual position of the cursor in a line, given the line number
+--  and its textual position.
+txtToVisPos :: String -> Int -> Int -> WSEdit Int
+txtToVisPos txt r n = (+1) <$> stringWidth r 1 (take (n - 1) txt)
 
 
 
@@ -396,7 +417,7 @@ toCursorDispPos (r, c) = do
               .  edLines
              <$> get
 
-    offset <- txtToVisPos currLine c
+    offset <- txtToVisPos currLine r c
 
     n <- lineNoWidth
     (r', c') <- scrollOffset <$> get
@@ -424,7 +445,7 @@ cursorOffScreen = do
         (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
-    curC <- txtToVisPos currLn curC_
+    curC <- txtToVisPos currLn curR curC_
 
     (maxR, maxC) <- getViewportDimensions
 
