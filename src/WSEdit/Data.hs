@@ -194,8 +194,9 @@ data EdState = EdState
         -- ^ Gets set when a full cache rebuild is required.
 
     , elTabCache   :: Maybe (B.Buffer [(Int, Int)])
-        -- ^ Lookup "table" for additional tab padding length when elastic
-        --   tabstops are enabled. `Nothing` if disabled.
+        -- ^ Textual position -> tab width lookup table for additional tab
+        --   padding length when elastic tabstops are enabled. `Nothing` if
+        --   disabled.
 
 
     , cursorPos    :: Int

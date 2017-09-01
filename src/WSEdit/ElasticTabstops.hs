@@ -44,16 +44,24 @@ import qualified WSEdit.Buffer as B
 
 
 
+-- | Get the text buffer contents in table form (tab-delimited) without the last
+--   cell.
 tableRep :: WSEdit (B.Buffer [String])
 tableRep = B.map (initSafe . splitOn "\t") <$> gets (B.map snd . edLines)
 
 
 
+-- | Get the display width of every cell, excluding the delimiting tab stop.
 widths :: B.Buffer [String] -> WSEdit (B.Buffer [Int])
 widths b = B.mapM (mapM (stringWidthRaw 1)) b
+    -- We can safely use `1` as the start position here since the parameter is
+    -- only used for tab alignment and the tab-delimited table should not
+    -- contain those any more.
 
 
 
+-- | Given a widths table, obtain the amount of cell padding necessary for the
+--   given cell (1-based indices).
 fieldPad :: B.Buffer [Int] -> Int -> Int -> Maybe Int
 fieldPad b r c = do
     let b0 = B.moveTo (r - 1) b
@@ -69,6 +77,7 @@ fieldPad b r c = do
 
 
 
+-- | Rebuild the `elTabCache`, if not `Nothing`.
 rebuildTabCache :: WSEdit ()
 rebuildTabCache = gets elTabCache >>= \case
     Nothing -> return ()
