@@ -9,6 +9,7 @@ module WSEdit.Arguments
 
 import Control.Monad
     ( foldM
+    , forM
     , unless
     , when
     )
@@ -346,12 +347,14 @@ parseArguments (c, s) = do
         readConfigFiles :: CanonicalPath -> IO [(CanonicalPath, String)]
         readConfigFiles (CanonicalPath p) = do
             h <- getHomeDirectory
-            b <- doesDirectoryExist $ confDir h
 
-            globConfs <- if not b
-                            then return []
-                            else fmap (filter (isSuffixOf ".wsconf") . concat)
-                               $ mapM listDirectoryDeep [sysDir, confDir h]
+            globConfs <- fmap (filter (isSuffixOf ".wsconf") . concat)
+                       $ forM [sysDir, confDir h]
+                       $ \d -> do
+                            b <- doesDirectoryExist d
+                            if b
+                               then listDirectoryDeep d
+                               else return []
 
             let locConfs = map ((</> ".local.wsconf") . joinPath)
                          $ filter (not . null)
