@@ -198,7 +198,6 @@ mainLoop = do
 
     flip catchEditor errHdlRenderer $ do
         rebuildAll $ Just s
-        rebuildTabCache
 
         when (dumpEvents c) $ do
             st <- get

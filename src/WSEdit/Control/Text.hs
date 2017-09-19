@@ -82,7 +82,7 @@ insert c = alterBuffer $ insertRaw [c]
 -- | Inserts a string at the cursor location, moving the cursor to the right.
 --   Low-level function that disregards undo functionality, read-only-ness, ...
 insertRaw :: String -> WSEdit ()
-insertRaw s = refuseOnReadOnly $ modify (ins s) >> validateCursor
+insertRaw s = refuseOnReadOnly $ modify $ ins s
     where
         ins :: String -> EdState -> EdState
         ins s' st = st

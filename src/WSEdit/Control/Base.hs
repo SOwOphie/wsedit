@@ -103,6 +103,9 @@ import WSEdit.Data.Algorithms
     , setOffset
     , tryEditor
     )
+import WSEdit.ElasticTabstops
+    ( rebuildTabCache
+    )
 import WSEdit.Output
     ( cursorOffScreen
     , draw
@@ -145,6 +148,7 @@ alterBuffer a = refuseOnReadOnly
              >> validateCursor
              >> alter
              >> a
+             >> rebuildTabCache
              >> validateCursor
 
 
