@@ -5,12 +5,19 @@ module WSEdit.ElasticTabstops
     ) where
 
 
+import Control.DeepSeq
+    ( force
+    )
+import Control.Exception
+    ( evaluate
+    )
 import Control.Monad
     ( mplus
     )
 import Control.Monad.RWS.Strict
     ( asks
     , gets
+    , liftIO
     , modify
     )
 import Data.List.Split
@@ -86,14 +93,17 @@ rebuildTabCache = gets elTabCache >>= \case
         t      <- asks tabWidth
         numLns <- gets (B.zip [1..] . edLines)
 
-        let tcNew = B.map (\(lNo, (_, txt)) ->
-                                map (\(fNo, (col, _)) -> (col, fromMaybe t
-                                                             $ fieldPad ws lNo fNo
-                                                         )
+        tcNew <- liftIO
+               $ evaluate
+               $ force
+               $ B.map (\(lNo, (_, txt)) ->
+                        map (\(fNo, (col, _)) -> (col, fromMaybe t
+                                                     $ fieldPad ws lNo fNo
+                                                 )
                                     )
-                              $ zip [1..]
-                              $ filter ((== '\t') . snd)
-                              $ zip [1..] txt
-                          ) numLns
+                            $ zip [1..]
+                            $ filter ((== '\t') . snd)
+                            $ zip [1..] txt
+                       ) numLns
 
         modify $ \st -> st { elTabCache = Just tcNew }
