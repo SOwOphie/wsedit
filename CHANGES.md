@@ -53,6 +53,8 @@ complying to the `$DESTDIR` convention.
   command-line argument. For examples, see `wsed -hc`.
 - Improved the text rendering algorithm for `-h*`. It now prioritizes small
   words instead of large ones for additional padding.
+- Moved the "crash editor" keybind from `Alt-.` to `F12` since Alt and "."
+  are right next to each other on some keyboards.
 - When opening the file at a specific line, the viewport will be placed so that
   the target line is at 1/3 of the visible area instead of the bottom.
 

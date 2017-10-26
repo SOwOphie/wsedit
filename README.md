@@ -160,8 +160,8 @@ off the caching system.
 ### Non-fatal bugs
 
 Most non-fatal bugs will probably be rendering glitches. Reproduce the
-situation, point the cursor at it if possible, then press Alt + ".".
-This will simulate a crash and create the above-mentioned files.
+situation, point the cursor at it if possible, then press F12. This will
+simulate a crash and create the above-mentioned files.
 
 
 ## Known issues / Troubleshooting / FAQ
