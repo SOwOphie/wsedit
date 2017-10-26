@@ -130,8 +130,10 @@ import WSEdit.Data
 import WSEdit.Data.Algorithms
     ( catchEditor
     , chopHist
+    , getCursor
     , mapPast
     , popHist
+    , setOffset
     , setStatus
     , tryEditor
     )
@@ -140,6 +142,7 @@ import WSEdit.Data.Pretty
     )
 import WSEdit.Output
     ( drawExitFrame
+    , getViewportDimensions
     )
 import WSEdit.Util
     ( linesPlus
@@ -483,7 +486,7 @@ load lS = alterState $ do
                 $ fromMaybe (B.singleton (False, ""))
                 $ B.fromList
                 $ map (withFst (`elem` initJMarks c))
-                $  zip [1..] l
+                $ zip [1..] l
 
             put $ s
                 { edLines     = l'
@@ -526,6 +529,11 @@ load lS = alterState $ do
 
             -- Move the cursor to where it should be placed.
             uncurry moveCursor $ withPair dec dec $ loadPos s
+            when (loadPos s /= (1, 1)) $ do
+                rs     <- fst <$> getViewportDimensions
+                actpos <- fst <$> getCursor
+                setOffset (actpos - 1 - rs `div` 3, 0)
+                validateCursor
 
             when lS $ dictAddRec
 
