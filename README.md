@@ -136,8 +136,8 @@ bugs and preventing regressions (which have previously been haunting some
 components).
 
 Please submit every kind of weird behaviour you encounter as an
-[issue on GitHub](https://github.com/SirBoonami/wsedit/issues/new). If possible,
-obtain a state dump as described below.
+[issue on GitHub](https://github.com/LadyBoonami/wsedit/issues/new). If
+possible, obtain a state dump as described below.
 
 ### Crashes
 

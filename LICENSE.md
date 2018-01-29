@@ -1,6 +1,6 @@
 # WYVERNSCALE SOURCE CODE LICENSE v2.0
 
-COPYRIGHT (c) 2016, Felix Hirn
+COPYRIGHT (c) 2016, Sophie Hirn
 
 This license may only be copied verbatim, not in modified form.
 

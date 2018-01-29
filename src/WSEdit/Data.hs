@@ -112,7 +112,7 @@ version = "1.2.2.16"
 
 -- | Upstream URL.
 upstream :: String
-upstream = "https://github.com/SirBoonami/wsedit"
+upstream = "https://github.com/LadyBoonami/wsedit"
 
 -- | License version number constant.
 licenseVersion :: String

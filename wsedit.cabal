@@ -2,12 +2,12 @@ name:          wsedit
 version:       1.2.2.16
 synopsis:      A simple terminal source code editor.
 description:
-homepage:      https://github.com/SirBoonami/wsedit
+homepage:      https://github.com/LadyBoonami/wsedit
 license:       OtherLicense
 license-file:  LICENSE.md
-author:        Felix Hirn
-maintainer:    felix.hirn@wyvernscale.com
-copyright:     2016 Felix Hirn
+author:        Sophie Hirn
+maintainer:    sophie.hirn@wyvernscale.com
+copyright:     2016 Sophie Hirn
 category:      Development
 build-type:    Simple
 cabal-version: >=1.10

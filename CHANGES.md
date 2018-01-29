@@ -58,6 +58,9 @@ complying to the `$DESTDIR` convention.
   are right next to each other on some keyboards.
 - When opening the file at a specific line, the viewport will be placed so that
   the target line is at 1/3 of the visible area instead of the bottom.
+- I've changed my first name, email address and GitHub account name. Due to
+  that, the repository url also changed. It is now
+  `https://github.com/LadyBoonami/wsedit`.
 
 # v1.2.1
 

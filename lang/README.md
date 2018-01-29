@@ -15,7 +15,7 @@ than 30 minutes.
 1. Take a look around the existing definitions and look at how they are
    structured.
 
-2. Fork the repository on [github](https://github.com/SirBoonami/wsedit), clone
+2. Fork the repository on [github](https://github.com/LadyBoonami/wsedit), clone
    your fork to your local machine.
 
 3. Start with `template-lang.wsconf`.
