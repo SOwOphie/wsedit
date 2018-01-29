@@ -11,7 +11,7 @@
 #                                                                              #
 # Indentation settings                                                         #
 *.tsv
-	-ei 16
+	-el
 	-ett
 #                                                                              #
 # Syntax highlighting                                                          #
