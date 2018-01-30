@@ -112,11 +112,8 @@ fqn = ("WSEdit." ++)
 --   loop.
 start :: IO ()
 start = do
-    -- initialize vty
-    v <- mkVty defaultConfig
-
     -- create the configuration object
-    let conf = mkDefConfig v defaultKM
+    let conf = mkDefConfig undefined defaultKM
 
     ((conf', st), b) <- parseArguments (conf, def)
 
@@ -129,7 +126,11 @@ start = do
                     runWSEdit (conf', st) $ quitComplain
                                           $ "-fe: Encoding not available: " ++ e
 
-    (_, st', _) <- runRWST (exec b) conf' st
+    -- initialize vty
+    v <- mkVty defaultConfig
+
+    -- call main loop
+    (_, st', _) <- runRWST (exec b) conf' { vtyObj = v } st
 
     -- Shutdown vty
     shutdown v

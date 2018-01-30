@@ -49,6 +49,13 @@ import System.Directory
 import System.Environment
     ( getArgs
     )
+import System.Exit
+    ( ExitCode
+        ( ExitSuccess
+        , ExitFailure
+        )
+    , exitWith
+    )
 import System.FilePath
     ( joinPath
     , splitPath
@@ -86,12 +93,6 @@ import WSEdit.Arguments.Data
 import WSEdit.Arguments.Parser
     ( configCmd
     , configFile
-    )
-import WSEdit.Control.Base
-    ( standby
-    )
-import WSEdit.Control.Global
-    ( quitComplain
     )
 import WSEdit.Data
     ( CanonicalPath
@@ -139,7 +140,6 @@ import WSEdit.Data
         ( Release
         )
     , brightTheme
-    , runWSEdit
     , stability
     , upstream
     )
@@ -170,6 +170,14 @@ import qualified WSEdit.Buffer as B
 
 
 
+-- | Abort the loading process with a status code and a message.
+abort :: ExitCode -> String -> IO a
+abort c s = do
+    putStrLn s
+    exitWith c
+
+
+
 -- | Some options provide files to match syntax against, this is where this
 --   information is recorded.
 providedFile :: Argument -> Maybe FilePath
@@ -181,8 +189,6 @@ providedFile  OtherOpenCfLoc     = Just ".local.wsconf"
 providedFile  OtherOpenCfGlob    = Just "/home/user/.config/wsedit.wsconf"
 providedFile (SpecialSetFile  s) = Just s
 providedFile  _                  = Nothing
-
-
 
 
 
@@ -207,11 +213,8 @@ parseArguments (c, s) = do
     case parsedArgs of
          Left  e -> do
             -- Yes? Complain, quit.
-            runWSEdit (c, s)
-                  $ quitComplain
-                  $ "Command line argument parse error:\n" ++ show e
-
-            return undefined
+            abort (ExitFailure 1)
+                $ "Command line argument parse error:\n" ++ show e
 
          Right a ->
             -- No? => a contains all parsed cmd arguments
@@ -223,12 +226,8 @@ parseArguments (c, s) = do
             in
                 case targetFName of
                      -- No file? Complain, quit.
-                     Nothing -> runWSEdit (c, s)
-                                          ( quitComplain
-                                            "No file selected, exiting now (see -h)."
-                                          )
-
-                             >> return undefined
+                     Nothing -> abort (ExitFailure 1)
+                                    "No file selected, exiting now (see -h)."
 
                      -- File found. Note that this may not be the actual file
                      -- name that we're opening later, just something closely
@@ -294,8 +293,7 @@ parseArguments (c, s) = do
                         when ( (not $ null parseErrors)
                             && MetaFailsafe `notElem` allArgs
                              )
-                             $ runWSEdit (c, s)
-                             $ quitComplain
+                             $ abort (ExitFailure 1)
                              $ "Parse error(s) occured:\n"
                             ++ unlines (map show parseErrors)
                             ++ "Tip: Use -mf to ignore all files containing errors and fix them."
@@ -303,8 +301,7 @@ parseArguments (c, s) = do
                         -- Abort if the release is not as stable as the user
                         -- wants it to be.
                         when (stability < selStab)
-                             $ runWSEdit (c, s)
-                             $ quitComplain
+                             $ abort (ExitFailure 1)
                              $ "This release is not stable enough for your preferences:\n\n"
                             ++ "    " ++ show stability ++ " < " ++ show selStab ++ "\n\n"
                             ++ "Getting the latest stable release from the \"Releases\" section\n"
@@ -383,14 +380,13 @@ parseArguments (c, s) = do
 
         -- | Load the file inside `fname` as state file.
         loadSF :: (EdConfig, EdState) -> IO (EdConfig, EdState)
-        loadSF (cf, st@EdState { fname = f }) = do
+        loadSF (cf, EdState { fname = f }) = do
             doesFileExist f >>= flip unless
-                (runWSEdit (cf, st) $ quitComplain
-                                    $ "File not found: "
-                                   ++ f
+                (abort (ExitFailure 1)
+                    $ "File not found: " ++ f
                 )
 
-            runWSEdit (cf, st) $ standby "Parsing state file, this may take a moment..."
+            putStrLn "Parsing state file, this may take a moment..."
 
             (_, sf) <- readEncFile f
 
@@ -410,16 +406,12 @@ parseArguments (c, s) = do
 
             case (c', s') of
                  (Nothing , _       ) -> do
-                    runWSEdit (cf, st) $ quitComplain
+                    abort (ExitFailure 1)
                         "Resume editor from dump: Parse error in config section."
 
-                    return undefined
-
                  (_       , Nothing ) -> do
-                    runWSEdit (cf, st) $ quitComplain
+                    abort (ExitFailure 1)
                         "Resume editor from dump: Parse error in state section."
-
-                    return undefined
 
                  (Just c'', Just s'') -> return (c'', s'')
 
@@ -512,10 +504,10 @@ applyArg (c, s)  OtherPurgeOn         = return (c { purgeOnClose = True         
 applyArg (c, s)  OtherPurgeOff        = return (c { purgeOnClose = False                                   }, s)
 
 
-applyArg (c, s)  HelpGeneral          = runWSEdit (c, s) (quitComplain     usageHelp           ) >> return (c, s)
-applyArg (c, s)  HelpConfig           = runWSEdit (c, s) (quitComplain      confHelp           ) >> return (c, s)
-applyArg (c, s)  HelpKeybinds         = runWSEdit (c, s) (quitComplain $  keymapHelp $ keymap c) >> return (c, s)
-applyArg (c, s)  HelpVersion          = runWSEdit (c, s) (quitComplain   versionHelp           ) >> return (c, s)
+applyArg (_, _)  HelpGeneral          = abort ExitSuccess     usageHelp
+applyArg (_, _)  HelpConfig           = abort ExitSuccess      confHelp
+applyArg (c, _)  HelpKeybinds         = abort ExitSuccess $  keymapHelp $ keymap c
+applyArg (_, _)  HelpVersion          = abort ExitSuccess   versionHelp
 
 applyArg (c, s)  DebugDumpArgs        = return (c, s)
 applyArg (c, s) (DebugStability  _  ) = return (c, s)

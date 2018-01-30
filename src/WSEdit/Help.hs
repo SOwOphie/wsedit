@@ -285,14 +285,13 @@ confHelp = renderText 80
 -- | Help text describing all available command line options. Caution, this one
 --   is about 250 lines long.
 usageHelp :: String
-usageHelp = renderText 80
-    [ "Usage:"
-    , "  wsedit [<arguments>] <filename> [line-no. [column-no.]] [<arguments>]"
-    , "  wsedit [<arguments>] -ocg [<arguments>]"
-    , "  wsedit [<arguments>] -ocl [<arguments>]"
-    , ""
-    , ""
-    , "For information on how to set these options permanently, see \"wsedit -hc\"."
+usageHelp = "Usage:\n"
+    ++ "  wsedit [<arguments>] <filename> [line-no. [column-no.]] [<arguments>]\n"
+    ++ "  wsedit [<arguments>] -ocg [<arguments>]\n"
+    ++ "  wsedit [<arguments>] -ocl [<arguments>]\n"
+    ++ "\n\n"
+    ++ renderText 80
+    [ "For information on how to set these options permanently, see \"wsedit -hc\"."
     , ""
     , "Possible arguments (the uppercase options are on by default):"
     , ""
@@ -587,14 +586,11 @@ usageHelp = renderText 80
 
 -- | Version and disclaimer help text.
 versionHelp :: String
-versionHelp = renderText 80
-    [ "Wyvernscale Source Code Editor (wsedit) Version " ++ version ++ " (" ++ show stability ++ ")"
-    , ""
-    , "Licensed under the Wyvernscale Source Code License Version " ++ licenseVersion ++ "."
-    , ""
-    , "Upsteam URL: " ++ upstream
-    , ""
-    , "The licensed software is to be regarded as an awful, insecure, barely-working"
+versionHelp = "Wyvernscale Source Code Editor (wsedit) Version " ++ version ++ " (" ++ show stability ++ ")\n\n"
+    ++ "Licensed under the Wyvernscale Source Code License Version " ++ licenseVersion ++ ".\n\n"
+    ++ "Upsteam URL: " ++ upstream ++ "\n\n"
+    ++ renderText 80
+    [ "The licensed software is to be regarded as an awful, insecure, barely-working"
     , "hack job.  It should only be used in a secured environment that prevents the"
     , "software from causing any damage, including, but not limited to damage from"
     , "unexpected side effects or refusal to run at all.  Any potential damage caused"
