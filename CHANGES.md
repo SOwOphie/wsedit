@@ -40,6 +40,7 @@ complying to the `$DESTDIR` convention.
 - Fixed a config parse error with paths containing subdirectories.
 - Made it possible to include escaped quotes inside quoted options, e.g.
   `-lk "this\"is\"stupid\"but\"works\"now"`
+- Output from the various `-h*` commands can now be captured via pipes.
 
 ## Other Changes
 
