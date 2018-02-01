@@ -122,6 +122,9 @@ import System.Exit
         ( ExitSuccess
         )
     )
+import System.FilePath
+    ( (</>)
+    )
 import System.Info
     ( os
     )
@@ -330,7 +333,7 @@ mayReadFile f = do
 listDirectoryDeep :: FilePath -> IO [FilePath]
 listDirectoryDeep p = listDirectory p >>= fmap concat . mapM (\s -> do
         let
-            name = p ++ "/" ++ s
+            name = p </> s
 
         dir  <- doesDirectoryExist name
         file <- doesFileExist      name

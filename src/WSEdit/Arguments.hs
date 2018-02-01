@@ -329,11 +329,11 @@ parseArguments (c, s) = do
 
     where
         -- | User home directory -> wsedit config directory
-        confDir :: String -> String
-        confDir = (++ "/.config/wsedit/")
-
-        sysDir :: String
-        sysDir = "/etc/wsedit/"
+        confDirs :: FilePath -> [FilePath]
+        confDirs home = [ home </> ".config/wsedit/"
+                        , "/etc/wsedit/"
+                        , "/usr/local/etc/wsedit/"
+                        ]
 
         -- | User home directory -> global wsedit config file
         globC :: String -> String
@@ -346,7 +346,7 @@ parseArguments (c, s) = do
             h <- getHomeDirectory
 
             globConfs <- fmap (filter (isSuffixOf ".wsconf") . concat)
-                       $ forM [sysDir, confDir h]
+                       $ forM (confDirs h)
                        $ \d -> do
                             b <- doesDirectoryExist d
                             if b
