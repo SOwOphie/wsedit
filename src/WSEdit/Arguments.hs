@@ -330,9 +330,9 @@ parseArguments (c, s) = do
     where
         -- | User home directory -> wsedit config directory
         confDirs :: FilePath -> [FilePath]
-        confDirs home = [ home </> ".config/wsedit/"
-                        , "/etc/wsedit/"
+        confDirs home = [ "/etc/wsedit/"
                         , "/usr/local/etc/wsedit/"
+                        , home </> ".config/wsedit/"
                         ]
 
         -- | User home directory -> global wsedit config file
