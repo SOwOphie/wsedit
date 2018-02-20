@@ -1,6 +1,7 @@
 flags: {}
 extra-package-dbs: []
 packages:
-- '.'
+- .
 extra-deps:
+- vty-5.20
 resolver: lts-8.0

@@ -1,5 +1,5 @@
 name:          wsedit
-version:       1.2.2.18
+version:       1.2.2.19
 synopsis:      A simple terminal source code editor.
 description:
 homepage:      https://github.com/LadyBoonami/wsedit
@@ -68,7 +68,7 @@ library
     strict           >= 0.3.2  && < 1,
     transformers     >= 0.4.2  && < 1,
     unix             >= 2.7    && < 3,
-    vty              >= 5.6    && < 6
+    vty              >= 5.20   && < 6
 
   ghc-options:
     -Wall

@@ -50,6 +50,7 @@ import Graphics.Vty
         , attrBackColor
         , attrForeColor
         , attrStyle
+        , attrURL
         )
     , Background
         ( ClearBackground
@@ -367,6 +368,10 @@ lineRep lNo off str = do
                                         , attrBackColor = tryPreserve
                                             (attrBackColor $ csNominal cs)
                                             (attrBackColor $  sNominal x )
+
+                                        , attrURL       = tryPreserve
+                                            (attrURL       $ csNominal cs)
+                                            (attrURL       $  sNominal x )
                                         }
                                     , csStr     = sStr x
                                     }

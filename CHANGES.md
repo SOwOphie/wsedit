@@ -1,3 +1,8 @@
+# v1.2.2b
+
+- Small compatibility patch for `vty-5.20`.
+- Added `/usr/local/etc/wsedit` to the config search path.
+
 # v1.2.2
 
 ## New Features

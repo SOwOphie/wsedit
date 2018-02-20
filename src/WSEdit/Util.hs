@@ -93,6 +93,7 @@ import Graphics.Vty
         , attrStyle
         , attrForeColor
         , attrBackColor
+        , attrURL
         )
     , MaybeDefault
         ( Default
@@ -623,6 +624,7 @@ combineAttrs a b = Attr
     { attrStyle     = combineMayDef (attrStyle     a) (attrStyle     b)
     , attrForeColor = combineMayDef (attrForeColor a) (attrForeColor b)
     , attrBackColor = combineMayDef (attrBackColor a) (attrBackColor b)
+    , attrURL       = combineMayDef (attrURL       a) (attrURL       b)
     }
     where
         combineMayDef :: MaybeDefault a -> MaybeDefault a -> MaybeDefault a

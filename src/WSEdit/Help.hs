@@ -25,6 +25,8 @@ import Graphics.Vty
         ( BLeft
         , BMiddle
         , BRight
+        , BScrollUp
+        , BScrollDown
         )
     , Event
         ( EvKey
@@ -193,9 +195,11 @@ keymapHelp km =
         showKey  k           = drop 1 $ show k
 
         showBtn :: Button -> String
-        showBtn BLeft   = "LMB"
-        showBtn BMiddle = "MMB"
-        showBtn BRight  = "RMB"
+        showBtn BLeft       = "LMB"
+        showBtn BMiddle     = "MMB"
+        showBtn BRight      = "RMB"
+        showBtn BScrollUp   = "Scroll Up"
+        showBtn BScrollDown = "Scroll Down"
 
 
 
