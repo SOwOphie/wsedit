@@ -1,5 +1,9 @@
 # v1.2.3
 
+## Fixes
+
+- Fixed a endless loop with duplicate `-mi` directives.
+
 ## Other Changes
 
 - Moving the cursor in larger steps (e.g. Ctrl-Right) now stops at the

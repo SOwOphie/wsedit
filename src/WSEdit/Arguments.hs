@@ -421,7 +421,8 @@ parseArguments (c, s) = do
 --   return a list of arguments that should be active.
 selectArgs :: [CanonicalPath] -> [ArgBlock] -> IO [Argument]
 selectArgs files args = do
-    files' <- mapM (canonicalPath Nothing)
+    files' <- fmap nub
+            $ mapM (canonicalPath Nothing)
             $ catMaybes
             $ map (\case { MetaInclude s -> Just s; _ -> Nothing })
             $ concatMap abArg
