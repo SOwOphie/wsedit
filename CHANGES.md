@@ -3,7 +3,9 @@
 ## Other Changes
 
 - Moving the cursor in larger steps (e.g. Ctrl-Right) now stops at the
-beginning / end of the line.
+  beginning / end of the line.
+- Switched to stack `lts-11.22`, replaced obsolete `EitherT` with the
+  `mtl`-native `ExceptT`.
 
 # v1.2.2b
 

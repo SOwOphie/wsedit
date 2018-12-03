@@ -25,6 +25,12 @@ import Control.Monad
     ( unless
     , when
     )
+import Control.Monad.Except
+    ( ExceptT
+        ( ExceptT
+        )
+    , runExceptT
+    )
 import Control.Monad.IO.Class
     ( liftIO
     )
@@ -33,12 +39,6 @@ import Control.Monad.RWS.Strict
     , get
     , modify
     , put
-    )
-import Control.Monad.Trans.Either
-    ( EitherT
-        ( EitherT
-        , runEitherT
-        )
     )
 import Data.Char
     ( isSpace
@@ -380,15 +380,15 @@ showText s k = do
 
                 , readOnly = True
                 }
-          ) (rebuildAll Nothing >> runEitherT loop)
+          ) (rebuildAll Nothing >> runExceptT loop)
         >>= \case
             Right _ -> return ()
             Left  e -> setStatus (show e)
 
     where
-        loop :: EitherT SomeException WSEdit ()
+        loop :: ExceptT SomeException WSEdit ()
         loop = do
-            EitherT $ tryEditor $ do
+            ExceptT $ tryEditor $ do
                 c <- ask
                 st <- get
 
