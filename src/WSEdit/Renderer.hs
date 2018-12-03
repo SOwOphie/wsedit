@@ -16,7 +16,8 @@ import Data.Ix
     ( inRange
     )
 import Data.List
-    ( nubBy
+    ( nub
+    , nubBy
     , sort
     , sortOn
     )
@@ -143,18 +144,20 @@ tkLn (_, str) = do
     s <- get
 
     return $ sort
-           $ nubBy overlap
-           $ sortOn (\(n, x) -> (n, Down (length x)))
-           $ token  str (         lineComment  c)
-          ++ token  str (unpack $ blockComment c)
-          ++ token  str (unpack $ brackets     c)
-          ++ token  str (         searchTerms  s)
-          ++ tokenI str (         keywords     c)
-          ++ token  str (unpack $ strDelim     c)
-          ++ token  str (unpack $ mStrDelim    c)
-          ++ token  str (unpack $ chrDelim     c)
-          ++ token  str (         escapeO      c)
-          ++ token  str (         escapeS      c)
+           $ nub
+           $ token  str (searchTerms s)
+          ++ tokenI str (keywords    c)
+          ++ ( nubBy overlap
+             $ sortOn (\(n, x) -> (n, Down (length x)))
+             $ token  str (         lineComment  c)
+            ++ token  str (unpack $ blockComment c)
+            ++ token  str (unpack $ brackets     c)
+            ++ token  str (unpack $ strDelim     c)
+            ++ token  str (unpack $ mStrDelim    c)
+            ++ token  str (unpack $ chrDelim     c)
+            ++ token  str (         escapeO      c)
+            ++ token  str (         escapeS      c)
+             )
 
     where
         token :: String -> [String] -> [(Int, String)]
@@ -225,7 +228,8 @@ rLn (rc, bc) (lNr, l) = do
            $ fsm (c,s) lNr (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
 
     where
-        fsm :: (EdConfig, EdState)              -- ^ Editor parameters
+        fsm, fsm2
+            :: (EdConfig, EdState)              -- ^ Editor parameters
             -> Int                              -- ^ Line number
             -> (FmtParserState, BracketStack)   -- ^ State of the FSM leaving the previous line
             -> [(Int, String)]                  -- ^ Tokens in the line
@@ -237,21 +241,30 @@ rLn (rc, bc) (lNr, l) = do
         ||                                                                    ||
         #==================================================================== -}
 
-
         {- --------------------------------------------------------------------*
-        |  Highlight search terms regardless of current parser state           |
+        |  Search terms and keywords should not interfere with other parsers   |
         *-------------------------------------------------------------------- -}
 
-        fsm (c, s) lNo st ((n, x):xs)
+        -- Search term
+        fsm (c, s) lNo st xxs@((n, x):_)
             | x `elem` searchTerms s
                 = withFst (withFst (((n, n + length x - 1), HSearch):))
-                $ fsm (c, s) lNo st xs
+                $ fsm2 (c, s) lNo st xxs
+
+        -- Keyword
+        fsm (c, s) lNo (PNothing, st) xxs@((n, x):_)
+            | x `elem` keywords c
+                = withFst (withFst (((n, n + length x - 1), HKeyword):))
+                $ fsm2 (c, s) lNo (PNothing, st) xxs
+
+        fsm (c, s) lNo st xs
+            = fsm2 (c, s) lNo st xs
 
         {- --------------------------------------------------------------------*
         |  Skip next token on escape if it follows directly                    |
         *-------------------------------------------------------------------- -}
 
-        fsm (c, s) lNo st ((n1, e):(n2, _):xs)
+        fsm2 (c, s) lNo st ((n1, e):(n2, _):xs)
             | n1 + length e == n2 && e `elem` escapeO c
                 = fsm (c, s) lNo st xs
 
@@ -260,11 +273,11 @@ rLn (rc, bc) (lNr, l) = do
         *-------------------------------------------------------------------- -}
 
         -- Escape character
-        fsm (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
+        fsm2 (c, s) lNo (PMLString n1 str, st) ((n2, e):(n3, _):xs)
             | n2 + length e == n3 && e `elem` escapeS c
                 = fsm (c, s) lNo (PMLString n1 str, st) xs
 
-        fsm (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
+        fsm2 (c, s) lNo (PMLString n1 str, st) ((n2, x):xs)
 
             -- Closing the string
             | str == x
@@ -280,11 +293,11 @@ rLn (rc, bc) (lNr, l) = do
         *-------------------------------------------------------------------- -}
 
         -- Escape character
-        fsm (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
+        fsm2 (c, s) lNo (PLnString n1 str, st) ((n2, e):(n3, _):xs)
             | n2 + length e == n3 && e `elem` escapeS c
                 = fsm (c, s) lNo (PLnString n1 str, st) xs
 
-        fsm (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
+        fsm2 (c, s) lNo (PLnString n1 str, st) ((n2, x):xs)
 
             -- Closing the string
             | str == x
@@ -301,7 +314,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- (opening token):(escape token):(some token):(closing token):xs
         -- Number of enclosed characters: length escape + 1
-        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):_:(n4, x4):xs)
+        fsm2 (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):_:(n4, x4):xs)
             | Just x4' <- x1 `lookup` chrDelim c
                     , x4 == x4'
                    && n4 == n1 + length x1 + length x2 + 1
@@ -311,7 +324,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- (opening token):(escape token):(closing token):xs
         -- Number of enclosed characters: length escape + 1
-        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):(n3, x3):xs)
+        fsm2 (c, s) lNo (PNothing, st) ((n1, x1):(_, x2):(n3, x3):xs)
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
                    && n3 == n1 + length x1 + length x2 + 1
@@ -321,7 +334,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- (opening token):(some non-escape token):(closing token):xs
         -- Number of enclosed characters: 1
-        fsm (c, s) lNo (PNothing, st) ((n1, x1):(_,x2):(n3, x3):xs)
+        fsm2 (c, s) lNo (PNothing, st) ((n1, x1):(_,x2):(n3, x3):xs)
             | Just x3' <- x1 `lookup` chrDelim c
                     , x3 == x3'
                    && n3 == n1 + length x1 + 1
@@ -331,7 +344,7 @@ rLn (rc, bc) (lNr, l) = do
 
         -- (opening token):(closing token):xs
         -- Number of enclosed characters: 1
-        fsm (c, s) lNo (PNothing, st) ((n1, x1):(n2, x2):xs)
+        fsm2 (c, s) lNo (PNothing, st) ((n1, x1):(n2, x2):xs)
             | Just x2' <- x1 `lookup` chrDelim c
                     , x2 == x2'
                    && n2 == n1 + length x1 + 1
@@ -344,19 +357,19 @@ rLn (rc, bc) (lNr, l) = do
 
         -- If the line ends in a state that should transfer to the next one,
         -- facilitate that.
-        fsm _      _   (PMLString n1 str  , st         ) []
+        fsm2 _      _   (PMLString n1 str  , st         ) []
             = (([((n1, maxBound), HString )], PMLString 1 str), ([], st))
 
-        fsm _      _   (PBComment n1 str  , st         ) []
+        fsm2 _      _   (PBComment n1 str  , st         ) []
             = (([((n1, maxBound), HComment)], PBComment 1 str), ([], st))
 
         -- Single-line strings shouldn't, so mark the opening tag as an error
         -- and proceed with the next line.
-        fsm _      _   (PLnString n1 _    , st         ) []
+        fsm2 _      _   (PLnString n1 _    , st         ) []
             = (([((n1, maxBound), HError  )], PNothing       ), ([], st))
 
         -- Otherwise, set the parser to the empty state for the next line.
-        fsm _      _   (_                 , st         ) []
+        fsm2 _      _   (_                 , st         ) []
             = (([]                          , PNothing       ), ([], st))
 
         {- --------------------------------------------------------------------*
@@ -364,7 +377,7 @@ rLn (rc, bc) (lNr, l) = do
         *-------------------------------------------------------------------- -}
 
         -- Close block comments
-        fsm (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
+        fsm2 (c, s) lNo (PBComment n1 str  , st         ) ((n2, x):xs)
             | str == x
                 = withFst (withFst (((n1, n2 + length x - 1), HComment):))
                 $ fsm (c, s) lNo (PNothing        , st) xs
@@ -373,13 +386,13 @@ rLn (rc, bc) (lNr, l) = do
                 = fsm (c, s) lNo (PBComment n1 str, st) xs
 
         -- Close brackets (only outside highlighted ranges)
-        fsm (c, s) lNo (PNothing          , (p, str):bs) ((n1, x):xs)
+        fsm2 (c, s) lNo (PNothing          , (p, str):bs) ((n1, x):xs)
             | str == x
                 = withSnd (withFst ((p, (lNo, n1)):))
                 $ fsm (c, s) lNo (PNothing, bs) xs
 
         -- Stray closing bracket? Tag it as an error!
-        fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
+        fsm2 (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
             | x `elem` map snd (brackets c)
                 = withFst (withFst (((n1, n1 + length x - 1), HError):))
                 $ fsm (c, s) lNo (PNothing, st) xs
@@ -387,7 +400,8 @@ rLn (rc, bc) (lNr, l) = do
         {- --------------------------------------------------------------------*
         |  Open various ranges                                                 |
         *-------------------------------------------------------------------- -}
-        fsm (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
+
+        fsm2 (c, s) lNo (PNothing          , st         ) ((n1, x):xs)
 
             -- Line comment
             |            x `elem`   lineComment  c
@@ -408,11 +422,6 @@ rLn (rc, bc) (lNr, l) = do
             -- Multi-line string
             | Just cl <- x `lookup` mStrDelim    c
                 = fsm (c, s) lNo (PMLString n1 cl,                   st) xs
-
-            -- Keyword
-            |            x `elem`   keywords     c
-                = withFst (withFst (((n1, n1 + length x - 1), HKeyword):))
-                $ fsm (c, s) lNo (PNothing       ,                   st) xs
 
             | otherwise
                 = fsm (c, s) lNo (PNothing       ,                   st) xs

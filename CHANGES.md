@@ -3,6 +3,8 @@
 ## Fixes
 
 - Fixed a endless loop with duplicate `-mi` directives.
+- Search no longer breaks strings and brackets.
+- Keywords can now also be brackets at the same time.
 
 ## Other Changes
 
