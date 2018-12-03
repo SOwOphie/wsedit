@@ -1,3 +1,10 @@
+# v1.2.3
+
+## Other Changes
+
+- Moving the cursor in larger steps (e.g. Ctrl-Right) now stops at the
+beginning / end of the line.
+
 # v1.2.2b
 
 - Small compatibility patch for `vty-5.20`.

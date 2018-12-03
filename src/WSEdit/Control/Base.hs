@@ -250,20 +250,20 @@ moveCursor r c = alterState $ do
             len            <- currLineLen
 
             if | currC + n > len + 1 ->
-                    if currR < B.length (edLines s)
-                       then do
+                    if currR >= B.length (edLines s) || currC <= len
+                       then moveCursorEnd
+                       else do
                                 moveCursor   1  0
                                 moveCursorHome
                                 moveCursor   0  (currC + n - len - 2)
-                       else moveCursorEnd
 
                | currC + n < 1       ->
-                    if currR > 1
-                       then do
+                    if currR <= 1 || currC > 1
+                       then moveCursorHome
+                       else do
                                 moveCursor (-1) 0
                                 moveCursorEnd
                                 moveCursor   0  (currC + n          )
-                       else moveCursorHome
 
                | otherwise           ->
                     setCursor ( currR
