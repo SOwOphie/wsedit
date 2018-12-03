@@ -97,6 +97,9 @@ import WSEdit.Control.Base
     , standby
     , validateCursor
     )
+import WSEdit.Control.Text
+    ( cleanse
+    )
 import WSEdit.Data
     ( EdConfig
         ( atomicSaves
@@ -305,9 +308,7 @@ canWriteFile = do
                         Left  e -> const (return False) (e :: SomeException)
 
     -- I am aware of the fact that this code is pretty awful, but it has yet to
-    -- fail me and/or break anything.  I use it as my daily driver to edit all
-    -- kinds of mission-critical system files, but do heed lines 33-38 of the
-    -- license file anyways.
+    -- fail me and/or break anything.
 
 
 
@@ -316,12 +317,14 @@ save :: WSEdit ()
 save = refuseOnReadOnly $ do
     standby "Saving..."
 
-    s <- get
-
-    if not (changed s)
-       then setStatus "No changes to save."
+    w <- canWriteFile
+    if not w
+       then setStatus "File not writeable."
 
        else do
+            cleanse
+
+            s <- get
             c <- ask
 
             let
@@ -567,12 +570,10 @@ toggleReadOnly = alterState $ do
     s <- get
     if readOnly s
        then do
-            b <- canWriteFile
-            if not b
-               then setStatus "Error: file is read-only."
-               else do
-                    put $ s { readOnly = False }
-                    fetchCursor
+            canWriteFile >>= flip when (setStatus "Warning: no write permissions on file.")
+
+            put $ s { readOnly = False }
+            fetchCursor
 
        else put $ s { readOnly  = True
                     , cursorPos = 1

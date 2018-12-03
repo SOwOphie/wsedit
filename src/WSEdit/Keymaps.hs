@@ -66,8 +66,7 @@ import WSEdit.Control.Selection
     , unindentSelection
     )
 import WSEdit.Control.Text
-    ( cleanse
-    , delLeft
+    ( delLeft
     , delRight
     , insertTab
     , smartHome
@@ -356,7 +355,7 @@ defaultKM =
            )
     , Nothing
     , Just ( EvKey (KChar 's') [MCtrl]
-           , ( cleanse >> save
+           , ( save
              , "Remove trailing whitespace, ensure that the last line is empty,"
                 ++ " then save."
              )
