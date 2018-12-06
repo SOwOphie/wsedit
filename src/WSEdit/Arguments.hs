@@ -100,7 +100,8 @@ import WSEdit.Data
         , getCanonicalPath
         )
     , EdConfig
-        ( atomicSaves
+        ( addnIdChars
+        , atomicSaves
         , blockComment
         , brackets
         , chrDelim
@@ -493,6 +494,8 @@ applyArg (c, s) (LangEscOAdd     a  ) = return (c { escapeO      = a      : dele
 applyArg (c, s) (LangEscODel     a  ) = return (c { escapeO      =          delete a      (escapeO      c) }, s)
 applyArg (c, s) (LangEscSAdd     a  ) = return (c { escapeS      = a      : delete a      (escapeS      c) }, s)
 applyArg (c, s) (LangEscSDel     a  ) = return (c { escapeS      =          delete a      (escapeS      c) }, s)
+applyArg (c, s) (LangIdChrAdd    a  ) = return (c { addnIdChars  = a      : delete a      (addnIdChars  c) }, s)
+applyArg (c, s) (LangIdChrDel    a  ) = return (c { addnIdChars  =          delete a      (addnIdChars  c) }, s)
 applyArg (c, s) (LangKeywordAdd  a  ) = return (c { keywords     = a      : delete a      (keywords     c) }, s)
 applyArg (c, s) (LangKeywordDel  a  ) = return (c { keywords     =          delete a      (keywords     c) }, s)
 applyArg (c, s) (LangStrChrAdd   a b) = return (c { chrDelim     = (a, b) : delete (a, b) (chrDelim     c) }, s)

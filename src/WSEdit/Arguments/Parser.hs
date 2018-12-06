@@ -201,6 +201,8 @@ configOption = (choice
     , langEscODel
     , langEscSAdd
     , langEscSDel
+    , langIdChrAdd
+    , langIdChrDel
     , langKeywordAdd
     , langKeywordDel
     , langStrChrAdd
@@ -260,24 +262,26 @@ debugDumpEvOff    = try (string "-yE" ) >> return DebugDumpEvOff
 debugWriOff       = try (string "-yi" ) >> return DebugWRIOff
 debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
-autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt  }
-displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet <$> word     }
-editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer  }
-editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer  }
-editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer  }
-fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word     }
-generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word     }
-generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word     }
-langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word     }
-langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word     }
-langEscOAdd       = do { try $ string "-leo"; spaces'; LangEscOAdd     <$> word     }
-langEscODel       = do { try $ string "-leO"; spaces'; LangEscODel     <$> word     }
-langEscSAdd       = do { try $ string "-les"; spaces'; LangEscSAdd     <$> word     }
-langEscSDel       = do { try $ string "-leS"; spaces'; LangEscSDel     <$> word     }
-langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word     }
-langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word     }
-metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> pathName }
-debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab     }
+autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf <$> wildInt    }
+displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet <$> word       }
+editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integer    }
+editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer    }
+editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer    }
+fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word       }
+generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word       }
+generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word       }
+langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word       }
+langCommLineDel   = do { try $ string "-lcL"; spaces'; LangCommLineDel <$> word       }
+langEscOAdd       = do { try $ string "-leo"; spaces'; LangEscOAdd     <$> word       }
+langEscODel       = do { try $ string "-leO"; spaces'; LangEscODel     <$> word       }
+langEscSAdd       = do { try $ string "-les"; spaces'; LangEscSAdd     <$> word       }
+langEscSDel       = do { try $ string "-leS"; spaces'; LangEscSDel     <$> word       }
+langIdChrAdd      = do { try $ string "-li" ; spaces'; LangIdChrAdd    <$> simpleChar }
+langIdChrDel      = do { try $ string "-lI" ; spaces'; LangIdChrDel    <$> simpleChar }
+langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word       }
+langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word       }
+metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> pathName   }
+debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab       }
 
 autocompAdd       = do { try $ string "-ad" ; spaces'; n <- wildInt; spaces'; AutocompAdd    n <$> qualifier}
 langBracketAdd    = do { try $ string "-lb" ; spaces'; s <- word   ; spaces'; LangBracketAdd s <$> word     }

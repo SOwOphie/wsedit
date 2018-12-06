@@ -61,6 +61,8 @@
 	-lk -leO
 	-lk -les
 	-lk -leS
+	-lk -li
+	-lk -lI
 	-lk -lk
 	-lk -lK
 	-lk -lsc

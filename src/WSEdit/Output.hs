@@ -95,7 +95,8 @@ import Safe
 
 import WSEdit.Data
     ( EdConfig
-        ( drawBg
+        ( addnIdChars
+        , drawBg
         , edDesign
         , tabWidth
         , vtyObj
@@ -173,8 +174,11 @@ import qualified WSEdit.Buffer as B
 --   elastic tab adjustments.
 charWidthRaw :: Int -> Char -> WSEdit Int
 charWidthRaw n '\t'                           = (\w -> w - (n-1) `mod` w) <$> asks tabWidth
-charWidthRaw _ c | charClass c == Unprintable = return $ length (showHex (ord c) "") + 3
-                 | otherwise                  = return 1
+charWidthRaw _ c  = do
+    l <- asks addnIdChars
+    if charClass l c == Unprintable
+       then return $ length (showHex (ord c) "") + 3
+       else return 1
 
 
 -- | Returns the display width of a given char in a given line and column,
@@ -270,18 +274,19 @@ charRep br hl pos ' ' = do
 charRep br hl pos ch = do
     (r, _) <- getCursor
     st     <- get
-    d      <- edDesign <$> ask
+    d      <- edDesign    <$> ask
+    l      <- addnIdChars <$> ask
 
     return $ Snippet
         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
                          (flip combineAttrs $ dCurrLnMod d)
                    $ iff br (combineAttrs $ dBrMod d)
                    $ lookupJustDef
-                        (lookupJustDef defAttr (charClass ch) (dCharStyles d))
+                        (lookupJustDef defAttr (charClass l ch) (dCharStyles d))
                      hl
                     (dHLStyles d)
 
-        , sStr     = if charClass ch == Unprintable
+        , sStr     = if charClass l ch == Unprintable
                         then "?#" ++ showHex (ord ch) ";"
                         else [ch]
         }

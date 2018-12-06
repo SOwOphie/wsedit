@@ -362,93 +362,94 @@ data CharClass = Whitesp     -- ^ Whitespace (@"\\t\\n\\r "@)
 
 
 -- | Returns the character class a char belongs into.
-charClass :: Char -> CharClass
-charClass c | '0' <= c && c <= '9' = Digit
-charClass c | 'a' <= c && c <= 'z' = Lower
-charClass c | 'A' <= c && c <= 'Z' = Upper
+charClass :: [Char] -> Char -> CharClass
+charClass l c | c `elem` l           = Lower
+charClass _ c | '0' <= c && c <= '9' = Digit
+charClass _ c | 'a' <= c && c <= 'z' = Lower
+charClass _ c | 'A' <= c && c <= 'Z' = Upper
 
-charClass c |       isControl c = Unprintable
-charClass c |       isMark    c = Unprintable
-charClass c | not $ isPrint   c = Unprintable
+charClass _ c |       isControl c = Unprintable
+charClass _ c |       isMark    c = Unprintable
+charClass _ c | not $ isPrint   c = Unprintable
 
-charClass '_'  = Lower
+charClass _ '_'  = Lower
 
-charClass '\t' = Whitesp
-charClass '\n' = Whitesp
-charClass '\r' = Whitesp
-charClass ' '  = Whitesp
+charClass _ '\t' = Whitesp
+charClass _ '\n' = Whitesp
+charClass _ '\r' = Whitesp
+charClass _ ' '  = Whitesp
 
-charClass '('  = Bracket
-charClass ')'  = Bracket
-charClass '['  = Bracket
-charClass ']'  = Bracket
-charClass '{'  = Bracket
-charClass '}'  = Bracket
+charClass _ '('  = Bracket
+charClass _ ')'  = Bracket
+charClass _ '['  = Bracket
+charClass _ ']'  = Bracket
+charClass _ '{'  = Bracket
+charClass _ '}'  = Bracket
 
-charClass '+'  = Operator
-charClass '-'  = Operator
-charClass '*'  = Operator
-charClass '/'  = Operator
-charClass '\\' = Operator
-charClass '$'  = Operator
-charClass '!'  = Operator
-charClass '\'' = Operator
-charClass '"'  = Operator
-charClass '%'  = Operator
-charClass '&'  = Operator
-charClass '^'  = Operator
-charClass '='  = Operator
-charClass '?'  = Operator
-charClass '´'  = Operator
-charClass '`'  = Operator
-charClass '~'  = Operator
-charClass '#'  = Operator
-charClass '.'  = Operator
-charClass ':'  = Operator
-charClass ','  = Operator
-charClass ';'  = Operator
-charClass '<'  = Operator
-charClass '>'  = Operator
-charClass '|'  = Operator
-charClass '@'  = Operator
+charClass _ '+'  = Operator
+charClass _ '-'  = Operator
+charClass _ '*'  = Operator
+charClass _ '/'  = Operator
+charClass _ '\\' = Operator
+charClass _ '$'  = Operator
+charClass _ '!'  = Operator
+charClass _ '\'' = Operator
+charClass _ '"'  = Operator
+charClass _ '%'  = Operator
+charClass _ '&'  = Operator
+charClass _ '^'  = Operator
+charClass _ '='  = Operator
+charClass _ '?'  = Operator
+charClass _ '´'  = Operator
+charClass _ '`'  = Operator
+charClass _ '~'  = Operator
+charClass _ '#'  = Operator
+charClass _ '.'  = Operator
+charClass _ ':'  = Operator
+charClass _ ','  = Operator
+charClass _ ';'  = Operator
+charClass _ '<'  = Operator
+charClass _ '>'  = Operator
+charClass _ '|'  = Operator
+charClass _ '@'  = Operator
 
-charClass  _   = Special
+charClass _  _   = Special
 
 
 -- | Returns whether the character is probably part of a identifier.
-isIdentifierChar :: Char -> Bool
-isIdentifierChar c = case charClass c of
-                          Whitesp     -> False
-                          Digit       -> True
-                          Lower       -> True
-                          Upper       -> True
-                          Bracket     -> False
-                          Operator    -> False
-                          Unprintable -> False
-                          Special     -> True
+isIdentifierChar :: [Char] -> Char -> Bool
+isIdentifierChar l c = case charClass l c of
+                            Whitesp     -> False
+                            Digit       -> True
+                            Lower       -> True
+                            Upper       -> True
+                            Bracket     -> False
+                            Operator    -> False
+                            Unprintable -> False
+                            Special     -> True
 
 
 -- | Returns whether the string is probably an identifier.
-isIdentifier :: String -> Bool
-isIdentifier s = all isIdentifierChar s
-              && not (all (\c -> charClass c == Digit) s)
+isIdentifier :: [Char] -> String -> Bool
+isIdentifier l s = all (isIdentifierChar l) s
+              && not (all (\c -> charClass l c == Digit) s)
               && length s >= 2
 
 
 
 -- | Prelude 'words' on steroids, uses 'isIdentifier' and 'isIdentifierChar' to
 --   pick out identifiers from a possibly quite cryptic source code snippet.
-wordsPlus :: String -> [String]
-wordsPlus s =
+wordsPlus :: [Char] -> String -> [String]
+wordsPlus l s =
     let
-        s'       = dropWhile (\c -> not (isIdentifierChar c) || charClass c == Digit) s
-        (k, s'') = span isIdentifierChar s'
+        s'       = dropWhile (\c -> not (isIdentifierChar l c) || charClass l c == Digit) s
+        (k, s'') = span (isIdentifierChar l) s'
     in
         if null k
            then []
-           else if isIdentifier k
-                   then k : wordsPlus s''
-                   else     wordsPlus s''
+           else if isIdentifier l k
+                   then k : wordsPlus l s''
+                   else     wordsPlus l s''
 
 
 
@@ -480,8 +481,8 @@ getExt = reverse
 
 -- | Given a 1-based cursor position and the current line, returns the keyword
 --   at the cursor position, if there is one.
-getKeywordAtCursor :: Int -> String -> Maybe String
-getKeywordAtCursor c s = headMay $ filter isIdentifier $ tails $ take (c - 1) s
+getKeywordAtCursor :: [Char] -> Int -> String -> Maybe String
+getKeywordAtCursor l c s = headMay $ filter (isIdentifier l) $ tails $ take (c - 1) s
 
 
 
@@ -530,27 +531,27 @@ findInStr pat str@(_:xs)
 
 
 -- | Find the position of the first string as a whole word within the second one.
-findIsolated :: String -> String -> [Int]
-findIsolated []  _  = error "findIsolated: empty pattern"
-findIsolated _   [] = []
-findIsolated pa str
-    | match pa str = 0 : findIs pa str
-    | otherwise    =     findIs pa str
+findIsolated :: [Char] -> String -> String -> [Int]
+findIsolated _ []  _  = error "findIsolated: empty pattern"
+findIsolated _ _   [] = []
+findIsolated l pa str
+    | match l pa str = 0 : findIs l pa str
+    | otherwise      =     findIs l pa str
 
     where
-        findIs :: String -> String -> [Int]
-        findIs []  _      = error "findIsolated: empty pattern"
-        findIs _   []     = []
-        findIs pat (x:xs)
-            | isIdentifierChar x =     map (+1) $ findIs pat xs
-            | match pat xs       = 1 : map (+1) ( findIs pat xs)
-            | otherwise          =     map (+1) $ findIs pat xs
+        findIs :: [Char] -> String -> String -> [Int]
+        findIs _ []  _      = error "findIsolated: empty pattern"
+        findIs _ _   []     = []
+        findIs l' pat (x:xs)
+            | isIdentifierChar l' x =     map (+1) $ findIs l' pat xs
+            | match l' pat xs       = 1 : map (+1) ( findIs l' pat xs)
+            | otherwise             =     map (+1) $ findIs l' pat xs
 
-        match :: String -> String -> Bool
-        match (p:ps) (y:ys) | p == y = match ps ys
-        match []     []              = True
-        match []     (y:_ )          = not $ isIdentifierChar y
-        match _      _               = False
+        match :: [Char] -> String -> String -> Bool
+        match l' (p:ps) (y:ys) | p == y = match l' ps ys
+        match _  []     []              = True
+        match l' []     (y:_ )          = not $ isIdentifierChar l' y
+        match _  _      _               = False
 
 
 

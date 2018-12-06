@@ -38,7 +38,8 @@ import WSEdit.Data
     , BracketCacheElem
     , BracketStack
     , EdConfig
-        ( brackets
+        ( addnIdChars
+        , brackets
         , chrDelim
         , blockComment
         , escapeO
@@ -145,8 +146,8 @@ tkLn (_, str) = do
 
     return $ sort
            $ nub
-           $ token  str (searchTerms s)
-          ++ tokenI str (keywords    c)
+           $ token                  str (searchTerms s)
+          ++ tokenI (addnIdChars c) str (keywords    c)
           ++ ( nubBy overlap
              $ sortOn (\(n, x) -> (n, Down (length x)))
              $ token  str (         lineComment  c)
@@ -164,9 +165,9 @@ tkLn (_, str) = do
         token s l = map (withFst (+1))
                   $ concatMap (\tk -> [(x, tk) | x <- tk `findInStr` s]) l
 
-        tokenI :: String -> [String] -> [(Int, String)]
-        tokenI s l = map (withFst (+1))
-                   $ concatMap (\tk -> [(x, tk) | x <- tk `findIsolated` s]) l
+        tokenI :: [Char] -> String -> [String] -> [(Int, String)]
+        tokenI cs s l = map (withFst (+1))
+                   $ concatMap (\tk -> [(x, tk) | x <- findIsolated cs tk s]) l
 
         unpack :: [(a, a)] -> [a]
         unpack []         = []

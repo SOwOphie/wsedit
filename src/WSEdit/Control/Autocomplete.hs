@@ -55,7 +55,8 @@ import WSEdit.Control.Text
 import WSEdit.Data
     ( WSEdit
     , EdConfig
-        ( lineComment
+        ( addnIdChars
+        , lineComment
         , tabWidth
         )
     , EdState
@@ -118,7 +119,7 @@ dictAdd f = do
         d <- liftIO
            $ evaluate
            $ foldl (flip addWord) (dict s)
-           $ wordsPlus
+           $ wordsPlus (addnIdChars c)
            $ unlinesPlus
            $ map ( (\l -> take ( minimum
                                $ maxBound
@@ -198,9 +199,10 @@ dictAddRec = do
 listAutocomplete :: WSEdit ()
 listAutocomplete = do
     s <- get
+    c <- ask
 
     unless (null (buildDict s) || readOnly s)
-        $ case getKeywordAtCursor (cursorPos s)
+        $ case getKeywordAtCursor (addnIdChars c) (cursorPos s)
                 $ snd
                 $ B.pos
                 $ edLines s of
@@ -227,9 +229,10 @@ listAutocomplete = do
 applyAutocomplete :: WSEdit ()
 applyAutocomplete = do
     s <- get
+    c <- ask
 
     when (not (null $ buildDict s) && canComplete s)
-        $ case getKeywordAtCursor (cursorPos s)
+        $ case getKeywordAtCursor (addnIdChars c) (cursorPos s)
                 $ snd
                 $ B.pos
                 $ edLines s of

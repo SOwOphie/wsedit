@@ -20,6 +20,7 @@
 	-lb ( )
 	-lb { }
 	-lb [ ]
+	-li -
 #                                                                              #
 # Keywords                                                                     #
 *.sh

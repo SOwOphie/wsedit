@@ -1,5 +1,11 @@
 # v1.2.3
 
+## New Features
+
+- The `-li` directive can now be used to designate additional characters that
+  can be part of identifiers. This affects rendering, but is most useful for
+  autocompletion.
+
 ## Fixes
 
 - Fixed a endless loop with duplicate `-mi` directives.

@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.3.5"
+version = "1.2.3.6"
 
 -- | Upstream URL.
 upstream :: String
@@ -385,6 +385,9 @@ data EdConfig = EdConfig
 
     , brackets     :: [(String, String)]
         -- ^ List of bracket pairs.
+
+    , addnIdChars  :: [Char]
+        -- ^ List of additional characters to consider part of identifiers
     }
 
 -- | Create a default `EdConfig`.
@@ -412,6 +415,7 @@ mkDefConfig v k = EdConfig
                 , escapeO      = []
                 , escapeS      = []
                 , brackets     = []
+                , addnIdChars  = []
               }
 
 

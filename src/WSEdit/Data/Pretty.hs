@@ -21,6 +21,7 @@ import System.IO
 import WSEdit.Data
     ( EdConfig
         ( EdConfig
+        , addnIdChars
         , atomicSaves
         , blockComment
         , brackets
@@ -97,6 +98,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pEscapeO      :: [String]
     , pEscapeS      :: [String]
     , pBrackets     :: [(String, String)]
+    , pAddnIdChars  :: [Char]
     }
     deriving (Eq, Read, Show)
 
@@ -125,6 +127,7 @@ prettyEdConfig c = PrettyEdConfig
     , pEscapeO      =                  escapeO      c
     , pEscapeS      =                  escapeS      c
     , pBrackets     =                  brackets     c
+    , pAddnIdChars  =                  addnIdChars  c
     }
 
 -- | Restore an 'EdConfig' from a 'PrettyEdConfig'.
@@ -152,6 +155,7 @@ unPrettyEdConfig v k p = EdConfig
     , escapeO      = pEscapeO                     p
     , escapeS      = pEscapeS                     p
     , brackets     = pBrackets                    p
+    , addnIdChars  = pAddnIdChars                 p
     }
 
 

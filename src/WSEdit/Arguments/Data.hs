@@ -123,6 +123,8 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | LangEscODel     String
               | LangEscSAdd     String
               | LangEscSDel     String
+              | LangIdChrAdd    Char
+              | LangIdChrDel    Char
               | LangKeywordAdd  String
               | LangKeywordDel  String
               | LangStrChrAdd   String String
