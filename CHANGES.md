@@ -20,6 +20,7 @@
   `mtl`-native `ExceptT`.
 - The editor can now enter read-write mode for files that cannot be saved.
 - Split up language definitions for C and C++.
+- Moved editor dump to `F9`.
 
 # v1.2.2b
 

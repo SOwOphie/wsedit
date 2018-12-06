@@ -20,6 +20,7 @@ module WSEdit.Util
     , chunkWords
 #ifdef dev
     , dump
+    , dlog
     , timed
 #endif
     , mayReadFile
@@ -280,7 +281,7 @@ chunkWords n s  =
 
 #ifdef dev
 -- | Appends the given string as well as a pretty-printed 'show' of the second
---   parameter to the file @dmp@ in the current working directory. Occasionally
+--   parameter to the file @dmp@ in the user's home directory. Occasionally
 --   crashes on weird I/O race conditions. Use for debugging purposes only.
 dump :: (Show a) => String -> a -> a
 dump s x = unsafePerformIO $ do
@@ -294,6 +295,12 @@ dump s x = unsafePerformIO $ do
        ++ "\n\n"
 
     return x
+
+-- | Appends the given string  to the file @dmp@ in the user's home directory.
+dlog :: String -> IO ()
+dlog s = do
+    h  <- getHomeDirectory
+    appendFile (h ++ "/dmp") $ s ++ "\n\n"
 
 -- | Forces execution and `dump`s the elapsed time.
 timed :: (NFData a) => String -> a -> a

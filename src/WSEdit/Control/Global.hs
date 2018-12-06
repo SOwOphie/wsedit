@@ -168,7 +168,7 @@ fqn = ("WSEdit.Control.Global." ++)
 
 
 
--- | Crashes the editor. Used for debugging. Mapped to @Meta-.@, test it if you
+-- | Crashes the editor. Used for debugging. Mapped to @F9@, test it if you
 --   dare.
 simulateCrash :: WSEdit ()
 simulateCrash = error "Simulated crash."

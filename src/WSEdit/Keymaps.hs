@@ -371,7 +371,7 @@ defaultKM =
              , "Quit, even if unsaved changes are present."
              )
            )
-    , Just ( EvKey (KFun  11 ) []
+    , Just ( EvKey (KFun  9  ) []
            , ( simulateCrash
              , "Crash the editor and create a state dump."
              )
