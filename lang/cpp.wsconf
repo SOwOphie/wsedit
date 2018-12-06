@@ -10,7 +10,7 @@
 ################################################################################
 #                                                                              #
 # Syntax highlighting                                                          #
-*.cpp
+*.ii
 	-lcl //
 	-lcb /* */
 	-lsr \" \"
@@ -19,10 +19,11 @@
 	-lb ( )
 	-lb [ ]
 	-lb { }
+	-li $
 #                                                                              #
 # Keywords                                                                     #
 # From: https://en.cppreference.com/w/cpp/keyword                              #
-*.cpp
+*.ii
 	-lk alignas
 	-lk alignof
 	-lk and
@@ -109,10 +110,27 @@
 	-lk while
 	-lk xor
 	-lk xor_eq
+*.cpp
+	-lk #define
+	-lk #defined
+	-lk #endif
+	-lk #else
+	-lk #elif
+	-lk #error
+	-lk #if
+	-lk #ifdef
+	-lk #ifndef
+	-lk #include
+	-lk #line
+	-lk #pragma
+	-lk #undef
+	-lk #__has_include
+	-lk #__has_cpp_attribute
+	-lk _Pragma
 #                                                                              #
 # Common synonyms                                                              #
 # From: https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html                #
-*.ii:  -mi file.cpp
+*.cpp: -mi file.ii
 *.cc:  -mi file.cpp
 *.cp:  -mi file.cpp
 *.cxx: -mi file.cpp

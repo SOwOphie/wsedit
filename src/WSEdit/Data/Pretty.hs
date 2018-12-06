@@ -35,6 +35,7 @@ import WSEdit.Data
         , histSize
         , initJMarks
         , keymap
+        , keyPrfxs
         , keywords
         , lineComment
         , mStrDelim
@@ -95,6 +96,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pMStrDelim    :: [(String, String)]
     , pChrDelim     :: [(String, String)]
     , pKeywords     :: [String]
+    , pKeyPrfxs     :: [String]
     , pEscapeO      :: [String]
     , pEscapeS      :: [String]
     , pBrackets     :: [(String, String)]
@@ -124,6 +126,7 @@ prettyEdConfig c = PrettyEdConfig
     , pMStrDelim    =                  mStrDelim    c
     , pChrDelim     =                  chrDelim     c
     , pKeywords     =                  keywords     c
+    , pKeyPrfxs     =                  keyPrfxs     c
     , pEscapeO      =                  escapeO      c
     , pEscapeS      =                  escapeS      c
     , pBrackets     =                  brackets     c
@@ -152,6 +155,7 @@ unPrettyEdConfig v k p = EdConfig
     , mStrDelim    = pMStrDelim                   p
     , chrDelim     = pChrDelim                    p
     , keywords     = pKeywords                    p
+    , keyPrfxs     = pKeyPrfxs                    p
     , escapeO      = pEscapeO                     p
     , escapeS      = pEscapeS                     p
     , brackets     = pBrackets                    p

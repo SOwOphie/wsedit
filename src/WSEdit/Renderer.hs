@@ -16,7 +16,8 @@ import Data.Ix
     ( inRange
     )
 import Data.List
-    ( nub
+    ( isPrefixOf
+    , nub
     , nubBy
     , sort
     , sortOn
@@ -44,6 +45,7 @@ import WSEdit.Data
         , blockComment
         , escapeO
         , escapeS
+        , keyPrfxs
         , keywords
         , mStrDelim
         , lineComment
@@ -81,6 +83,7 @@ import WSEdit.Output
 import WSEdit.Util
     ( findInStr
     , findIsolated
+    , findPrefixed
     , withFst
     , withPair
     , withSnd
@@ -148,6 +151,7 @@ tkLn (_, str) = do
            $ nub
            $ token                  str (searchTerms s)
           ++ tokenI (addnIdChars c) str (keywords    c)
+          ++ tokenP (addnIdChars c) str (keyPrfxs    c)
           ++ ( nubBy overlap
              $ sortOn (\(n, x) -> (n, Down (length x)))
              $ token  str (         lineComment  c)
@@ -167,7 +171,11 @@ tkLn (_, str) = do
 
         tokenI :: [Char] -> String -> [String] -> [(Int, String)]
         tokenI cs s l = map (withFst (+1))
-                   $ concatMap (\tk -> [(x, tk) | x <- findIsolated cs tk s]) l
+                      $ concatMap (\tk -> [(x, tk) | x <- findIsolated cs tk s]) l
+
+        tokenP :: [Char] -> String -> [String] -> [(Int, String)]
+        tokenP cs s l = map (withFst (+1))
+                      $ concatMap (\p -> findPrefixed cs p s) l
 
         unpack :: [(a, a)] -> [a]
         unpack []         = []
@@ -255,6 +263,12 @@ rLn (rc, bc) (lNr, l) = do
         -- Keyword
         fsm (c, s) lNo (PNothing, st) xxs@((n, x):_)
             | x `elem` keywords c
+                = withFst (withFst (((n, n + length x - 1), HKeyword):))
+                $ fsm2 (c, s) lNo (PNothing, st) xxs
+
+        -- Keyword prefix
+        fsm (c, s) lNo (PNothing, st) xxs@((n, x):_)
+            | any (`isPrefixOf` x) $ keyPrfxs c
                 = withFst (withFst (((n, n + length x - 1), HKeyword):))
                 $ fsm2 (c, s) lNo (PNothing, st) xxs
 

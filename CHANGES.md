@@ -5,6 +5,9 @@
 - The `-li` directive can now be used to designate additional characters that
   can be part of identifiers. This affects rendering, but is most useful for
   autocompletion.
+- Some languages use prefixes to mark certain tokens (e.g. LaTeX macros always
+  start with a `\`). The new `-lkp` directive can be used to mark these as
+  keywords.
 
 ## Fixes
 
@@ -21,6 +24,8 @@
 - The editor can now enter read-write mode for files that cannot be saved.
 - Split up language definitions for C and C++.
 - Moved editor dump to `F9`.
+- Adjusted syntax highlighting files to make use of the new features mentioned
+  above.
 
 # v1.2.2b
 

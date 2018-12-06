@@ -39,6 +39,7 @@ module WSEdit.Util
     , checkClipboardSupport
     , findInStr
     , findIsolated
+    , findPrefixed
     , findDelimBy
     , lookupBy
     , readEncFile
@@ -559,6 +560,33 @@ findIsolated l pa str
         match _  []     []              = True
         match l' []     (y:_ )          = not $ isIdentifierChar l' y
         match _  _      _               = False
+
+
+
+-- | Find whole words starting with the first string within the second one.
+findPrefixed :: [Char] -> String -> String -> [(Int, String)]
+findPrefixed _ []  _  = error "findPrefixed: empty pattern"
+findPrefixed _ _   [] = []
+findPrefixed l pa str
+    | Just s <- match l pa str = (0, s) : findP l pa str
+    | otherwise                =          findP l pa str
+
+    where
+        findP :: [Char] -> String -> String -> [(Int, String)]
+        findP _ []  _      = error "findPrefixed: empty pattern"
+        findP _ _   []     = []
+        findP l' pat (x:xs)
+            | isIdentifierChar l' x     =          map (withFst (+1)) $ findP l' pat xs
+            | Just s <- match l' pat xs = (1, s) : map (withFst (+1)) ( findP l' pat xs)
+            | otherwise                 =          map (withFst (+1)) $ findP l' pat xs
+
+        match :: [Char] -> String -> String -> Maybe String
+        match l' (p:ps) (y:ys) | p == y = (y:) <$> match l' ps ys
+        match _  []     []              = Just ""
+        match l' []     (y:ys)
+            | isIdentifierChar l' y     = (y:) <$> match l' [] ys
+            | otherwise                 = Just ""
+        match _ _       _               = Nothing
 
 
 

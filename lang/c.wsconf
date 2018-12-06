@@ -19,9 +19,10 @@
 	-lb ( )
 	-lb [ ]
 	-lb { }
+	-li $
 #                                                                              #
 # Keywords                                                                     #
-# From: https://en.cppreference.com/w/cpp/keyword                              #
+# From: https://en.cppreference.com/w/c/keyword                                #
 *.i
 	-lk asm
 	-lk auto
@@ -61,6 +62,7 @@
 	-lk void
 	-lk while
 *.i
+	-lkp __
 	-lk _Alignas
 	-lk _Alignof
 	-lk _Atomic
@@ -69,17 +71,8 @@
 	-lk _Generic
 	-lk _Imaginary
 	-lk _Noreturn
-	-lk _Pragma
 	-lk _Static_assert
 	-lk _Thread_local
-	-lk alignas
-	-lk alignof
-	-lk bool
-	-lk complex
-	-lk imaginary
-	-lk noreturn
-	-lk static_assert
-	-lk thread_local
 *.c
 	-lk #define
 	-lk #defined
@@ -94,6 +87,15 @@
 	-lk #line
 	-lk #pragma
 	-lk #undef
+	-lk _Pragma
+	-lk alignas
+	-lk alignof
+	-lk bool
+	-lk complex
+	-lk imaginary
+	-lk noreturn
+	-lk static_assert
+	-lk thread_local
 #                                                                              #
 # Common synonyms                                                              #
 # From: https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html                #

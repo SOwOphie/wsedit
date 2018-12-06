@@ -113,6 +113,7 @@ import WSEdit.Data
         , escapeS
         , initJMarks
         , keymap
+        , keyPrfxs
         , keywords
         , lineComment
         , mStrDelim
@@ -498,6 +499,8 @@ applyArg (c, s) (LangIdChrAdd    a  ) = return (c { addnIdChars  = a      : dele
 applyArg (c, s) (LangIdChrDel    a  ) = return (c { addnIdChars  =          delete a      (addnIdChars  c) }, s)
 applyArg (c, s) (LangKeywordAdd  a  ) = return (c { keywords     = a      : delete a      (keywords     c) }, s)
 applyArg (c, s) (LangKeywordDel  a  ) = return (c { keywords     =          delete a      (keywords     c) }, s)
+applyArg (c, s) (LangKeyPrfxAdd  a  ) = return (c { keyPrfxs     = a      : delete a      (keyPrfxs     c) }, s)
+applyArg (c, s) (LangKeyPrfxDel  a  ) = return (c { keyPrfxs     =          delete a      (keyPrfxs     c) }, s)
 applyArg (c, s) (LangStrChrAdd   a b) = return (c { chrDelim     = (a, b) : delete (a, b) (chrDelim     c) }, s)
 applyArg (c, s) (LangStrChrDel   a b) = return (c { chrDelim     =          delete (a, b) (chrDelim     c) }, s)
 applyArg (c, s) (LangStrMLAdd    a b) = return (c { mStrDelim    = (a, b) : delete (a, b) (mStrDelim    c) }, s)

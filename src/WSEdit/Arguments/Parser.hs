@@ -203,6 +203,8 @@ configOption = (choice
     , langEscSDel
     , langIdChrAdd
     , langIdChrDel
+    , langKeyPrfxAdd
+    , langKeyPrfxDel
     , langKeywordAdd
     , langKeywordDel
     , langStrChrAdd
@@ -280,6 +282,8 @@ langIdChrAdd      = do { try $ string "-li" ; spaces'; LangIdChrAdd    <$> simpl
 langIdChrDel      = do { try $ string "-lI" ; spaces'; LangIdChrDel    <$> simpleChar }
 langKeywordAdd    = do { try $ string "-lk" ; spaces'; LangKeywordAdd  <$> word       }
 langKeywordDel    = do { try $ string "-lK" ; spaces'; LangKeywordDel  <$> word       }
+langKeyPrfxAdd    = do { try $ string "-lkp"; spaces'; LangKeyPrfxAdd  <$> word       }
+langKeyPrfxDel    = do { try $ string "-lkP"; spaces'; LangKeyPrfxDel  <$> word       }
 metaInclude       = do { try $ string "-mi" ; spaces'; MetaInclude     <$> pathName   }
 debugStability    = do { try $ string "-ys" ; spaces'; DebugStability  <$> stab       }
 

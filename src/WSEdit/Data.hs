@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.3.7"
+version = "1.2.3.8"
 
 -- | Upstream URL.
 upstream :: String
@@ -372,10 +372,13 @@ data EdConfig = EdConfig
         -- ^ List of multi-line string delimiters.
 
     , chrDelim     :: [(String, String)]
-        -- ^ List of char delimiters
+        -- ^ List of char delimiters.
 
     , keywords     :: [String]
         -- ^ List of keywords to highlight.
+
+    , keyPrfxs     :: [String]
+        -- ^ List of keyword prefixes.
 
     , escapeO      :: [String]
         -- ^ Escape character outside strings.
@@ -387,7 +390,7 @@ data EdConfig = EdConfig
         -- ^ List of bracket pairs.
 
     , addnIdChars  :: [Char]
-        -- ^ List of additional characters to consider part of identifiers
+        -- ^ List of additional characters to consider part of identifiers.
     }
 
 -- | Create a default `EdConfig`.
@@ -412,6 +415,7 @@ mkDefConfig v k = EdConfig
                 , mStrDelim    = []
                 , chrDelim     = []
                 , keywords     = []
+                , keyPrfxs     = []
                 , escapeO      = []
                 , escapeS      = []
                 , brackets     = []
