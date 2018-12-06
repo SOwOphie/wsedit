@@ -13,6 +13,7 @@
 - Switched to stack `lts-11.22`, replaced obsolete `EitherT` with the
   `mtl`-native `ExceptT`.
 - The editor can now enter read-write mode for files that cannot be saved.
+- Split up language definitions for C and C++.
 
 # v1.2.2b
 

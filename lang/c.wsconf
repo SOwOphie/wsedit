@@ -1,0 +1,103 @@
+################################################################################
+#                                                                              #
+#    ####                                                               ####   #
+#   ##  ##                                                             ##  ##  #
+#   ##                        C Files                                  ##      #
+#   ##  ##                                                             ##  ##  #
+#    ####                                                               ####   #
+#                                                                              #
+# by Sophie Hirn (sophie.hirn@wyvernscale.com)                                 #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.i
+	-lcl //
+	-lcb /* */
+	-lsr \" \"
+	-lsc ' '
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
+#                                                                              #
+# Keywords                                                                     #
+# From: https://en.cppreference.com/w/cpp/keyword                              #
+*.i
+	-lk asm
+	-lk auto
+	-lk break
+	-lk case
+	-lk char
+	-lk const
+	-lk continue
+	-lk default
+	-lk do
+	-lk double
+	-lk else
+	-lk enum
+	-lk extern
+	-lk false
+	-lk float
+	-lk for
+	-lk fortran
+	-lk goto
+	-lk if
+	-lk inline
+	-lk int
+	-lk long
+	-lk register
+	-lk restrict
+	-lk return
+	-lk short
+	-lk signed
+	-lk sizeof
+	-lk static
+	-lk struct
+	-lk switch
+	-lk typedef
+	-lk typeof
+	-lk union
+	-lk unsigned
+	-lk void
+	-lk while
+*.i
+	-lk _Alignas
+	-lk _Alignof
+	-lk _Atomic
+	-lk _Bool
+	-lk _Complex
+	-lk _Generic
+	-lk _Imaginary
+	-lk _Noreturn
+	-lk _Pragma
+	-lk _Static_assert
+	-lk _Thread_local
+	-lk alignas
+	-lk alignof
+	-lk bool
+	-lk complex
+	-lk imaginary
+	-lk noreturn
+	-lk static_assert
+	-lk thread_local
+*.c
+	-lk #define
+	-lk #defined
+	-lk #endif
+	-lk #else
+	-lk #elif
+	-lk #error
+	-lk #if
+	-lk #ifdef
+	-lk #ifndef
+	-lk #include
+	-lk #line
+	-lk #pragma
+	-lk #undef
+#                                                                              #
+# Common synonyms                                                              #
+# From: https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html                #
+*.c: -mi file.i
+*.h: -mi file.c
+#                                                                              #
+################################################################################

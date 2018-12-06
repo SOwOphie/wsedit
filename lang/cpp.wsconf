@@ -2,7 +2,7 @@
 #                                                                              #
 #    ####                                                     ####             #
 #   ##  ##   #    #                                          ##  ##   #    #   #
-#   ##      ###  ###          C/C++ Files                    ##      ###  ###  #
+#   ##      ###  ###          C++ Files                      ##      ###  ###  #
 #   ##  ##   #    #                                          ##  ##   #    #   #
 #    ####                                                     ####             #
 #                                                                              #
@@ -21,6 +21,7 @@
 	-lb { }
 #                                                                              #
 # Keywords                                                                     #
+# From: https://en.cppreference.com/w/cpp/keyword                              #
 *.cpp
 	-lk alignas
 	-lk alignof
@@ -62,6 +63,7 @@
 	-lk if
 	-lk inline
 	-lk int
+	-lk final
 	-lk long
 	-lk mutable
 	-lk namespace
@@ -73,6 +75,7 @@
 	-lk operator
 	-lk or
 	-lk or_eq
+	-lk override
 	-lk private
 	-lk protected
 	-lk public
@@ -108,7 +111,22 @@
 	-lk xor_eq
 #                                                                              #
 # Common synonyms                                                              #
-*.h: -mi file.cpp
-*.c: -mi file.cpp
+# From: https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html                #
+*.ii:  -mi file.cpp
+*.cc:  -mi file.cpp
+*.cp:  -mi file.cpp
+*.cxx: -mi file.cpp
+*.CPP: -mi file.cpp
+*.c++: -mi file.cpp
+*.C:   -mi file.cpp
+#                                                                              #
+*.hh:  -mi file.cpp
+*.H:   -mi file.cpp
+*.hp:  -mi file.cpp
+*.hxx: -mi file.cpp
+*.hpp: -mi file.cpp
+*.HPP: -mi file.cpp
+*.h++: -mi file.cpp
+*.tcc: -mi file.cpp
 #                                                                              #
 ################################################################################
