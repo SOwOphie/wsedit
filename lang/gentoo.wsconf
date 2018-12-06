@@ -103,6 +103,8 @@
 	-lk use_with
 # might be missing some stuff
 
+*.eclass: -mi file.ebuild
+
 /etc/fonts/*.conf
 	-lcb <!-- -->
 	-lcl #
