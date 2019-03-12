@@ -63,6 +63,7 @@ import WSEdit.Control.Selection
     , initMark
     , paste
     , searchFor
+    , selectAll
     , unindentSelection
     )
 import WSEdit.Control.Text
@@ -211,6 +212,11 @@ defaultKM =
              )
            )
     , Nothing
+    , Just ( EvKey (KChar 'a') [MCtrl]
+           , ( selectAll
+             , "Select all text."
+             )
+           )
     , Just ( EvKey KUp [MShift]
            , ( initMark >> moveCursor (-1) 0
              , "Move Cursor up 1 line, selecting text."

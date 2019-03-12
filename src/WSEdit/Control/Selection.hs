@@ -2,6 +2,7 @@
 
 module WSEdit.Control.Selection
     ( initMark
+    , selectAll
     , ifMarked
     , deleteSelection
     , copy
@@ -55,6 +56,7 @@ import WSEdit.Control.Base
     , moveCursor
     , moveCursorHome
     , refuseOnReadOnly
+    , validateCursor
     )
 import WSEdit.Data
     ( EdConfig
@@ -104,6 +106,19 @@ initMark = alterState
          $ getMark >>= \case
                 Nothing -> getCursor >>= setMark
                 _       -> return ()
+
+
+
+-- | Select all text (mark at beginning, cursor at end).
+selectAll :: WSEdit ()
+selectAll = alterState $ do
+    s <- get
+    let l = B.toLast $ edLines s
+    modify $ \s' -> s' { markPos   = Just (1, 1)
+                       , edLines   = l
+                       , cursorPos = length $ snd $ B.pos l
+                       }
+    validateCursor
 
 
 

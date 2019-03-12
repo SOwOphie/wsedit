@@ -19,13 +19,14 @@
 
 - Moving the cursor in larger steps (e.g. Ctrl-Right) now stops at the
   beginning / end of the line.
-- Switched to stack `lts-11.22`, replaced obsolete `EitherT` with the
+- Switched to stack `lts-13.7`, replaced obsolete `EitherT` with the
   `mtl`-native `ExceptT`.
 - The editor can now enter read-write mode for files that cannot be saved.
 - Split up language definitions for C and C++.
 - Moved editor dump to `F9`.
 - Adjusted syntax highlighting files to make use of the new features mentioned
   above.
+- Added `Ctrl-A` keybind to select everything.
 
 # v1.2.2b
 

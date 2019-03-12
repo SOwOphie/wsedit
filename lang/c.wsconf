@@ -37,7 +37,6 @@
 	-lk else
 	-lk enum
 	-lk extern
-	-lk false
 	-lk float
 	-lk for
 	-lk fortran
@@ -92,10 +91,12 @@
 	-lk alignof
 	-lk bool
 	-lk complex
+	-lk false
 	-lk imaginary
 	-lk noreturn
 	-lk static_assert
 	-lk thread_local
+	-lk true
 #                                                                              #
 # Common synonyms                                                              #
 # From: https://gcc.gnu.org/onlinedocs/gcc/Overall-Options.html                #
