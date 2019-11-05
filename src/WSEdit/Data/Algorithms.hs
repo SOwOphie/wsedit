@@ -331,7 +331,7 @@ delSelection = getSelBounds >>= \case
 -- | Retrieve the number of rows, colums displayed by vty, including all borders
 --   , frames and similar woo.
 getDisplayBounds :: WSEdit (Int, Int)
-getDisplayBounds = fmap swap (displayBounds . outputIface . vtyObj =<< ask)
+getDisplayBounds = fmap swap (liftIO . displayBounds . outputIface . vtyObj =<< ask)
 
 
 

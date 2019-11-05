@@ -27,6 +27,8 @@
 - Adjusted syntax highlighting files to make use of the new features mentioned
   above.
 - Added `Ctrl-A` keybind to select everything.
+- Compatibility with vty 5.26 (some [jackass](https://github.com/jtdaugherty/vty/pull/177)
+  decided to delete all the `liftIO`s because he didn't need them...)
 
 # v1.2.2b
 
