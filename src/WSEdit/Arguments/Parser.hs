@@ -183,6 +183,9 @@ configOption = (choice
     , fileLineEndUnix
     , fileLineEndWin
     , fileLineEndDef
+    , fileReadEncAuto
+    , fileReadEncSet
+    , fileReadEncDef
     , generalHighlAdd
     , generalHighlDel
     , generalROOn
@@ -246,6 +249,8 @@ fileEncodingDef   = try (string "-fE" ) >> return FileEncodingDef
 fileLineEndUnix   = try (string "-flu") >> return FileLineEndUnix
 fileLineEndWin    = try (string "-flw") >> return FileLineEndWin
 fileLineEndDef    = try (string "-fL" ) >> return FileLineEndDef
+fileReadEncAuto   = try (string "-fra") >> return FileReadEncAuto
+fileReadEncDef    = try (string "-fR" ) >> return FileReadEncDef
 generalROOn       = try (string "-gr" ) >> return GeneralROOn
 generalROOff      = try (string "-gR" ) >> return GeneralROOff
 helpGeneral       = try (string "-h"  ) >> return HelpGeneral
@@ -270,6 +275,7 @@ editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet    <$> integ
 editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd  <$> integer    }
 editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel  <$> integer    }
 fileEncodingSet   = do { try $ string "-fe" ; spaces'; FileEncodingSet <$> word       }
+fileReadEncSet    = do { try $ string "-fr" ; spaces'; FileReadEncSet  <$> word       }
 generalHighlAdd   = do { try $ string "-gh" ; spaces'; GeneralHighlAdd <$> word       }
 generalHighlDel   = do { try $ string "-gH" ; spaces'; GeneralHighlDel <$> word       }
 langCommLineAdd   = do { try $ string "-lcl"; spaces'; LangCommLineAdd <$> word       }

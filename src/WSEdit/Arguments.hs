@@ -119,6 +119,7 @@ import WSEdit.Data
         , mStrDelim
         , newlineMode
         , purgeOnClose
+        , readEnc
         , strDelim
         , tabWidth
         , vtyObj
@@ -137,6 +138,11 @@ import WSEdit.Data
         , readOnly
         , replaceTabs
         , searchTerms
+        )
+    , ReadEnc
+        ( ReadEncSet
+        , ReadEncAuto
+        , ReadEncDef
         )
     , Stability
         ( Release
@@ -485,6 +491,9 @@ applyArg (c, s)  FileEncodingDef      = return (c { encoding     = Nothing      
 applyArg (c, s)  FileLineEndUnix      = return (c { newlineMode  = NewlineMode CRLF   LF                   }, s)
 applyArg (c, s)  FileLineEndWin       = return (c { newlineMode  = NewlineMode CRLF CRLF                   }, s)
 applyArg (c, s)  FileLineEndDef       = return (c { newlineMode  = universalNewlineMode                    }, s)
+applyArg (c, s) (FileReadEncSet  e  ) = return (c { readEnc      = ReadEncSet e                            }, s)
+applyArg (c, s)  FileReadEncAuto      = return (c { readEnc      = ReadEncAuto                             }, s)
+applyArg (c, s)  FileReadEncDef       = return (c { readEnc      = ReadEncDef                              }, s)
 applyArg (c, s) (LangBracketAdd  a b) = return (c { brackets     = (a, b) : delete (a, b) (brackets     c) }, s)
 applyArg (c, s) (LangBracketDel  a b) = return (c { brackets     =          delete (a, b) (brackets     c) }, s)
 applyArg (c, s) (LangCommLineAdd a  ) = return (c { lineComment  = a      : delete a      (lineComment  c) }, s)

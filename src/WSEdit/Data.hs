@@ -20,6 +20,8 @@ module WSEdit.Data
         (..)
     , EdConfig
         (..)
+    , ReadEnc
+        (..)
     , mkDefConfig
     , EdDesign
         (..)
@@ -108,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.3.10"
+version = "1.2.3.11"
 
 -- | Upstream URL.
 upstream :: String
@@ -358,6 +360,9 @@ data EdConfig = EdConfig
     , encoding     :: Maybe String
         -- ^ Name of the file encoding to use.
 
+    , readEnc      :: ReadEnc
+        -- ^ Read encoding to use.
+
 
     , lineComment  :: [String]
         -- ^ List of strings that mark the beginning of a comment.
@@ -409,6 +414,7 @@ mkDefConfig v k = EdConfig
                 , initJMarks   = []
                 , newlineMode  = universalNewlineMode
                 , encoding     = Nothing
+                , readEnc      = ReadEncDef
                 , lineComment  = []
                 , blockComment = []
                 , strDelim     = []
@@ -421,6 +427,11 @@ mkDefConfig v k = EdConfig
                 , brackets     = []
                 , addnIdChars  = []
               }
+
+data ReadEnc = ReadEncDef
+             | ReadEncAuto
+             | ReadEncSet String
+    deriving (Eq, Read, Show)
 
 
 

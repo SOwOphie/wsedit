@@ -102,6 +102,9 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | FileLineEndUnix
               | FileLineEndWin
               | FileLineEndDef
+              | FileReadEncSet  String
+              | FileReadEncAuto
+              | FileReadEncDef
 
               | GeneralHighlAdd String
               | GeneralHighlDel String

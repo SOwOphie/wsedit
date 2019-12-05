@@ -14,6 +14,10 @@
 - Fixed a endless loop with duplicate `-mi` directives.
 - Search no longer breaks strings and brackets.
 - Keywords can now also be brackets at the same time.
+- The known file encoding issues have been resolved (it was a read problem, not
+  a write problem). The editor now no longer forces you to use the quirky
+  encoding detection for reading files, see the help for the `-fr` switches for
+  more information.
 
 ## Other Changes
 

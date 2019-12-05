@@ -41,6 +41,7 @@ import WSEdit.Data
         , mStrDelim
         , newlineMode
         , purgeOnClose
+        , readEnc
         , strDelim
         , tabWidth
         , vtyObj
@@ -67,6 +68,7 @@ import WSEdit.Data
         )
     , HighlightMode
     , Keymap
+    , ReadEnc
     )
 import WSEdit.Util
     ( CharClass
@@ -90,6 +92,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pInitJMarks   :: [Int]
     , pNewlineMode  :: NewlineMode
     , pEncoding     :: Maybe String
+    , pReadEnc      :: ReadEnc
     , pLineComment  :: [String]
     , pBlockComment :: [(String, String)]
     , pStrDelim     :: [(String, String)]
@@ -120,6 +123,7 @@ prettyEdConfig c = PrettyEdConfig
     , pInitJMarks   =                  initJMarks   c
     , pNewlineMode  =                  newlineMode  c
     , pEncoding     =                  encoding     c
+    , pReadEnc      =                  readEnc      c
     , pLineComment  =                  lineComment  c
     , pBlockComment =                  blockComment c
     , pStrDelim     =                  strDelim     c
@@ -149,6 +153,7 @@ unPrettyEdConfig v k p = EdConfig
     , initJMarks   = pInitJMarks                  p
     , newlineMode  = pNewlineMode                 p
     , encoding     = pEncoding                    p
+    , readEnc      = pReadEnc                     p
     , lineComment  = pLineComment                 p
     , blockComment = pBlockComment                p
     , strDelim     = pStrDelim                    p

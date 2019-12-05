@@ -20,7 +20,8 @@ module WSEdit.Control.Global
 
 
 import Control.DeepSeq
-    ( force
+    ( ($!!)
+    , force
     )
 import Control.Exception
     ( SomeException
@@ -36,6 +37,7 @@ import Control.Monad.IO.Class
 import Control.Monad.RWS.Strict
     ( ask
     , get
+    , local
     , modify
     , put
     )
@@ -71,9 +73,11 @@ import System.Exit
 import System.IO
     ( IOMode
         ( AppendMode
+        , ReadMode
         , WriteMode
         )
     , NewlineMode
+    , hGetContents
     , hPutStr
     , hSetEncoding
     , hSetNewlineMode
@@ -107,6 +111,7 @@ import WSEdit.Data
         , initJMarks
         , newlineMode
         , purgeOnClose
+        , readEnc
         , vtyObj
         , wriCheck
         )
@@ -125,7 +130,12 @@ import WSEdit.Data
         , overwrite
         , readOnly
         , replaceTabs
-    )
+        )
+    , ReadEnc
+        ( ReadEncSet
+        , ReadEncAuto
+        , ReadEncDef
+        )
     , WSEdit
     , runWSEdit
     , version
@@ -379,8 +389,9 @@ save = refuseOnReadOnly $ do
             False -> return True
             True  -> do
                 s <- get
-                put $ s { fname = fname s ++ ".atomic" }
-                _ <- load False
+                put $ s { fname   = fname s ++ ".atomic" }
+                _ <- local (\c -> c { readEnc = maybe ReadEncDef ReadEncSet $ encoding c })
+                   $ load False
                 s' <- get
                 put s
                 if (on (==) (map snd . B.toList) (edLines s) (edLines s'))
@@ -434,7 +445,7 @@ load lS = alterState $ do
     c <- ask
 
     (mEnc, txt) <- if b
-                      then liftIO $ readEncFile p'
+                      then liftIO $ doFile (readEnc c) p'
                       else return (Just undefined, "")
 
     let
@@ -480,7 +491,6 @@ load lS = alterState $ do
     if doLoad
        then do
             when lS $ standby "Rebuilding hashes..."
-
 
             l' <- liftIO
                 $ evaluate
@@ -547,6 +557,20 @@ load lS = alterState $ do
     where
         dec :: Int -> Int
         dec n = n - 1
+
+        doFile :: ReadEnc -> FilePath -> IO (Maybe String, String)
+        doFile ReadEncAuto f = readEncFile f
+        doFile re          f = withFile f ReadMode $ \h -> do
+            hSetNewlineMode h universalNewlineMode
+            case re of
+                 ReadEncSet e -> mkTextEncoding e >>= hSetEncoding h
+                 _            -> return ()
+            s <- hGetContents h
+            let etxt = case re of
+                            ReadEncSet e -> Just e
+                            ReadEncDef   -> Just "native"
+                            _            -> Nothing
+            return $!! (etxt, s)
 
 
 
