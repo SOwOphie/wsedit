@@ -240,10 +240,8 @@ charRep br hl pos '\t' = do
     dispWidth <- charWidth (fst pos) (snd pos) '\t'
 
     let
-        maxTabWidth = 1023
-        d           = edDesign   conf
-        currSty     = dCurrLnMod d
-        extTab      = padLeft maxTabWidth (dTabExt d) $ dTabStr d
+        d       = edDesign   conf
+        currSty = dCurrLnMod d
 
     return $ Snippet
         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
@@ -253,7 +251,7 @@ charRep br hl pos '\t' = do
                           HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
                           _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
 
-        , sStr     =  drop (length extTab - dispWidth) extTab
+        , sStr     =  take dispWidth $ dTabStr d ++ repeat (dTabExt d)
         }
 
 charRep br hl pos ' ' = do

@@ -33,6 +33,10 @@
 - Added `Ctrl-A` keybind to select everything.
 - Compatibility with vty 5.26 (some [jackass](https://github.com/jtdaugherty/vty/pull/177)
   decided to delete all the `liftIO`s because he didn't need them...)
+- The vertical bar indicating a tab character is now positioned at the left edge
+  of the character, not the right edge. This helps detect "lost" spaces between
+  tabs and makes it easier to follow to the construct at the beginning of an
+  indentation level.
 
 # v1.2.2b
 
