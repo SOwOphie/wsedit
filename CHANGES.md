@@ -8,6 +8,9 @@
 - Some languages use prefixes to mark certain tokens (e.g. LaTeX macros always
   start with a `\`). The new `-lkp` directive can be used to mark these as
   keywords.
+- Search keywords can now be entered on-the-fly. Press Ctrl-F without text
+  selected to bring up a prompt in the status bar. Removing search terms has
+  been moved to Ctrl-Alt-F.
 
 ## Fixes
 
@@ -18,6 +21,8 @@
   a write problem). The editor now no longer forces you to use the quirky
   encoding detection for reading files, see the help for the `-fr` switches for
   more information.
+- Selected text in the main view will no longer cause status messages to be
+  selected as well.
 
 ## Other Changes
 

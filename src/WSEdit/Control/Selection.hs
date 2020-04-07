@@ -10,6 +10,7 @@ module WSEdit.Control.Selection
     , indentSelection
     , unindentSelection
     , searchFor
+    , unsearch
     ) where
 
 
@@ -53,6 +54,7 @@ import System.Posix.Files
 import WSEdit.Control.Base
     ( alterBuffer
     , alterState
+    , getInput
     , moveCursor
     , moveCursorHome
     , refuseOnReadOnly
@@ -311,19 +313,31 @@ unindentSelection = alterBuffer
 
 
 
--- | Add the currently selected area to the list of search terms, or pop the
---   last search term from the list if the selection is empty.
+-- | Add the currently selected area to the list of search terms, or ask for a
+--   search term if the selection is empty.
 searchFor :: WSEdit ()
 searchFor = do
     getSelection >>= \case
-        Nothing -> headMay . searchTerms <$> get >>= \case
-            Nothing -> setStatus "Warning: no search terms."
+        Nothing -> getInput "> " >>= \case
+            Nothing -> return ()
+            Just "" -> return ()
             Just  s -> do
-                modify (\c -> c { searchTerms =     drop 1       $ searchTerms c  })
-                setStatus $ "Removed \"" ++ s ++ "\" from the list of search terms."
+                modify (\c -> c { searchTerms = s : filter (/= s) (searchTerms c) })
+                setStatus $ "Added \"" ++ s ++ "\" to the list of search terms."
+                modify $ \st -> st { fullRebdReq = True }
 
         Just  s -> do
             modify (\c -> c { searchTerms = s : filter (/= s) (searchTerms c) })
             setStatus $ "Added \"" ++ s ++ "\" to the list of search terms."
+            modify $ \st -> st { fullRebdReq = True }
 
-    modify $ \s -> s { fullRebdReq = True }
+
+
+-- | Remove the most recently added search term from the list.
+unsearch :: WSEdit ()
+unsearch = headMay . searchTerms <$> get >>= \case
+    Nothing -> setStatus "Warning: no search terms."
+    Just  s -> do
+        modify (\c -> c { searchTerms =     drop 1       $ searchTerms c  })
+        setStatus $ "Removed \"" ++ s ++ "\" from the list of search terms."
+        modify $ \st -> st { fullRebdReq = True }

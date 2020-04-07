@@ -65,6 +65,7 @@ import WSEdit.Control.Selection
     , searchFor
     , selectAll
     , unindentSelection
+    , unsearch
     )
 import WSEdit.Control.Text
     ( delLeft
@@ -343,8 +344,13 @@ defaultKM =
            )
     , Just ( EvKey (KChar 'f') [MCtrl]
            , ( searchFor
-             , "Add the selection to the list of highlighted search terms, or pop \
-               \the last one if the selection is empty."
+             , "Add the selection to the list of highlighted search terms, or ask \
+               \for a search term if the selection is empty."
+             )
+           )
+    , Just ( EvKey (KChar 'f') [MMeta, MCtrl]
+           , ( unsearch
+             , "Remove the most recently added search term from the list."
              )
            )
     , Nothing

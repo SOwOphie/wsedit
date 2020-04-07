@@ -15,6 +15,7 @@ module WSEdit.Control.Base
     , standby
     , askConfirm
     , showText
+    , getInput
     ) where
 
 
@@ -57,7 +58,10 @@ import Graphics.Vty
         , EvResize
         )
     , Key
-        ( KChar
+        ( KBS
+        , KChar
+        , KEnter
+        , KEsc
         )
     , nextEvent
     )
@@ -76,6 +80,7 @@ import WSEdit.Data
         , continue
         , cursorPos
         , edLines
+        , markPos
         , rangeCache
         , readOnly
         , scrollOffset
@@ -372,13 +377,15 @@ showText :: String -> Keymap -> WSEdit ()
 showText s k = do
     c <- ask
     runIn ( mkDefConfig (vtyObj c) k
-          , def { edLines  = B.toFirst
-                           $ fromMaybe (B.singleton (False, ""))
-                           $ B.fromList
-                           $ zip (repeat False)
-                           $ linesPlus s
+          , def { edLines   = B.toFirst
+                            $ fromMaybe (B.singleton (False, ""))
+                            $ B.fromList
+                            $ zip (repeat False)
+                            $ linesPlus s
 
-                , readOnly = True
+                , readOnly  = True
+                , cursorPos = 1
+                , markPos   = Nothing
                 }
           ) (rebuildAll Nothing >> runExceptT loop)
         >>= \case
@@ -412,3 +419,28 @@ showText s k = do
                 rebuildAll $ Just st
 
             continue <$> get >>= flip when loop
+
+
+
+-- | Get input from the user in the status line, with the given prompt.
+getInput :: String -> WSEdit (Maybe String)
+getInput prompt = loop prompt ""
+    where
+        loop :: String -> String -> WSEdit (Maybe String)
+        loop prompt' s = do
+            c <- ask
+            setStatus $ prompt ++ s ++ "_"
+            draw
+            ev <- liftIO $ nextEvent $ vtyObj c
+            case ev of
+                 EvKey  KEsc     [] -> do
+                    setStatus ""
+                    return Nothing
+
+                 EvKey  KEnter   [] -> do
+                    setStatus ""
+                    return $ Just s
+
+                 EvKey (KChar k) [] -> loop prompt' $ s ++ [k]
+                 EvKey  KBS      [] -> loop prompt' $ take (length s - 1) s
+                 _                  -> loop prompt' s
