@@ -23,6 +23,7 @@
   more information.
 - Selected text in the main view will no longer cause status messages to be
   selected as well.
+- Fixed elastic tabstops performace problems.
 
 ## Other Changes
 

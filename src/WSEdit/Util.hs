@@ -22,6 +22,7 @@ module WSEdit.Util
     , dump
     , dlog
     , timed
+    , timedM
 #endif
     , mayReadFile
     , listDirectoryDeep
@@ -66,6 +67,12 @@ import Control.Exception
 #endif
     , try
     )
+#ifdef dev
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+#endif
 import Data.Char
     ( chr
     , isAlphaNum
@@ -316,9 +323,29 @@ timed s a = unsafePerformIO $ do
        ++ show ( ( diffTimeToPicoseconds
                  $ realToFrac
                  $ diffUTCTime t2 t1)
-               `div` 1000000000
+               `div` 1000000
                )
-       ++ "ms\n\n"
+       ++ "μs\n\n"
+
+    return a'
+
+-- | Forces execution and `dump`s the elapsed time.
+timedM :: (MonadIO m, NFData a) => String -> m a -> m a
+timedM s a = do
+    t1 <- liftIO $ getCurrentTime
+    a' <- (liftIO . evaluate . force) =<< a
+    t2 <- liftIO $ getCurrentTime
+    h  <- liftIO $ getHomeDirectory
+    liftIO
+        $ appendFile (h ++ "/dmp")
+        $ s
+       ++ ": "
+       ++ show ( ( diffTimeToPicoseconds
+                 $ realToFrac
+                 $ diffUTCTime t2 t1)
+               `div` 1000000
+               )
+       ++ "μs\n\n"
 
     return a'
 

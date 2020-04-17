@@ -173,8 +173,8 @@ import qualified WSEdit.Buffer as B
 -- | Returns the display width of a given char in a given column, ignoring
 --   elastic tab adjustments.
 charWidthRaw :: Int -> Char -> WSEdit Int
-charWidthRaw n '\t'                           = (\w -> w - (n-1) `mod` w) <$> asks tabWidth
-charWidthRaw _ c  = do
+charWidthRaw n '\t' = (\w -> w - (n-1) `mod` w) <$> asks tabWidth
+charWidthRaw _ c    = do
     l <- asks addnIdChars
     if charClass l c == Unprintable
        then return $ length (showHex (ord c) "") + 3
@@ -185,13 +185,11 @@ charWidthRaw _ c  = do
 --   including elastic tab adjustments if enabled.
 charWidth :: Int -> Int -> Char -> WSEdit Int
 charWidth r n '\t' = do
-    t <- asks tabWidth
     gets elTabCache >>= \case
         Nothing -> charWidthRaw n '\t'
         Just c  -> do
-            l    <- gets (snd . flip (B.atDef (False, "")) (r-1) . edLines)
-            tPos <- visToTxtPos l r n
-            return $ maybe 0 (+t) $ lookup tPos $ B.atDef [] c $ r - 1
+            t <- asks tabWidth
+            return $ lookupJustDef t n $ B.atDef [] c $ r - 1
 charWidth _ n c    = charWidthRaw n c
 
 -- | Returns the display width of a given string starting at a given column,

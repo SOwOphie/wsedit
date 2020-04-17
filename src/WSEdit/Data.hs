@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.3.13"
+version = "1.2.3.14"
 
 -- | Upstream URL.
 upstream :: String
@@ -196,7 +196,7 @@ data EdState = EdState
         -- ^ Gets set when a full cache rebuild is required.
 
     , elTabCache   :: Maybe (B.Buffer [(Int, Int)])
-        -- ^ Textual position -> tab width lookup table for additional tab
+        -- ^ Visual position -> tab width lookup table for additional tab
         --   padding length when elastic tabstops are enabled. `Nothing` if
         --   disabled.
 

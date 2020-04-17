@@ -11,23 +11,22 @@ import Control.DeepSeq
 import Control.Exception
     ( evaluate
     )
-import Control.Monad
-    ( mplus
-    )
 import Control.Monad.RWS.Strict
     ( asks
     , gets
     , liftIO
     , modify
     )
+import Data.Foldable
+    ( foldl'
+    )
 import Data.List.Split
     ( splitOn
     )
-import Data.Maybe
-    ( fromMaybe
-    )
 import Safe
-    ( atMay
+    ( atDef
+    , atNote
+    , fromJustNote
     , initSafe
     )
 
@@ -49,6 +48,11 @@ import qualified WSEdit.Buffer as B
 
 
 
+fqn :: String -> String
+fqn = ("WSEdit.ElasticTabstops." ++)
+
+
+
 
 
 -- | Get the text buffer contents in table form (tab-delimited) without the last
@@ -58,29 +62,26 @@ tableRep = B.map (initSafe . splitOn "\t") <$> gets (B.map snd . edLines)
 
 
 
--- | Get the display width of every cell, excluding the delimiting tab stop.
-widths :: B.Buffer [String] -> WSEdit (B.Buffer [Int])
-widths b = B.mapM (mapM (stringWidthRaw 1)) b
+-- | Get the display width of every cell's content, excluding the delimiting tab
+--   stop.
+widths :: B.Buffer [String] -> WSEdit [[Int]]
+widths b = mapM (mapM (stringWidthRaw 1)) $ B.toList b
     -- We can safely use `1` as the start position here since the parameter is
     -- only used for tab alignment and the tab-delimited table should not
     -- contain those any more.
 
 
 
--- | Given a widths table, obtain the amount of cell padding necessary for the
---   given cell (1-based indices).
-fieldPad :: B.Buffer [Int] -> Int -> Int -> Maybe Int
-fieldPad b r c = do
-    let b0 = B.moveTo (r - 1) b
-    w <- B.pos b0 `atMay` (c - 1)
-    return $ max (fromMaybe 0 $ go B.forward  c b0)
-                 (fromMaybe 0 $ go B.backward c b0)
-           - w
+-- | Get the final width of every cell, including the delimiting tab stop.
+fWidths :: Int -> [[Int]] -> [[Int]]
+fWidths t l = map (map (+t))
+            $ fst $ foldl' f ([], [])
+            $ fst $ foldl' f ([], [])
+            $ l
     where
-        go :: (B.Buffer [Int] -> Maybe (B.Buffer [Int])) -> Int -> B.Buffer [Int] -> Maybe Int
-        go mov n b' = do
-                curr <- B.pos b' `atMay` (n - 1)
-                ((max curr) <$> (mov b' >>= go mov n)) `mplus` (return curr)
+        f (out, work) curr =
+            let r = zipWith max curr $ work ++ repeat 0
+            in  (r:out, r)
 
 
 
@@ -91,19 +92,27 @@ rebuildTabCache = gets elTabCache >>= \case
     Just _  -> do
         ws     <- widths =<< tableRep
         t      <- asks tabWidth
-        numLns <- gets (B.zip [1..] . edLines)
+        let fw =  fWidths t ws
+        lns    <- gets edLines
 
         tcNew <- liftIO
                $ evaluate
                $ force
-               $ B.map (\(lNo, (_, txt)) ->
-                        map (\(fNo, (col, _)) -> (col, fromMaybe t
-                                                     $ fieldPad ws lNo fNo
-                                                 )
+               $ B.moveTo (B.prefLength lns)
+               $ fromJustNote (fqn "rebuildTabCache")
+               $ B.fromList
+               $ zipWith3 (\w f (_, txt) ->
+                            map (\(fNo, _) ->
+                                    (   1
+                                      + sum (take (fNo - 1) f)
+                                      + atNote (fqn "rebuildTabCache") w (fNo - 1)
+                                    ,   atDef t f (fNo - 1)
+                                      - atDef t w (fNo - 1)
                                     )
-                            $ zip [1..]
-                            $ filter ((== '\t') . snd)
-                            $ zip [1..] txt
-                       ) numLns
+                                )
+                                $ zip [1..]
+                                $ filter (== '\t') txt
+                          ) ws fw
+               $ B.toList lns
 
         modify $ \st -> st { elTabCache = Just tcNew }
