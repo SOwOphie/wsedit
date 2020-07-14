@@ -3,6 +3,9 @@ module WSEdit.Keymaps
     ) where
 
 
+import Control.Monad
+    ( when
+    )
 import Graphics.Vty
     ( Event
         ( EvKey
@@ -35,6 +38,7 @@ import WSEdit.Control.Autocomplete
     )
 import WSEdit.Control.Base
     ( fetchCursor
+    , getInput
     , moveCursor
     , moveCursorEnd
     , moveViewport
@@ -49,6 +53,7 @@ import WSEdit.Control.Global
     , toggleReadOnly
     , toggleTabRepl
     , undo
+    , pipeThrough
     )
 import WSEdit.Control.Marks
     ( backwardsToMark
@@ -370,6 +375,11 @@ defaultKM =
            , ( save
              , "Remove trailing whitespace, ensure that the last line is empty,"
                 ++ " then save."
+             )
+           )
+    , Just ( EvKey (KChar 'p') [MCtrl]
+           , ( getInput "> " >>= maybe (return ()) (\s -> when (s /= "") $ pipeThrough s)
+             , "Pipe everything through an external command."
              )
            )
     , Nothing

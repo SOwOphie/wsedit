@@ -16,6 +16,7 @@ module WSEdit.Control.Global
     , toggleInsOvr
     , toggleReadOnly
     , undo
+    , pipeThrough
     ) where
 
 
@@ -30,6 +31,7 @@ import Control.Exception
     )
 import Control.Monad
     ( when
+    , void
     )
 import Control.Monad.IO.Class
     ( liftIO
@@ -37,6 +39,7 @@ import Control.Monad.IO.Class
 import Control.Monad.RWS.Strict
     ( ask
     , get
+    , gets
     , local
     , modify
     , put
@@ -52,6 +55,7 @@ import Graphics.Vty
     ( Vty
         ( shutdown
         )
+    , nextEvent
     )
 import Safe
     ( fromJustNote
@@ -68,7 +72,11 @@ import System.Directory
     , writable
     )
 import System.Exit
-    ( exitFailure
+    ( ExitCode
+        ( ExitSuccess
+        , ExitFailure
+        )
+    , exitFailure
     )
 import System.IO
     ( IOMode
@@ -85,6 +93,30 @@ import System.IO
     , universalNewlineMode
     , withFile
     )
+import System.Process
+    ( CreateProcess
+        ( CreateProcess
+        , child_group
+        , child_user
+        , close_fds
+        , cmdspec
+        , create_group
+        , create_new_console
+        , cwd
+        , delegate_ctlc
+        , detach_console
+        , env
+        , new_session
+        , std_err
+        , std_in
+        , std_out
+        , use_process_jobs
+        )
+    , CmdSpec
+        ( ShellCommand
+        )
+    , readCreateProcessWithExitCode
+    )
 import Text.Show.Pretty
     ( ppShow
     )
@@ -93,7 +125,8 @@ import WSEdit.Control.Autocomplete
     ( dictAddRec
     )
 import WSEdit.Control.Base
-    ( alterState
+    ( alterBuffer
+    , alterState
     , askConfirm
     , fetchCursor
     , moveCursor
@@ -615,3 +648,58 @@ undo :: WSEdit ()
 undo = refuseOnReadOnly
      $ alterState
      $ popHist >> validateCursor
+
+
+
+-- | Pipe all text through an external command.
+pipeThrough :: String -> WSEdit ()
+pipeThrough cmd = alterBuffer $ do
+    bold <- gets edLines
+
+    let old = unlinesPlus
+            $ map snd
+            $ B.toList bold
+
+    (ex, out, err) <- liftIO
+        $ readCreateProcessWithExitCode
+            ( CreateProcess
+                { cmdspec            = ShellCommand cmd
+                , cwd                = Nothing
+                , env                = Nothing
+                , std_in             = undefined -- These get
+                , std_out            = undefined -- filled out
+                , std_err            = undefined -- by readCreateProcessWithExitCode
+                , close_fds          = True
+                , create_group       = False
+                , delegate_ctlc      = True
+                , detach_console     = False
+                , create_new_console = False
+                , new_session        = False
+                , child_group        = Nothing
+                , child_user         = Nothing
+                , use_process_jobs   = False
+                }
+            )
+          old
+
+    setStatus $ show ex
+
+    case ex of
+         ExitFailure _ -> do
+            standby err
+            c <- ask
+            void $ liftIO $ nextEvent $ vtyObj c
+
+         ExitSuccess -> do
+            b <- liftIO
+               $ evaluate
+               $ force
+               $ B.moveTo (B.currPos bold)
+               $ fromMaybe (B.singleton (False, ""))
+               $ B.fromList
+               $ zip (repeat False)
+               $ linesPlus out
+
+            modify $ (\s -> s { edLines = b })
+            validateCursor
+            dictAddRec

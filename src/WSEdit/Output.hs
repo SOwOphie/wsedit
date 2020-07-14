@@ -585,14 +585,14 @@ makeFooter = do
                      else string (dFrameFormat    d) " "
                  )
              <|> string (dFrameFormat d)
-                 ( if readOnly s
-                      then ""
-                      else ( case markPos s of
-                                  Nothing -> ""
-                                  Just  m -> show m
-                                          ++ " -> "
-                           )
-                ++ show (r, c)
+                 ( ( if readOnly s
+                        then ""
+                        else ( case markPos s of
+                                    Nothing -> ""
+                                    Just  m -> show m
+                                            ++ " -> "
+                             ) ++ show (r, c)
+                   )
                 ++ " "
                  )
              <|> string (dStatusFormat d) ( padRight nCols ' '

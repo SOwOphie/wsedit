@@ -28,7 +28,6 @@ import Data.List
     , inits
     , isSuffixOf
     , nub
-    , null
     , (\\)
     )
 import Data.Maybe

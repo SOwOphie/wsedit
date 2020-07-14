@@ -11,6 +11,7 @@
 - Search keywords can now be entered on-the-fly. Press Ctrl-F without text
   selected to bring up a prompt in the status bar. Removing search terms has
   been moved to Ctrl-Alt-F.
+- File contents can now be piped through external commands via Ctrl-P.
 
 ## Fixes
 
@@ -43,6 +44,7 @@
   of the character, not the right edge. This helps detect "lost" spaces between
   tabs and makes it easier to follow to the construct at the beginning of an
   indentation level.
+- Switched to the `lts-16.5` stack resolver.
 
 # v1.2.2b
 
