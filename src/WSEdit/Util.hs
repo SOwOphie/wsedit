@@ -304,7 +304,7 @@ dump s x = unsafePerformIO $ do
 
     return x
 
--- | Appends the given string  to the file @dmp@ in the user's home directory.
+-- | Appends the given string to the file @dmp@ in the user's home directory.
 dlog :: String -> IO ()
 dlog s = do
     h  <- getHomeDirectory
@@ -348,8 +348,8 @@ timedM s a = do
        ++ "μs\n\n"
 
     return a'
-
 #endif
+
 
 
 -- | Attempt to read a file, or return 'Nothing' if it fails.

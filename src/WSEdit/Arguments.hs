@@ -399,14 +399,14 @@ parseArguments (c, s) = do
 
             let t        = drop 1
                          $ dropWhile null
-                         $ dropWhile (not. null)
+                         $ dropWhile (not . null)
                          $ linesPlus sf
 
                 (tc, ts) = withSnd (drop 1 . dropWhile null)
                          $ span (not . null) t
 
                 c'       = fmap ( unPrettyEdConfig (vtyObj cf)
-                                                  (keymap cf)
+                                                   (keymap cf)
                                 )
                          $ readMay $ unlinesPlus tc
                 s'       = readMay $ unlinesPlus ts

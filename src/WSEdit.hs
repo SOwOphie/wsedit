@@ -143,19 +143,20 @@ start = do
         -- | Possibly loads the file specified in `fname`, then runs the editor.
         exec :: Bool -> WSEdit ()
         exec b = do
-            when b $ ( catchEditor (load True)
-                        (\e -> quitComplain ( "An I/O error occured while loading:\n\n"
-                                           ++ show e
-                                            )
-                            >> return False
-                        )
-                 >>= flip when (do
+            if b
+               then catchEditor (load True)
+                    (\e -> quitComplain ( "An I/O error occured while loading:\n\n"
+                                       ++ show e
+                                        )
+                        >> return False
+                    )
+                  >>= flip when (do
                                     standby "Building initial rendering cache..."
                                     rebuildAll Nothing
                                     rebuildTabCache
                                     mainLoop
-                               )
-                   )
+                                )
+               else mainLoop
 
             drawExitFrame
 

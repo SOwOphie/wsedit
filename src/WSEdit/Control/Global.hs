@@ -6,6 +6,7 @@ module WSEdit.Control.Global
     ( simulateCrash
     , emergencySave
     , bail
+    , dumpState
     , quitComplain
     , quit
     , forceQuit
@@ -260,21 +261,12 @@ bail mayComp s = do
                 , "Writing state dump to $HOME/CRASH-DUMP ..."
                 ]
 
-        liftIO $ writeFile (h ++ "/CRASH-DUMP")
-               $ "WSEDIT " ++ version ++ " CRASH LOG\n"
-              ++ "Error message: " ++ (headDef "" $ lines s)
-                    ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
-              ++ "\nLast recorded event: "
-                    ++ fromMaybe "-" (fmap show $ lastEvent st)
-              ++ "\n\nEditor configuration:\n"
-              ++ indent (ppShow $ prettyEdConfig c)
-              ++ "\n\nEditor state:\n"
-              ++ indent ( ppShow
-                        $ mapPast (\hs -> hs { dict = empty })
-                        $ fromJustNote (fqn "bail")
-                        $ chopHist 10
-                        $ Just st
-                        )
+        dumpState (h ++ "/CRASH-DUMP")
+              $ "WSEDIT " ++ version ++ " CRASH LOG\n"
+             ++ "Error message: " ++ (headDef "" $ lines s)
+                   ++ maybe "" (\str -> " (" ++ str ++ ")") mayComp
+             ++ "\nLast recorded event: "
+                   ++ fromMaybe "-" (fmap show $ lastEvent st)
 
     drawExitFrame
 
@@ -290,6 +282,26 @@ bail mayComp s = do
 
         exitFailure
 
+
+-- | Dumps the editor state and config to a given file, with a given prefix
+--   added as the first few lines.
+dumpState :: FilePath -> String -> WSEdit ()
+dumpState f pref = do
+    c  <- ask
+    st <- get
+
+    liftIO
+        $ writeFile f
+        $ pref
+            ++ "\n\nEditor configuration:\n"
+            ++ indent (ppShow $ prettyEdConfig c)
+            ++ "\n\nEditor state:\n"
+            ++ indent ( ppShow
+                      $ mapPast (\hs -> hs { dict = empty })
+                      $ fromJustNote (fqn "dumpState")
+                      $ chopHist 10
+                      $ Just st
+                      )
     where
         indent :: String -> String
         indent = unlinesPlus . map ("    " ++) . linesPlus
