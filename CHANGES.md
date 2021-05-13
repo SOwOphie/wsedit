@@ -1,3 +1,27 @@
+# v1.2.4
+
+This is a technical release, as WSEdit is switching to a new version scheme as
+well as moving to the BSD-3 license.
+
+## New Versioning Scheme
+
+Version `x.y.z[.a]` will now have the following meaning:
+
+- `x` will increment for major rewrites and other milestones.
+- `y` will increment for incompatible changes.
+- `z` will increment for releases.
+- `a` denotes development efforts on top of the current release. No guarantees
+  regarding change compatibility are made.
+
+## New License
+
+The entire codebase, including the language definitions, is now licensed under
+BSD-3.
+
+## Other Changes
+
+- Removed the orphaned remains of the test suite.
+
 # v1.2.3
 
 ## New Features

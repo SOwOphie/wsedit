@@ -5,7 +5,6 @@
 module WSEdit.Data
     ( version
     , upstream
-    , licenseVersion
     , Stability
         (..)
     , stability
@@ -110,15 +109,11 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.3.16"
+version = "1.2.4"
 
 -- | Upstream URL.
 upstream :: String
 upstream = "https://github.com/LadyBoonami/wsedit"
-
--- | License version number constant.
-licenseVersion :: String
-licenseVersion = "2.0"
 
 -- | Version stability
 data Stability = Prototype

@@ -1,10 +1,10 @@
 name:          wsedit
-version:       1.2.3.16
+version:       1.2.4
 synopsis:      A simple terminal source code editor.
 description:
 homepage:      https://github.com/LadyBoonami/wsedit
-license:       OtherLicense
-license-file:  LICENSE.md
+license:       BSD3
+license-file:  LICENSE
 author:        Sophie Hirn
 maintainer:    sophie.hirn@wyvernscale.com
 copyright:     2016 Sophie Hirn
@@ -130,26 +130,3 @@ executable wsed-dev
     buildable: True
   else
     buildable: False
-
-
-
-test-suite spec
-  type:             exitcode-stdio-1.0
-  main-is:          Spec.hs
-  default-language: Haskell2010
-  hs-source-dirs:   test/
-  ghc-options:      -Wall
-
-  other-modules:
-    Base,
-    WSEdit.BufferSpec,
-    WSEdit.Arguments.ParserSpec,
-    WSEdit.Data.AlgorithmsSpec
-
-  build-depends:
-    base,
-    hashable,
-    hspec,
-    parsec,
-    QuickCheck,
-    wsedit

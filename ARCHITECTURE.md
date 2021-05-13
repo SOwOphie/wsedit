@@ -26,6 +26,7 @@ The file tree looks somewhat like this:
         Control/
             Autocomplete.hs
             Base.hs
+            Global.hs
             Marks.hs
             Selection.hs
             Text.hs
@@ -157,12 +158,26 @@ results of its work into `EdState`.
 This reflects in the structure of the main loop, which is:
 
  1. Draw Call, uses the structures to draw an image
- 2. Event Handler, rearrange `EdState` in some way.
- 3. GoTo 1
+ 2. Event Handler, rearrange `EdState` in some way
+ 3. Rebuild caches (also inside `EdState`)
+ 4. GoTo 1
 
 All this runs inside an exception handler that will dump the structures should
 an error occur. This can later be used to trace what went wrong and even to
 re-launch the editor in the state before the error occured.
+
+## Text Representation
+
+The text data is represented as a "zipper" or "pointed list" of lines, i.e. a
+triple of
+
+* a list of lines before the current line in reverse order,
+* the current line,
+* a list of lines after the current line in regular order.
+
+This takes advantage of the fact that editor operations usually occur close to
+the cursor, and makes cache rebuilding very efficient. This data structure is
+implemented in `WSEdit.Buffer`.
 
 ## The Rendering Pipeline
 

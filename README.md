@@ -118,26 +118,29 @@ the `Troubleshooting` section further down below and see if it helps.
 
 ## Bugs / Crashes and how to report them properly
 
-### A general note on the stability of `wsedit`
-
-Up until v1.2.2, the focus of `wsedit` has been fleshing out its feature set
-rather than making sure it works in every fringe condition. The protection
-against bugs consisted of:
-
-- routines to rescue your changes in case of a crash,
-- protection against file corruption on save,
-- requiring explicit user consent to run builds with low estimated stability
-
-As a certain point of main-feature-completeness has now been reached, the
-focus is shifting towards (among other things) creating an automated test
-harness. This is a lot of tedious, sometimes very difficult work and will
-therefore take some time, but it will hopefully pay off by uncovering hidden
-bugs and preventing regressions (which have previously been haunting some
-components).
-
 Please submit every kind of weird behaviour you encounter as an
 [issue on GitHub](https://github.com/LadyBoonami/wsedit/issues/new). If
 possible, obtain a state dump as described below.
+
+### A general note on the stability of `wsedit`
+
+When I started development on WSEdit back in 2016, it would frequently break
+things in a way that causes data loss. Since then, a lot of data protection
+safeguards have been implemented, and the codebase has matured quite a bit.
+Nowadays many things have to go wrong at once for data to be damaged, and as a
+result of this, I haven't had data loss in years.
+
+I originally planned to write an extensive test suite for WSEdit, but have since
+stopped working on that for a number of reasons:
+
+* Writing anything but simple unit tests for an interactive editor is very hard,
+* Expected impact for bugs will be very low since the editor seems to work well
+  and multiple safety nets are in place,
+* The editors with comparable scope that I've checked don't seem to have test
+  suites either.
+
+Considering all that, the limited time I have for working on WSEdit is better
+spent developing new features.
 
 ### Crashes
 
@@ -156,6 +159,20 @@ all active configuration as well as the entire file you edited when the crash
 happened. Make sure you are okay with that becoming public before uploading it.
 Also, please do not provide a modified dump file, as any changes made will throw
 off the caching system.
+
+### Data corruption on save
+
+By default, the editor saves data in the following way:
+
+1. The contents are written to a new file.
+2. The written file is immediately read again, and the result is compared to
+   the current buffer. If these don't match, your current data is
+   emergency-saved to `${HOME}/CRASH-RESCUE` with conservative encoding
+   settings, and the editor aborts.
+3. The new file receives the same permissions as the old file.
+4. The new file is atomically renamed over the old file.
+
+This behaviour can be disabled, but it is highly recommended not to do so.
 
 ### Non-fatal bugs
 
@@ -214,3 +231,9 @@ this to your `.Xresources` file will soothe your pain:
 
     urxvt*iso14755: False
     urxvt*iso14755_52: False
+
+
+## Licensing
+
+The entire codebase, including the language definitions, is licensed under the
+3-Clause BSD License, see `LICENSE`.
