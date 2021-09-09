@@ -109,7 +109,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.4"
+version = "1.2.4.1"
 
 -- | Upstream URL.
 upstream :: String
@@ -124,7 +124,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = Release
+stability = RC
 
 
 
@@ -476,13 +476,9 @@ data EdDesign = EdDesign
         -- ^ vty attribute for jump marks
 
 
-    , dTabStr        :: String
-        -- ^ String to display tab characters as.  Will get truncated from the
-        --   left as needed.
-
-    , dTabExt        :: Char
-        -- ^ If 'dTabStr' is too short, this will be used to pad it to the
-        --   required length.
+    , dTabStr        :: (Char, Char, Char)
+        -- ^ Template for the tab string: first character, padding character,
+        --   last character.
 
 
     , dCharStyles    :: [(CharClass, Attr)]
@@ -526,8 +522,7 @@ instance Default EdDesign where
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
-        , dTabStr        = "|"
-        , dTabExt        = ' '
+        , dTabStr        = ('·', ' ', '|')
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
@@ -621,8 +616,7 @@ brightTheme = EdDesign
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
-        , dTabStr        = "|"
-        , dTabExt        = ' '
+        , dTabStr        = ('·', ' ', '|')
 
         , dCharStyles    =
             [ (Whitesp    , defAttr

@@ -116,7 +116,6 @@ import WSEdit.Data
         , dLineNoInterv
         , dJumpMarkFmt
         , dStatusFormat
-        , dTabExt
         , dTabStr
         )
     , EdState
@@ -249,7 +248,8 @@ charRep br hl pos '\t' = do
                           HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
                           _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
 
-        , sStr     =  take dispWidth $ dTabStr d ++ repeat (dTabExt d)
+        , sStr     = let (c1, c2, c3) = dTabStr d
+                     in take dispWidth $ c1 : replicate (dispWidth - 2) c2 ++ [c3]
         }
 
 charRep br hl pos ' ' = do

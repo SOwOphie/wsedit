@@ -1,3 +1,10 @@
+# Unreleased
+
+## Other Changes
+
+- Changed tab rendering again, now a marking character is placed both at the
+  start and the end of the tab space.
+
 # v1.2.4
 
 This is a technical release, as WSEdit is switching to a new version scheme as

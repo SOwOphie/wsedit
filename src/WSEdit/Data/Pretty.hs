@@ -63,7 +63,6 @@ import WSEdit.Data
         , dLineNoFormat
         , dLineNoInterv
         , dStatusFormat
-        , dTabExt
         , dTabStr
         )
     , HighlightMode
@@ -184,8 +183,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDCurrLnMod     :: Attr
     , pDBrMod         :: Attr
     , pDJumpMarkFmt   :: Attr
-    , pDTabStr        :: String
-    , pDTabExt        :: Char
+    , pDTabStr        :: (Char, Char, Char)
     , pDCharStyles    :: [(CharClass    , Attr)]
     , pDHLStyles      :: [(HighlightMode, Attr)]
     }
@@ -207,7 +205,6 @@ prettyEdDesign d = PrettyEdDesign
     , pDBrMod         = dBrMod         d
     , pDJumpMarkFmt   = dJumpMarkFmt   d
     , pDTabStr        = dTabStr        d
-    , pDTabExt        = dTabExt        d
     , pDCharStyles    = dCharStyles    d
     , pDHLStyles      = dHLStyles      d
     }
@@ -228,7 +225,6 @@ unPrettyEdDesign p = EdDesign
     , dBrMod         = pDBrMod         p
     , dJumpMarkFmt   = pDJumpMarkFmt   p
     , dTabStr        = pDTabStr        p
-    , dTabExt        = pDTabExt        p
     , dCharStyles    = pDCharStyles    p
     , dHLStyles      = pDHLStyles      p
     }
