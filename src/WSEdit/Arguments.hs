@@ -117,6 +117,7 @@ import WSEdit.Data
         , lineComment
         , mStrDelim
         , newlineMode
+        , preserveWsp
         , purgeOnClose
         , readEnc
         , strDelim
@@ -483,6 +484,8 @@ applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def          
 applyArg (c, s) (EditorIndSet    n  ) = return (c { tabWidth     = n                                       }, s)
 applyArg (c, s) (EditorJumpMAdd  n  ) = return (c { initJMarks   = n      : delete n      (initJMarks   c) }, s)
 applyArg (c, s) (EditorJumpMDel  n  ) = return (c { initJMarks   =          delete n      (initJMarks   c) }, s)
+applyArg (c, s)  EditorPreserveOn     = return (c { preserveWsp  = True                                    }, s)
+applyArg (c, s)  EditorPreserveOff    = return (c { preserveWsp  = False                                   }, s)
 applyArg (c, s)  FileAtomicOff        = return (c { atomicSaves  = False                                   }, s)
 applyArg (c, s)  FileAtomicOn         = return (c { atomicSaves  = True                                    }, s)
 applyArg (c, s) (FileEncodingSet e  ) = return (c { encoding     = Just e                                  }, s)

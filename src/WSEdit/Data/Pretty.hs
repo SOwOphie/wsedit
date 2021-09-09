@@ -40,6 +40,7 @@ import WSEdit.Data
         , lineComment
         , mStrDelim
         , newlineMode
+        , preserveWsp
         , purgeOnClose
         , readEnc
         , strDelim
@@ -88,6 +89,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pAtomicSaves  :: Bool
     , pWriCheck     :: Bool
     , pPurgeOnClose :: Bool
+    , pPreserveWsp  :: Bool
     , pInitJMarks   :: [Int]
     , pNewlineMode  :: NewlineMode
     , pEncoding     :: Maybe String
@@ -119,6 +121,7 @@ prettyEdConfig c = PrettyEdConfig
     , pAtomicSaves  =                  atomicSaves  c
     , pWriCheck     =                  wriCheck     c
     , pPurgeOnClose =                  purgeOnClose c
+    , pPreserveWsp  =                  preserveWsp  c
     , pInitJMarks   =                  initJMarks   c
     , pNewlineMode  =                  newlineMode  c
     , pEncoding     =                  encoding     c
@@ -149,6 +152,7 @@ unPrettyEdConfig v k p = EdConfig
     , atomicSaves  = pAtomicSaves                 p
     , wriCheck     = pWriCheck                    p
     , purgeOnClose = pPurgeOnClose                p
+    , preserveWsp  = pPreserveWsp                 p
     , initJMarks   = pInitJMarks                  p
     , newlineMode  = pNewlineMode                 p
     , encoding     = pEncoding                    p

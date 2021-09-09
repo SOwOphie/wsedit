@@ -144,6 +144,7 @@ import WSEdit.Data
         , encoding
         , initJMarks
         , newlineMode
+        , preserveWsp
         , purgeOnClose
         , readEnc
         , vtyObj
@@ -377,10 +378,11 @@ save = refuseOnReadOnly $ do
        then setStatus "File not writeable."
 
        else do
-            cleanse
+            c <- ask
+
+            when (not $ preserveWsp c) cleanse
 
             s <- get
-            c <- ask
 
             let
                 targetFName = if atomicSaves c

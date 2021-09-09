@@ -109,7 +109,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.4.1"
+version = "1.2.4.2"
 
 -- | Upstream URL.
 upstream :: String
@@ -345,6 +345,10 @@ data EdConfig = EdConfig
     , purgeOnClose :: Bool
         -- ^ Whether the clipboard file is to be deleted on close.
 
+    , preserveWsp  :: Bool
+        -- ^ Whether to preserve whitespace exactly on save (or remove trailing
+        --   whitespace and add a trailing newline at the end of the file).
+
     , initJMarks   :: [Int]
         -- ^ Where to put jump marks on load.
 
@@ -406,6 +410,7 @@ mkDefConfig v k = EdConfig
                 , atomicSaves  = True
                 , wriCheck     = True
                 , purgeOnClose = False
+                , preserveWsp  = False
                 , initJMarks   = []
                 , newlineMode  = universalNewlineMode
                 , encoding     = Nothing

@@ -173,6 +173,8 @@ configOption = (choice
     , editorJumpMDel
     , editorElTabsOn
     , editorElTabsOff
+    , editorPreserveOn
+    , editorPreserveOff
     , editorTabModeSpc
     , editorTabModeTab
     , editorTabModeAuto
@@ -240,6 +242,8 @@ displayInvBGOn    = try (string "-dx" ) >> return DisplayInvBGOn
 displayInvBGOff   = try (string "-dX" ) >> return DisplayInvBGOff
 editorElTabsOn    = try (string "-el" ) >> return EditorElTabsOn
 editorElTabsOff   = try (string "-eL" ) >> return EditorElTabsOff
+editorPreserveOn  = try (string "-ep" ) >> return EditorPreserveOn
+editorPreserveOff = try (string "-eP" ) >> return EditorPreserveOff
 editorTabModeSpc  = try (string "-ets") >> return EditorTabModeSpc
 editorTabModeTab  = try (string "-ett") >> return EditorTabModeTab
 editorTabModeAuto = try (string "-eT" ) >> return EditorTabModeAuto

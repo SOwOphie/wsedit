@@ -1,9 +1,16 @@
 # Unreleased
 
+## New Features
+
+- `-ep` can now be used to preserve whitespace exactly on save. This should help
+  with file formats that are particular sensitive to whitespace changes, such as
+  patch files.
+
 ## Other Changes
 
 - Changed tab rendering again, now a marking character is placed both at the
   start and the end of the tab space.
+- New language definition for patch files.
 
 # v1.2.4
 

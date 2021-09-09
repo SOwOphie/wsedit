@@ -35,6 +35,8 @@
 	-lk -eJ
 	-lk -el
 	-lk -eL
+	-lk -ep
+	-lk -eP
 	-lk -ets
 	-lk -ett
 	-lk -eT
