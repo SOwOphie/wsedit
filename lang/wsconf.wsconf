@@ -67,6 +67,8 @@
 	-lk -lI
 	-lk -lk
 	-lk -lK
+	-lk -lkp
+	-lk -lkP
 	-lk -lsc
 	-lk -lsC
 	-lk -lsm
