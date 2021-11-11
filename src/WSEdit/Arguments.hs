@@ -33,6 +33,7 @@ import Data.List
 import Data.Maybe
     ( catMaybes
     , fromMaybe
+    , listToMaybe
     )
 import Safe
     ( lastMay
@@ -125,6 +126,7 @@ import WSEdit.Data
         , vtyObj
         , wriCheck
         )
+    , EdDesign
     , EdState
         ( EdState
 #ifndef dev
@@ -296,6 +298,26 @@ parseArguments (c, s) = do
                                                 _                -> Nothing
                                           )
                                     $ allArgs
+
+                            -- Get path to theme
+                            themeRoute = listToMaybe
+                                       $ catMaybes
+                                       $ map (\case
+                                                   DisplayCustTheme x -> Just x
+                                                   _ -> Nothing
+                                             )
+                                       $ allArgs
+
+                        -- Report if theme file not found
+                        when ( False )
+                             $ abort (ExitFailure 1)
+                             $ "Theme file not found. Check file route"
+                            ++ "Or remove -dct flag to use default theme"
+
+                        -- Report if theme can't be read into EdDesign
+                        when ( False )
+                             $ abort (ExitFailure 1)
+                             $ "Theme file error"
 
                         -- Report parse errors and abort if no -mf is active.
                         when ( (not $ null parseErrors)
@@ -539,6 +561,8 @@ applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s 
 applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
+
+applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> head y /= '#') . lines) x)) >>= (\x -> return(read x::EdDesign)) >>= (\x -> return (c {edDesign = x}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

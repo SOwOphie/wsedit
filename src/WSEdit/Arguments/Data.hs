@@ -68,8 +68,8 @@ unProtoAB abp = do
 
 
 -- | Argument type.
-data Argument = AutocompAdd     (Maybe Int) FileMatchProto
-              | AutocompAddSelf (Maybe Int)
+data Argument = AutocompAdd      (Maybe Int) FileMatchProto
+              | AutocompAddSelf  (Maybe Int)
               | AutocompOff
 
               | DebugDumpArgs
@@ -77,18 +77,19 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | DebugDumpEvOff
               | DebugWRIOff
               | DebugWRIOn
-              | DebugStability  Stability
+              | DebugStability   Stability
 
-              | DisplayBadgeSet String
+              | DisplayBadgeSet  String
               | DisplayBadgeOff
+              | DisplayCustTheme String
               | DisplayDotsOn
               | DisplayDotsOff
               | DisplayInvBGOn
               | DisplayInvBGOff
 
-              | EditorIndSet    Int
-              | EditorJumpMAdd  Int
-              | EditorJumpMDel  Int
+              | EditorIndSet     Int
+              | EditorJumpMAdd   Int
+              | EditorJumpMDel   Int
               | EditorElTabsOn
               | EditorElTabsOff
               | EditorPreserveOn
@@ -99,17 +100,17 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
 
               | FileAtomicOff
               | FileAtomicOn
-              | FileEncodingSet String
+              | FileEncodingSet  String
               | FileEncodingDef
               | FileLineEndUnix
               | FileLineEndWin
               | FileLineEndDef
-              | FileReadEncSet  String
+              | FileReadEncSet   String
               | FileReadEncAuto
               | FileReadEncDef
 
-              | GeneralHighlAdd String
-              | GeneralHighlDel String
+              | GeneralHighlAdd  String
+              | GeneralHighlDel  String
               | GeneralROOn
               | GeneralROOff
 
@@ -118,31 +119,31 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | HelpKeybinds
               | HelpVersion
 
-              | LangBracketAdd  String String
-              | LangBracketDel  String String
-              | LangCommLineAdd String
-              | LangCommLineDel String
-              | LangCommBlkAdd  String String
-              | LangCommBlkDel  String String
-              | LangEscOAdd     String
-              | LangEscODel     String
-              | LangEscSAdd     String
-              | LangEscSDel     String
-              | LangIdChrAdd    Char
-              | LangIdChrDel    Char
-              | LangKeywordAdd  String
-              | LangKeywordDel  String
-              | LangKeyPrfxAdd  String
-              | LangKeyPrfxDel  String
-              | LangStrChrAdd   String String
-              | LangStrChrDel   String String
-              | LangStrMLAdd    String String
-              | LangStrMLDel    String String
-              | LangStrRegAdd   String String
-              | LangStrRegDel   String String
+              | LangBracketAdd   String String
+              | LangBracketDel   String String
+              | LangCommLineAdd  String
+              | LangCommLineDel  String
+              | LangCommBlkAdd   String String
+              | LangCommBlkDel   String String
+              | LangEscOAdd      String
+              | LangEscODel      String
+              | LangEscSAdd      String
+              | LangEscSDel      String
+              | LangIdChrAdd     Char
+              | LangIdChrDel     Char
+              | LangKeywordAdd   String
+              | LangKeywordDel   String
+              | LangKeyPrfxAdd   String
+              | LangKeyPrfxDel   String
+              | LangStrChrAdd    String String
+              | LangStrChrDel    String String
+              | LangStrMLAdd     String String
+              | LangStrMLDel     String String
+              | LangStrRegAdd    String String
+              | LangStrRegDel    String String
 
               | MetaFailsafe
-              | MetaInclude     String
+              | MetaInclude      String
               | MetaStateFile
 
               | OtherOpenCfLoc
@@ -150,8 +151,8 @@ data Argument = AutocompAdd     (Maybe Int) FileMatchProto
               | OtherPurgeOn
               | OtherPurgeOff
 
-              | SpecialSetFile  String
-              | SpecialSetVPos  Int
-              | SpecialSetHPos  Int
+              | SpecialSetFile   String
+              | SpecialSetVPos   Int
+              | SpecialSetHPos   Int
 
     deriving (Eq, Read, Show)

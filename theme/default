@@ -1,59 +1,72 @@
 EdDesign {
-# test comment, this should bread read, but not read file
+# vty attribute for the frame lines
   dFrameFormat = Attr {
                    attrStyle = Default
                  , attrForeColor = SetTo (ISOColor 2)
                  , attrBackColor = Default
                  , attrURL = Default
                  }
-# another test comment
+# vty attribute for the status line
 , dStatusFormat = Attr {
                     attrStyle = SetTo 32
                   , attrForeColor = SetTo (ISOColor 10)
                   , attrBackColor = Default
                   , attrURL = Default
                   }
+# vty attribute for the line numbers to the left
 , dLineNoFormat = Attr {
                     attrStyle = SetTo 32
                   , attrForeColor = SetTo (ISOColor 10)
                   , attrBackColor = Default
                   , attrURL = Default
                   }
+# Display interval for the line numbers
 , dLineNoInterv = 10
+# Display interval for the column numbers. Don't set this lower than
+# the expected number's length, or strange things might happen.
 , dColNoInterval = 40
+# vty attribute for the column numbers
 , dColNoFormat = Attr {
                    attrStyle = SetTo 32
                  , attrForeColor = SetTo (ISOColor 10)
                  , attrBackColor = Default
                  , attrURL = Default
                  }
+# Character to fill the background with
 , dBGChar = '\183'
+# Character to draw column lines with
 , dColChar = Just '|'
+# vty attribute for everything in the background
 , dBGFormat = Attr {
                 attrStyle = Default
               , attrForeColor = SetTo (ISOColor 0)
               , attrBackColor = Default
               , attrURL = Default
               }
+# Attribute modifications to apply to the current line
 , dCurrLnMod = Attr {
                  attrStyle = Default
                , attrForeColor = Default
                , attrBackColor = SetTo (ISOColor 0)
                , attrURL = Default
                }
+# Attribute modifications for bracket matching.
 , dBrMod = Attr {
              attrStyle = SetTo 4
            , attrForeColor = Default
            , attrBackColor = Default
            , attrURL = Default
            }
+# vty attribute for jump marks
 , dJumpMarkFmt = Attr {
                    attrStyle = Default
                  , attrForeColor = SetTo (ISOColor 1)
                  , attrBackColor = Default
                  , attrURL = Default
                  }
+# Template for the tab string: first character, padding character,last character.
 , dTabStr = ('\183',' ','|')
+# vty attributes list for the different character classes
 , dCharStyles = [
                   (Whitesp, Attr {
                               attrStyle = Default
@@ -104,8 +117,20 @@ EdDesign {
                            , attrURL = Default
                            })
                 ]
-, dHLStyles = [
-                (HComment, Attr {
+# vty attributes list for the different highlight modes
+, dHLStyles = [ (HNone, Attr {
+                           attrStyle = Default
+                         , attrForeColor = Default
+                         , attrBackColor = Default
+                         , attrURL = Default
+                         })
+               ,(HBracket, Attr {
+                           attrStyle = Default
+                         , attrForeColor = Default
+                         , attrBackColor = Default
+                         , attrURL = Default
+                         })
+               ,(HComment, Attr {
                              attrStyle = SetTo 32
                            , attrForeColor = SetTo (ISOColor 13)
                            , attrBackColor = Default
