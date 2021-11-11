@@ -1,0 +1,52 @@
+################################################################################
+#                                                                              #
+#  ####   #                                                      ####   #      #
+#  #   #  #                                                      #   #  #      #
+#  ####   #                  Prolog Files                        ####   #      #
+#  #      #                                                      #      #      #
+#  #      #####                                                  #      #####  #
+#                                                                              #
+# by Sophie Hirn (sophie.hirn@wyvernscale.com)                                 #
+################################################################################
+#                                                                              #
+# Syntax highlighting                                                          #
+*.pl
+	-lcl %
+	-lcb /* */
+	-lsr \" \"
+	-lsr ` `
+	-lsr ' '
+	-les \\
+	-lb ( )
+	-lb [ ]
+#                                                                              #
+# Keywords                                                                     #
+*.pl
+	-lkp a
+	-lkp b
+	-lkp c
+	-lkp d
+	-lkp e
+	-lkp f
+	-lkp g
+	-lkp h
+	-lkp i
+	-lkp j
+	-lkp k
+	-lkp l
+	-lkp m
+	-lkp n
+	-lkp o
+	-lkp p
+	-lkp q
+	-lkp r
+	-lkp s
+	-lkp t
+	-lkp u
+	-lkp v
+	-lkp w
+	-lkp x
+	-lkp y
+	-lkp z
+#                                                                              #
+################################################################################
