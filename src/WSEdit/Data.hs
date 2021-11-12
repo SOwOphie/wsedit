@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleInstances
            , TypeSynonymInstances
-           #-}
+           , BinaryLiterals
+                      #-}
+
 
 module WSEdit.Data
     ( version

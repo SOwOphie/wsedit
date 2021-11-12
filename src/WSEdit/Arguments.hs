@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BinaryLiterals #-}
 
 module WSEdit.Arguments
     ( parseArguments
@@ -308,6 +309,9 @@ parseArguments (c, s) = do
                                              )
                                        $ allArgs
 
+                            -- remove comments from theme file
+                            remComs = (unlines . filter (\y -> head y /= '#') . lines)
+
                         mayFile <- (\case
                                      Nothing -> return Nothing
                                      Just b -> mayReadFile b) themeRoute
@@ -323,7 +327,7 @@ parseArguments (c, s) = do
                                                 Nothing -> return False -- -dct not used
                                                 Just d -> case (readMay d :: Maybe EdDesign) of
                                                                Just _ -> return False -- file read fine
-                                                               Nothing -> return True) mayFile
+                                                               Nothing -> return True) (remComs <$> mayFile)
 
                         -- Report if theme can't be read into EdDesign
                         when ( themeUnreadable )
