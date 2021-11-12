@@ -308,14 +308,24 @@ parseArguments (c, s) = do
                                              )
                                        $ allArgs
 
-                        -- Report if theme file not found
-                        when ( False )
+                        -- True if custom theme file is not found, false if it is found, or not given
+                        fileNotFound <- (\case
+                                              Nothing -> return False -- file not given
+                                              Just t -> doesFileExist t >>= (\b -> return (not b))) themeRoute
+                        -- Report if theme file selected but not found
+                        when ( fileNotFound )
                              $ abort (ExitFailure 1)
-                             $ "Theme file not found. Check file route"
-                            ++ "Or remove -dct flag to use default theme"
+                             $ "Theme file not found. Check file route "
+                            ++ "or remove -dct flag to use default theme"
 
+                        -- True if there is a themefile that can't be read, false otherwise
+                        themeUnreadable <- (\case
+                                              Nothing -> return False -- file not given
+                                              Just t -> mayReadFile t >>= (\case
+                                                                                Just _ -> return False
+                                                                                Nothing -> return True)) themeRoute
                         -- Report if theme can't be read into EdDesign
-                        when ( False )
+                        when ( themeUnreadable )
                              $ abort (ExitFailure 1)
                              $ "Theme file error"
 
