@@ -56,12 +56,14 @@ EdDesign {
                   (Whitesp, Attr {
                               attrStyle = Default
                             , attrForeColor = SetTo (ISOColor 4)
-                            , attrBackColor = Default, attrURL = Default
+                            , attrBackColor = Default
+                            , attrURL = Default
                             })
                 , (Digit, Attr {
                             attrStyle = Default
                           , attrForeColor = SetTo (ISOColor 1)
-                          , attrBackColor = Default, attrURL = Default
+                          , attrBackColor = Default
+                          , attrURL = Default
                           })
                 , (Lower, Attr {
                             attrStyle = Default
