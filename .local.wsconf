@@ -1,6 +1,3 @@
-*
-	-ds "Fork me on Github!"
-
 *.hs
 	-ad 0 *.hs
 	-ad * src/WSEdit/Data.hs
