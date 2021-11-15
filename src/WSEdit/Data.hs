@@ -494,7 +494,7 @@ data EdDesign = EdDesign
     , dHLStyles      :: [(HighlightMode, Attr)]
         -- ^ vty attributes list for the different highlight modes
     }
-    deriving (Eq, Read, Show)
+    deriving Eq
 
 instance Default EdDesign where
     def = EdDesign

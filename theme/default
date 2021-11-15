@@ -52,9 +52,9 @@
 #
 # Url : I'll be honest, I'm not sure what this does.  if you do then add an explanation and send a pull request
 #
-EdDesign
+PrettyEdDesign
 # vty attribute for the frame lines
-  { dFrameFormat =
+  { pDFrameFormat =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 2)
@@ -62,7 +62,7 @@ EdDesign
         , attrURL = Default
         }
 # vty attribute for the status line
-  , dStatusFormat =
+  , pDStatusFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
@@ -70,7 +70,7 @@ EdDesign
         , attrURL = Default
         }
 # vty attribute for the status line
-  , dLineNoFormat =
+  , pDLineNoFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
@@ -78,12 +78,12 @@ EdDesign
         , attrURL = Default
         }
 # Display interval for the line numbers
-  , dLineNoInterv = 10
+  , pDLineNoInterv = 10
 # Display interval for the column numbers. Don't set this lower than
 # the expected number's length, or strange things might happen.
-  , dColNoInterval = 40
+  , pDColNoInterval = 40
 # vty attribute for the column numbers
-  , dColNoFormat =
+  , pDColNoFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
@@ -91,11 +91,11 @@ EdDesign
         , attrURL = Default
         }
 # Character to fill the background with
-  , dBGChar = '\183'
+  , pDBGChar = '\183'
 # Character to draw column lines with
-  , dColChar = Just '|'
+  , pDColChar = Just '|'
 # vty attribute for everything in the background
-  , dBGFormat =
+  , pDBGFormat =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 0)
@@ -103,7 +103,7 @@ EdDesign
         , attrURL = Default
         }
 # Attribute modifications to apply to the current line
-  , dCurrLnMod =
+  , pDCurrLnMod =
       Attr
         { attrStyle = Default
         , attrForeColor = Default
@@ -111,7 +111,7 @@ EdDesign
         , attrURL = Default
         }
 # Attribute modifications for bracket matching.
-  , dBrMod =
+  , pDBrMod =
       Attr
         { attrStyle = SetTo 4
         , attrForeColor = Default
@@ -119,7 +119,7 @@ EdDesign
         , attrURL = Default
         }
 # vty attribute for jump marks
-  , dJumpMarkFmt =
+  , pDJumpMarkFmt =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 1)
@@ -127,9 +127,9 @@ EdDesign
         , attrURL = Default
         }
 # Template for the tab string: first character, padding character,last character.
-  , dTabStr = ( '\183' , ' ' , '|' )
+  , pDTabStr = ( '\183' , ' ' , '|' )
 # vty attributes list for the different character classes
-  , dCharStyles =
+  , pDCharStyles =
       [ ( Whitesp
         , Attr
             { attrStyle = Default
@@ -196,7 +196,7 @@ EdDesign
         )
       ]
 # vty attributes list for the different highlight modes
-  , dHLStyles =
+  , pDHLStyles =
       [ ( HComment
         , Attr
             { attrStyle = SetTo 32

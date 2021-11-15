@@ -160,6 +160,8 @@ import WSEdit.Data.Algorithms
     )
 import WSEdit.Data.Pretty
     ( unPrettyEdConfig
+    , unPrettyEdDesign
+    , PrettyEdDesign
     )
 import WSEdit.Help
     ( confHelp
@@ -325,7 +327,7 @@ parseArguments (c, s) = do
                         -- True if there is a themefile that can't be read, false otherwise
                         themeUnreadable <- (\case
                                                 Nothing -> return False -- -dct not used
-                                                Just d -> case (readMay d :: Maybe EdDesign) of
+                                                Just d -> case (readMay d :: Maybe PrettyEdDesign) of
                                                                Just _ -> return False -- file read fine
                                                                Nothing -> return True) (remComs <$> mayFile)
 
@@ -577,7 +579,7 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
-applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> head y /= '#') . lines) x)) >>= (\x -> return(read x::EdDesign)) >>= (\x -> return (c {edDesign = x}, s))
+applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> head y /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

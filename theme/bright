@@ -1,66 +1,67 @@
-EdDesign
-  { dFrameFormat =
+# test comment
+PrettyEdDesign
+  { pDFrameFormat =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 2)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dStatusFormat =
+  , pDStatusFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dLineNoFormat =
+  , pDLineNoFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dLineNoInterv = 10
-  , dColNoInterval = 40
-  , dColNoFormat =
+  , pDLineNoInterv = 10
+  , pDColNoInterval = 40
+  , pDColNoFormat =
       Attr
         { attrStyle = SetTo 32
         , attrForeColor = SetTo (ISOColor 10)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dBGChar = '\183'
-  , dColChar = Just '|'
-  , dBGFormat =
+  , pDBGChar = '\183'
+  , pDColChar = Just '|'
+  , pDBGFormat =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 7)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dCurrLnMod =
+  , pDCurrLnMod =
       Attr
         { attrStyle = Default
         , attrForeColor = Default
         , attrBackColor = SetTo (ISOColor 7)
         , attrURL = Default
         }
-  , dBrMod =
+  , pDBrMod =
       Attr
         { attrStyle = SetTo 4
         , attrForeColor = Default
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dJumpMarkFmt =
+  , pDJumpMarkFmt =
       Attr
         { attrStyle = Default
         , attrForeColor = SetTo (ISOColor 1)
         , attrBackColor = Default
         , attrURL = Default
         }
-  , dTabStr = ( '\183' , ' ' , '|' )
-  , dCharStyles =
+  , pDTabStr = ( '\183' , ' ' , '|' )
+  , pDCharStyles =
       [ ( Whitesp
         , Attr
             { attrStyle = Default
@@ -126,7 +127,7 @@ EdDesign
             }
         )
       ]
-  , dHLStyles =
+  , pDHLStyles =
       [ ( HBracket
         , Attr
             { attrStyle = SetTo 2
