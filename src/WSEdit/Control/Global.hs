@@ -139,7 +139,10 @@ import WSEdit.Control.Text
     ( cleanse
     )
 import WSEdit.Data
-    ( EdConfig
+    ( CanonicalPath
+        ( getCanonicalPath
+        )
+    , EdConfig
         ( atomicSaves
         , encoding
         , initJMarks
@@ -176,7 +179,8 @@ import WSEdit.Data
     , version
     )
 import WSEdit.Data.Algorithms
-    ( catchEditor
+    ( canonicalPath
+    , catchEditor
     , chopHist
     , getCursor
     , mapPast
@@ -401,12 +405,13 @@ save = refuseOnReadOnly $ do
 
             when (atomicSaves c && b) $ do
                 liftIO $ do
-                    doesFileExist (fname s)
-                        >>= flip when ( copyPermissions (fname s)
+                    real <- liftIO $ fmap getCanonicalPath $ canonicalPath Nothing $ fname s
+                    doesFileExist real
+                        >>= flip when ( copyPermissions real
                                       $ fname s ++ ".atomic"
                                       )
 
-                    renameFile (fname s ++ ".atomic") (fname s)
+                    renameFile (fname s ++ ".atomic") real
 
             when (not (atomicSaves c) || b) $ do
                 modify $ \s' -> s' { changed = False }

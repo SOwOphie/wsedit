@@ -6,6 +6,10 @@
   with file formats that are particular sensitive to whitespace changes, such as
   patch files.
 
+## Fixes
+
+- No longer clobbers symbolic links with atomic saves.
+
 ## Other Changes
 
 - Changed tab rendering again, now a marking character is placed both at the
