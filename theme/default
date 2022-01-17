@@ -15,9 +15,9 @@
 #
 # Vty Style:
 #   style is an 8 bit binary number with the 8 bits corresponding to the 8 style options
-#   +-------------------------------------------------------------------+
+#   +--------------------------------------------------------------------+
 #   |strikethrough italic bold dim blink reverseVideo underline  standout|
-#   +-------------------------------------------------------------------+
+#   +--------------------------------------------------------------------+
 # only italic would be 01000000, or 0x40, or 64
 # only  bold  would be 00100000, or 0x20, or 32
 # strikethrough dim underline would be 10010010, or 0x92, or 146

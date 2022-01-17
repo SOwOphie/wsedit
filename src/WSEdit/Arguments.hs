@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE BinaryLiterals #-}
 
 module WSEdit.Arguments
     ( parseArguments
