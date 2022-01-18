@@ -305,7 +305,7 @@ parseArguments (c, s) = do
                             themeRoute = listToMaybe
                                        $ catMaybes
                                        $ map (\case
-                                                   DisplayCustTheme x -> Just x
+                                                   DisplayThemeOn x -> Just x
                                                    _ -> Nothing
                                              )
                                        $ allArgs
@@ -517,6 +517,7 @@ applyArg (c, s)  DebugWRIOff          = return (c { wriCheck     = False        
 applyArg (c, s)  DebugWRIOn           = return (c { wriCheck     = True                                    }, s)
 applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = True                                    }, s)
 applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = False                                   }, s)
+applyArg (c, s)  DisplayThemeOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s)  DisplayInvBGOn       = return (c { edDesign     = brightTheme                             }, s)
 applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s) (EditorIndSet    n  ) = return (c { tabWidth     = n                                       }, s)
@@ -578,7 +579,7 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
-applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headWDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
+applyArg (c, s) (DisplayThemeOn t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headWDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

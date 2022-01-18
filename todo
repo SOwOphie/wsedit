@@ -1,5 +1,5 @@
-- Change -dct flag to -dt
-- add -dT flag to force default theme
+DONE- Change -dct flag to -dt
+DONE- add -dT flag to force default theme
 - improve error message for if the theme file can't be parsed
     - was the file not found or could it not be parsed
     - where did we look for file

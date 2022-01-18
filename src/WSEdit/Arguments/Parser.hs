@@ -164,11 +164,12 @@ configOption = (choice
     , autocompOff
     , displayBadgeSet
     , displayBadgeOff
-    , displayCustTheme
     , displayDotsOn
     , displayDotsOff
     , displayInvBGOn
     , displayInvBGOff
+    , displayThemeOn
+    , displayThemeOff
     , editorIndSet
     , editorJumpMAdd
     , editorJumpMDel
@@ -239,6 +240,7 @@ autocompOff       = try (string "-A"  ) >> return AutocompOff
 displayBadgeOff   = try (string "-dS" ) >> return DisplayBadgeOff
 displayDotsOn     = try (string "-db" ) >> return DisplayDotsOn
 displayDotsOff    = try (string "-dB" ) >> return DisplayDotsOff
+displayThemeOff   = try (string "-dT" ) >> return DisplayThemeOff
 displayInvBGOn    = try (string "-dx" ) >> return DisplayInvBGOn
 displayInvBGOff   = try (string "-dX" ) >> return DisplayInvBGOff
 editorElTabsOn    = try (string "-el" ) >> return EditorElTabsOn
@@ -276,7 +278,7 @@ debugWriOn        = try (string "-yI" ) >> return DebugWRIOn
 
 autocompAddSelf   = do { try $ string "-as" ; spaces'; AutocompAddSelf  <$> wildInt    }
 displayBadgeSet   = do { try $ string "-ds" ; spaces'; DisplayBadgeSet  <$> word       }
-displayCustTheme  = do { try $ string "-dct"; spaces'; DisplayCustTheme <$> word       }
+displayThemeOn    = do { try $ string "-dt" ; spaces'; DisplayThemeOn <$> word       }
 editorIndSet      = do { try $ string "-ei" ; spaces'; EditorIndSet     <$> integer    }
 editorJumpMAdd    = do { try $ string "-ej" ; spaces'; EditorJumpMAdd   <$> integer    }
 editorJumpMDel    = do { try $ string "-eJ" ; spaces'; EditorJumpMDel   <$> integer    }
