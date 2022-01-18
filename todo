@@ -10,7 +10,7 @@
 - if -mf is used theme file can't be parsed, load default theme
 - give theme files a .wstheme file extension
 - add a /lang/wstheme.wsconf file for theme syntax highlighting
-- change mentions of "file route" to "file path"
+DONE- change mentions of "file route" to "file path"
 DONE- drop BinaryLiterals extension in Arguments.hs and Data.hs
 - Arguments.hs:315 uses head and errors on empty list, fix that
 DONE- align the box in theme/default:19

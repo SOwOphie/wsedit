@@ -320,7 +320,7 @@ parseArguments (c, s) = do
                         -- Report if theme file selected but not found
                         when ((themeRoute /= Nothing) && (mayFile == Nothing) )
                              $ abort (ExitFailure 1)
-                             $ "Theme file not found. Check file route "
+                             $ "Theme file not found. Check file path "
                             ++ "or remove -dct flag to use default theme"
 
                         -- True if there is a themefile that can't be read, false otherwise
