@@ -3,7 +3,7 @@
 - improve error message for if the theme file can't be parsed
     - was the file not found or could it not be parsed
     - where did we look for file
-    [57438u- suggested fixes
+    - suggested fixes
         - check changelog upstream
         - check template theme file
         - run using -mf or -dT
