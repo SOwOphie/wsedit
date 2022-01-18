@@ -3,14 +3,13 @@
 - improve error message for if the theme file can't be parsed
     - was the file not found or could it not be parsed
     - where did we look for file
-    - suggested fixes
+    [57438u- suggested fixes
         - check changelog upstream
         - check template theme file
         - run using -mf or -dT
 - if -mf is used theme file can't be parsed, load default theme
 DONE- give theme files a .wstheme file extension
-- add a /lang/wstheme.wsconf file for theme syntax highlighting
-    todo: add keywords and ascii art
+DONE- add a /lang/wstheme.wsconf file for theme syntax highlighting
 DONE- change mentions of "file route" to "file path"
 DONE- drop BinaryLiterals extension in Arguments.hs and Data.hs
 DONE- Arguments.hs:315 uses head and errors on empty list, fix that

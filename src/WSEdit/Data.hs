@@ -522,6 +522,7 @@ instance Default EdDesign where
         , dCurrLnMod     = defAttr
                             `withBackColor` black
 
+
         , dBrMod         = defAttr
                             `withStyle`     reverseVideo
 
@@ -532,8 +533,7 @@ instance Default EdDesign where
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
-                            `withForeColor` blue
-              )
+                            `withForeColor` blue              )
             , (Digit      , defAttr
                             `withForeColor` red
               )
