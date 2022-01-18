@@ -8,14 +8,15 @@
         - check template theme file
         - run using -mf or -dT
 - if -mf is used theme file can't be parsed, load default theme
-- give theme files a .wstheme file extension
+DONE- give theme files a .wstheme file extension
 - add a /lang/wstheme.wsconf file for theme syntax highlighting
+    todo: add keywords and ascii art
 DONE- change mentions of "file route" to "file path"
 DONE- drop BinaryLiterals extension in Arguments.hs and Data.hs
-- Arguments.hs:315 uses head and errors on empty list, fix that
+DONE- Arguments.hs:315 uses head and errors on empty list, fix that
 DONE- align the box in theme/default:19
 DONE- fix the option in Help.hs:344
-- fix warning for unused imports
+DONE- fix warning for unused imports
 
 ~ after all that is fixed ~
 - bump last version digit in wsedit.cabal and Data.hs

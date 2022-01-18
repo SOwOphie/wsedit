@@ -126,7 +126,6 @@ import WSEdit.Data
         , vtyObj
         , wriCheck
         )
-    , EdDesign
     , EdState
         ( EdState
 #ifndef dev
@@ -176,6 +175,7 @@ import WSEdit.Util
     , unlinesPlus
     , withFst
     , withSnd
+    , headWDef
     )
 
 import qualified WSEdit.Buffer as B
@@ -310,8 +310,8 @@ parseArguments (c, s) = do
                                              )
                                        $ allArgs
 
-                            -- remove comments from theme file
-                            remComs = (unlines . filter (\y -> head y /= '#') . lines)
+                            -- remove coomments, treat empty lines as a comment
+                            remComs = (unlines . filter (\y -> (headWDef '#' y) /= '#') . lines)
 
                         mayFile <- (\case
                                      Nothing -> return Nothing
@@ -578,7 +578,7 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
-applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> head y /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
+applyArg (c, s) (DisplayCustTheme t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headWDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

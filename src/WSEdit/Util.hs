@@ -47,6 +47,7 @@ module WSEdit.Util
     , combineAttrs
     , iff
     , matchGlob
+    , headWDef
     ) where
 
 
@@ -721,3 +722,10 @@ matchGlob px@('*' :p:ps) (s:ss) | p == s    = matchGlob ps ss
                                 | otherwise = matchGlob px ss
 matchGlob    (     p:ps) (s:ss) | p == s    = matchGlob ps ss
 matchGlob    _           _                  = False
+
+
+
+-- | Head, but make it safe with default
+headWDef :: a -> [a] -> a
+headWDef def [] = def
+headWDef _ (f:_) = f
