@@ -319,7 +319,7 @@ parseArguments (c, s) = do
                         mayFile <- mayReadFile themePath
 
                         -- Report if theme file selected but not found
-                        when ((themePath /= "") && (mayFile == Nothing) )
+                        when ((mayThemePath /= Nothing) && (mayFile == Nothing) && (MetaFailsafe `notElem` allArgs))
                              $ abort (ExitFailure 1)
                              $ "Theme file not found at " ++ themePath
                             ++ " use -dT flag to use default theme, or -mf to ignore"
@@ -367,8 +367,8 @@ parseArguments (c, s) = do
                                 $ "\n\n"
                                ++ ppShow allArgs
 
-                        -- if -mf flag passed, and theme is unreadable, remove theme from args
-                        let allArgs' = if ((MetaFailsafe `elem` allArgs) && themeUnreadable)
+                        -- if -mf flag passed, and theme is unreadable or can't be found, remove theme from args
+                        let allArgs' = if ((MetaFailsafe `elem` allArgs) && (themeUnreadable || ((mayThemePath /= Nothing) && (mayFile == Nothing))))
                                       then (filter (\case
                                                          DisplayThemeOn _ -> False
                                                          _ -> True) allArgs)
