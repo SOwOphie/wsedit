@@ -1,13 +1,13 @@
 DONE- Change -dct flag to -dt
 DONE- add -dT flag to force default theme
-- improve error message for if the theme file can't be parsed
+DONE- improve error message for if the theme file can't be parsed
     - was the file not found or could it not be parsed
     - where did we look for file
     - suggested fixes
         - check changelog upstream
         - check template theme file
         - run using -mf or -dT
-- if -mf is used theme file can't be parsed, load default theme
+DONE- if -mf is used theme file can't be parsed, ignore themefile
 DONE- give theme files a .wstheme file extension
 DONE- add a /lang/wstheme.wsconf file for theme syntax highlighting
 DONE- change mentions of "file route" to "file path"

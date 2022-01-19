@@ -302,26 +302,28 @@ parseArguments (c, s) = do
                                     $ allArgs
 
                             -- Get path to theme
-                            themeRoute = listToMaybe
+                            mayThemePath = listToMaybe
                                        $ catMaybes
                                        $ map (\case
                                                    DisplayThemeOn x -> Just x
                                                    _ -> Nothing
                                              )
                                        $ allArgs
+                            themePath = (\case
+                                            Nothing -> ""
+                                            Just p -> p) mayThemePath
 
-                            -- remove coomments, treat empty lines as a comment
+                            -- remove comments, treat empty lines as a comment
                             remComs = (unlines . filter (\y -> (headWDef '#' y) /= '#') . lines)
 
-                        mayFile <- (\case
-                                     Nothing -> return Nothing
-                                     Just b -> mayReadFile b) themeRoute
+                        mayFile <- mayReadFile themePath
 
                         -- Report if theme file selected but not found
-                        when ((themeRoute /= Nothing) && (mayFile == Nothing) )
+                        when ((themePath /= "") && (mayFile == Nothing) )
                              $ abort (ExitFailure 1)
-                             $ "Theme file not found. Check file path "
-                            ++ "or remove -dct flag to use default theme"
+                             $ "Theme file not found at " ++ themePath
+                            ++ " use -dT flag to use default theme, or -mf to ignore"
+                            ++ " all configs that don't work"
 
                         -- True if there is a themefile that can't be read, false otherwise
                         themeUnreadable <- (\case
@@ -331,9 +333,12 @@ parseArguments (c, s) = do
                                                                Nothing -> return True) (remComs <$> mayFile)
 
                         -- Report if theme can't be read into EdDesign
-                        when ( themeUnreadable )
+                        when ( themeUnreadable && (MetaFailsafe `notElem` allArgs) )
                              $ abort (ExitFailure 1)
-                             $ "Theme file error"
+                             $ themePath ++ " couldn't be parsed, "
+                             ++ "compare it with the example theme file, or"
+                             ++ " check " ++ upstream ++ "/blob/master/CHANGES.md"
+                             ++ " if things broke without you changing anything"
 
                         -- Report parse errors and abort if no -mf is active.
                         when ( (not $ null parseErrors)
@@ -362,8 +367,14 @@ parseArguments (c, s) = do
                                 $ "\n\n"
                                ++ ppShow allArgs
 
+                        -- if -mf flag passed, and theme is unreadable, remove theme from args
+                        let allArgs' = if ((MetaFailsafe `elem` allArgs) && themeUnreadable)
+                                      then (filter (\case
+                                                         DisplayThemeOn _ -> False
+                                                         _ -> True) allArgs)
+                                      else allArgs
                         -- Apply arguments to config/state pair.
-                        (c', s') <- foldM applyArg (c, s) allArgs
+                        (c', s') <- foldM applyArg (c, s) allArgs'
 
                         -- State file processing
                         let sf = MetaStateFile `elem` allArgs
