@@ -18,8 +18,8 @@ DONE- fix the option in Help.hs:344
 DONE- fix warning for unused imports
 
 ~ after all that is fixed ~
-- bump last version digit in wsedit.cabal and Data.hs
-- add an entry in Changes.md in the "Unreleased" section
+DONE- bump last version digit in wsedit.cabal and Data.hs
+DONE- add an entry in Changes.md in the "Unreleased" section
 
 
 https://github.com/LadyBoonami/wsedit/pull/33#issuecomment-984688187

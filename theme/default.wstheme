@@ -50,7 +50,11 @@
 #      a list of rgb colors these correspond to can be found at
 #      https://hackage.haskell.org/package/vty-5.33/docs/src/Graphics.Vty.Attributes.Color240.html#color240CodeToRGB
 #
-# Url : I'll be honest, I'm not sure what this does.  if you do then add an explanation and send a pull request
+# Url : currently does nothing as Hyperlink mode is not enabled in the Vty output interface... yet
+#       for now using any value besides "Default" seems to break the theme file.  When Hyperlink mode is Enabled
+#       it could be used to render some text as a Hyperlink.  More info found:
+#         https://hackage.haskell.org/package/vty-5.33/docs/Graphics-Vty-Attributes.html#v:withURL
+#         https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
 #
 PrettyEdDesign
 # vty attribute for the frame lines
