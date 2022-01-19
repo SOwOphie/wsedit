@@ -11,6 +11,10 @@
   explain things.  `-dT` will override any external theme, and `-mf` will ignore
   theme file that can't be found or read.
 
+## Fixes
+
+- No longer clobbers symbolic links with atomic saves.
+
 ## Other Changes
 
 - Changed tab rendering again, now a marking character is placed both at the
