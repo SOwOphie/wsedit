@@ -1,0 +1,187 @@
+PrettyEdDesign
+  { pDFrameFormat =
+      Attr
+        { attrStyle = Default
+        , attrForeColor = SetTo (ISOColor 2)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDStatusFormat =
+      Attr
+        { attrStyle = SetTo 32
+        , attrForeColor = SetTo (ISOColor 10)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDLineNoFormat =
+      Attr
+        { attrStyle = SetTo 32
+        , attrForeColor = SetTo (ISOColor 10)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDLineNoInterv = 10
+  , pDColNoInterval = 40
+  , pDColNoFormat =
+      Attr
+        { attrStyle = SetTo 32
+        , attrForeColor = SetTo (ISOColor 10)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDBGChar = '\183'
+  , pDColChar = Just '|'
+  , pDBGFormat =
+      Attr
+        { attrStyle = Default
+        , attrForeColor = SetTo (ISOColor 7)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDCurrLnMod =
+      Attr
+        { attrStyle = Default
+        , attrForeColor = Default
+        , attrBackColor = SetTo (ISOColor 7)
+        , attrURL = Default
+        }
+  , pDBrMod =
+      Attr
+        { attrStyle = SetTo 4
+        , attrForeColor = Default
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDJumpMarkFmt =
+      Attr
+        { attrStyle = Default
+        , attrForeColor = SetTo (ISOColor 1)
+        , attrBackColor = Default
+        , attrURL = Default
+        }
+  , pDTabStr = ( '\183' , ' ' , '|' )
+  , pDCharStyles =
+      [ ( Whitesp
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 4)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Digit
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 1)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Lower
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = Default
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Upper
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = Default
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Bracket
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 3)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Operator
+        , Attr
+            { attrStyle = SetTo 32
+            , attrForeColor = SetTo (ISOColor 11)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Unprintable
+        , Attr
+            { attrStyle = SetTo 32
+            , attrForeColor = SetTo (ISOColor 5)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( Special
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 5)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      ]
+  , pDHLStyles =
+      [ ( HBracket
+        , Attr
+            { attrStyle = SetTo 2
+            , attrForeColor = Default
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( HComment
+        , Attr
+            { attrStyle = SetTo 32
+            , attrForeColor = SetTo (ISOColor 13)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( HError
+        , Attr
+            { attrStyle = SetTo 32
+            , attrForeColor = Default
+            , attrBackColor = SetTo (ISOColor 9)
+            , attrURL = Default
+            }
+        )
+      , ( HKeyword
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 2)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( HSearch
+        , Attr
+            { attrStyle = SetTo 32
+            , attrForeColor = SetTo (ISOColor 9)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      , ( HSelected
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 15)
+            , attrBackColor = SetTo (ISOColor 0)
+            , attrURL = Default
+            }
+        )
+      , ( HString
+        , Attr
+            { attrStyle = Default
+            , attrForeColor = SetTo (ISOColor 6)
+            , attrBackColor = Default
+            , attrURL = Default
+            }
+        )
+      ]
+  }

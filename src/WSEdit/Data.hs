@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances
            , TypeSynonymInstances
-           #-}
+                      #-}
+
 
 module WSEdit.Data
     ( version
@@ -109,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.4.3"
+version = "1.2.4.4"
 
 -- | Upstream URL.
 upstream :: String
@@ -492,7 +493,7 @@ data EdDesign = EdDesign
     , dHLStyles      :: [(HighlightMode, Attr)]
         -- ^ vty attributes list for the different highlight modes
     }
-
+    deriving Eq
 
 instance Default EdDesign where
     def = EdDesign
@@ -521,6 +522,7 @@ instance Default EdDesign where
         , dCurrLnMod     = defAttr
                             `withBackColor` black
 
+
         , dBrMod         = defAttr
                             `withStyle`     reverseVideo
 
@@ -531,8 +533,7 @@ instance Default EdDesign where
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
-                            `withForeColor` blue
-              )
+                            `withForeColor` blue              )
             , (Digit      , defAttr
                             `withForeColor` red
               )

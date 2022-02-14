@@ -33,9 +33,11 @@ import Data.List
 import Data.Maybe
     ( catMaybes
     , fromMaybe
+    , listToMaybe
     )
 import Safe
-    ( lastMay
+    ( headDef
+    , lastMay
     , maximumDef
     , readMay
     )
@@ -157,6 +159,8 @@ import WSEdit.Data.Algorithms
     )
 import WSEdit.Data.Pretty
     ( unPrettyEdConfig
+    , unPrettyEdDesign
+    , PrettyEdDesign
     )
 import WSEdit.Help
     ( confHelp
@@ -297,6 +301,45 @@ parseArguments (c, s) = do
                                           )
                                     $ allArgs
 
+                            -- Get path to theme
+                            mayThemePath = listToMaybe
+                                       $ catMaybes
+                                       $ map (\case
+                                                   DisplayThemeOn x -> Just x
+                                                   _ -> Nothing
+                                             )
+                                       $ allArgs
+                            themePath = (\case
+                                            Nothing -> ""
+                                            Just p -> p) mayThemePath
+
+                            -- remove comments, treat empty lines as a comment
+                            remComs = (unlines . filter (\y -> (headDef '#' y) /= '#') . lines)
+
+                        mayFile <- mayReadFile themePath
+
+                        -- Report if theme file selected but not found
+                        when ((mayThemePath /= Nothing) && (mayFile == Nothing) && (MetaFailsafe `notElem` allArgs))
+                             $ abort (ExitFailure 1)
+                             $ "Theme file not found at " ++ themePath
+                            ++ " use -dT flag to use default theme, or -mf to ignore"
+                            ++ " all configs that don't work"
+
+                        -- True if there is a themefile that can't be read, false otherwise
+                        themeUnreadable <- (\case
+                                                Nothing -> return False -- -dct not used
+                                                Just d -> case (readMay d :: Maybe PrettyEdDesign) of
+                                                               Just _ -> return False -- file read fine
+                                                               Nothing -> return True) (remComs <$> mayFile)
+
+                        -- Report if theme can't be read into EdDesign
+                        when ( themeUnreadable && (MetaFailsafe `notElem` allArgs) )
+                             $ abort (ExitFailure 1)
+                             $ themePath ++ " couldn't be parsed, "
+                             ++ "compare it with the example theme file, or"
+                             ++ " check " ++ upstream ++ "/blob/master/CHANGES.md"
+                             ++ " if things broke without you changing anything"
+
                         -- Report parse errors and abort if no -mf is active.
                         when ( (not $ null parseErrors)
                             && MetaFailsafe `notElem` allArgs
@@ -324,8 +367,14 @@ parseArguments (c, s) = do
                                 $ "\n\n"
                                ++ ppShow allArgs
 
+                        -- if -mf flag passed, and theme is unreadable or can't be found, remove theme from args
+                        let allArgs' = if ((MetaFailsafe `elem` allArgs) && (themeUnreadable || ((mayThemePath /= Nothing) && (mayFile == Nothing))))
+                                      then (filter (\case
+                                                         DisplayThemeOn _ -> False
+                                                         _ -> True) allArgs)
+                                      else allArgs
                         -- Apply arguments to config/state pair.
-                        (c', s') <- foldM applyArg (c, s) allArgs
+                        (c', s') <- foldM applyArg (c, s) allArgs'
 
                         -- State file processing
                         let sf = MetaStateFile `elem` allArgs
@@ -479,6 +528,7 @@ applyArg (c, s)  DebugWRIOff          = return (c { wriCheck     = False        
 applyArg (c, s)  DebugWRIOn           = return (c { wriCheck     = True                                    }, s)
 applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = True                                    }, s)
 applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = False                                   }, s)
+applyArg (c, s)  DisplayThemeOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s)  DisplayInvBGOn       = return (c { edDesign     = brightTheme                             }, s)
 applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s) (EditorIndSet    n  ) = return (c { tabWidth     = n                                       }, s)
@@ -539,6 +589,8 @@ applyArg (c, s)  OtherOpenCfGlob      = getHomeDirectory >>= \p -> return (c, s 
 applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
+
+applyArg (c, s) (DisplayThemeOn t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

@@ -1,0 +1,70 @@
+################################################################################
+#                                                                              #
+#  #   ##   #                                                      #   ##   #  #
+#   # #  # #                                                        # #  # #   #
+#    ##  ##                  WSEdit Theme Files                      #    #    #
+#     #  #                                                            #  #     #
+#      ##                                                              ##      #
+#                                                                              #
+# by Guy Black (guyb2602@gmail.com)                                            #
+################################################################################
+#                                                                              #
+# Indentation settings                                                         #
+*.wstheme
+	-ets
+#                                                                              #
+# Syntax highlighting                                                          #
+*.wstheme
+	-lcl #
+	-lsc ' '
+	-les \\
+	-lb ( )
+	-lb [ ]
+	-lb { }
+#                                                                              #
+# Keywords                                                                     #
+*.wstheme
+	-lk Attr
+	-lk attrStyle
+	-lk attrForeColor
+	-lk attrBackColor
+	-lk attrURL
+	-lk Default
+	-lk SetTo
+	-lk ISOColor
+	-lk Color240
+	-lk Just
+	-lk Nothing
+	-lk PrettyEdDesign
+	-lk pDFrameFormat
+	-lk pDStatusFormat
+	-lk pDLineNoFormat
+	-lk pDLineNoInterv
+	-lk pDColNoInterval
+	-lk pDColNoFormat
+	-lk pDBGChar
+	-lk pDColChar
+	-lk pDBGFormat
+	-lk pDCurrLnMod
+	-lk pDBrMod
+	-lk pDJumpMarkFmt
+	-lk pDTabStr
+	-lk pDCharStyles
+	-lk Whitesp
+	-lk Digit
+	-lk Lower
+	-lk Upper
+	-lk Bracket
+	-lk Operator
+	-lk Unprintable
+	-lk Special
+	-lk pDHLStyles
+	-lk HComment
+	-lk HError
+	-lk HKeyword
+	-lk HSearch
+	-lk HSelected
+	-lk HString
+#                                                                              #
+#                                                                              #
+################################################################################
