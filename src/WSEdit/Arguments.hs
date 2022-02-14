@@ -36,7 +36,8 @@ import Data.Maybe
     , listToMaybe
     )
 import Safe
-    ( lastMay
+    ( headDef
+    , lastMay
     , maximumDef
     , readMay
     )
@@ -175,7 +176,6 @@ import WSEdit.Util
     , unlinesPlus
     , withFst
     , withSnd
-    , headWDef
     )
 
 import qualified WSEdit.Buffer as B
@@ -314,7 +314,7 @@ parseArguments (c, s) = do
                                             Just p -> p) mayThemePath
 
                             -- remove comments, treat empty lines as a comment
-                            remComs = (unlines . filter (\y -> (headWDef '#' y) /= '#') . lines)
+                            remComs = (unlines . filter (\y -> (headDef '#' y) /= '#') . lines)
 
                         mayFile <- mayReadFile themePath
 
@@ -590,7 +590,7 @@ applyArg (c, s) (SpecialSetFile  f  ) = return (c, s { fname = f })
 applyArg (c, s) (SpecialSetVPos  n  ) = return (c, s { loadPos = withFst (const n) $ loadPos s })
 applyArg (c, s) (SpecialSetHPos  n  ) = return (c, s { loadPos = withSnd (const n) $ loadPos s })
 
-applyArg (c, s) (DisplayThemeOn t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headWDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
+applyArg (c, s) (DisplayThemeOn t ) = (readFile t) >>= (\x -> return ((unlines . filter (\y -> (headDef '#' y) /= '#') . lines) x)) >>= (\x -> return(read x::PrettyEdDesign)) >>= (\x -> return (c {edDesign = (unPrettyEdDesign x)}, s))
 
 #ifndef dev
 applyArg (c, s) (DisplayBadgeSet b  ) = return (c, s { badgeText   = Just b                     })

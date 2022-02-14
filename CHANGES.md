@@ -6,10 +6,9 @@
   with file formats that are particular sensitive to whitespace changes, such as
   patch files.
 
-- `-dt <path/to/file>` can now be used to add custom themes.  Example theme files
-  found in `/themes/` folder.  `default.wstheme` is heavily commented to help
-  explain things.  `-dT` will override any external theme, and `-mf` will ignore
-  theme file that can't be found or read.
+- `-dt <path/to/file>` can now be used to add custom themes.  Example theme
+  files found in `/themes/` folder.  `default.wstheme` is heavily commented to
+  help explain things. A huge Thank You to Guy Black for implementing this!
 
 ## Fixes
 
