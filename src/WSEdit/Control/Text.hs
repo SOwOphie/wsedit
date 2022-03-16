@@ -4,6 +4,7 @@ module WSEdit.Control.Text
     ( insert
     , insertRaw
     , insertTab
+    , insertText
     , delLeft
     , delRight
     , smartHome
@@ -27,6 +28,9 @@ import Data.Char
     )
 import Safe
     ( fromJustNote
+    , headNote
+    , initNote
+    , lastNote
     )
 
 import WSEdit.Control.Base
@@ -57,6 +61,7 @@ import WSEdit.Output
     )
 import WSEdit.Util
     ( delN
+    , linesPlus
     , withPair
     , withSnd
     )
@@ -80,7 +85,8 @@ insert c = alterBuffer $ insertRaw [c]
 
 
 -- | Inserts a string at the cursor location, moving the cursor to the right.
---   Low-level function that disregards undo functionality, read-only-ness, ...
+--   Fast, but does not handle newlines correctly. Low-level function that
+--   disregards undo functionality, read-only-ness, ...
 insertRaw :: String -> WSEdit ()
 insertRaw s = refuseOnReadOnly $ modify $ ins s
     where
@@ -116,6 +122,45 @@ insertTab = alterBuffer $ do
     if b
        then insertRaw $ replicate (w - n `mod` w) ' '
        else insertRaw "\t"
+
+
+
+-- | Inserts text at the cursor position. The cursor will be positioned after
+--   the inserted text. Low-level function that disregards undo functionality,
+--   read-only-ness, ...
+insertText :: String -> WSEdit ()
+insertText s = refuseOnReadOnly $ do
+    let l = linesPlus s
+    modify $ \s' -> s' { edLines =
+                            if length l == 1
+                               then B.withCurr (withSnd (\c -> take (cursorPos s' - 1) c
+                                                            ++ headNote (fqn "paste") l
+                                                            ++ drop (cursorPos s' - 1) c
+                                                        )
+                                               )
+                                  $ edLines s'
+
+                               else B.insertLeft (False, lastNote (fqn "paste") l
+                                                      ++ drop (cursorPos s' - 1)
+                                                              (snd $ B.pos $ edLines s')
+                                                 )
+                                  $ flip (foldl (flip B.insertLeft))
+                                         ( zip (repeat False)
+                                         $ drop 1
+                                         $ initNote (fqn "paste") l
+                                         )
+                                  $ B.withCurr (withSnd (\c -> take (cursorPos s' - 1) c
+                                                            ++ headNote (fqn "paste") l
+                                                        )
+                                               )
+                                  $ edLines s'
+                       }
+
+    if length l > 1
+       then moveCursorHome
+         >> moveCursor 0 (length $ last l)
+
+       else moveCursor 0 $ length s
 
 
 

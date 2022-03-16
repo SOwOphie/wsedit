@@ -137,6 +137,7 @@ import WSEdit.Control.Base
     )
 import WSEdit.Control.Text
     ( cleanse
+    , insertText
     )
 import WSEdit.Data
     ( CanonicalPath
@@ -182,7 +183,9 @@ import WSEdit.Data.Algorithms
     ( canonicalPath
     , catchEditor
     , chopHist
+    , delSelection
     , getCursor
+    , getSelection
     , mapPast
     , popHist
     , setOffset
@@ -673,11 +676,10 @@ undo = refuseOnReadOnly
 -- | Pipe all text through an external command.
 pipeThrough :: String -> WSEdit ()
 pipeThrough cmd = alterBuffer $ do
-    bold <- gets edLines
-
-    let old = unlinesPlus
-            $ map snd
-            $ B.toList bold
+    bold       <- gets edLines
+    (old, sel) <- getSelection >>= \case
+        Just b  -> return (b, True)
+        Nothing -> return (unlinesPlus $ map snd $ B.toList bold, False)
 
     (ex, out, err) <- liftIO
         $ readCreateProcessWithExitCode
@@ -710,15 +712,19 @@ pipeThrough cmd = alterBuffer $ do
             void $ liftIO $ nextEvent $ vtyObj c
 
          ExitSuccess -> do
-            b <- liftIO
-               $ evaluate
-               $ force
-               $ B.moveTo (B.currPos bold)
-               $ fromMaybe (B.singleton (False, ""))
-               $ B.fromList
-               $ zip (repeat False)
-               $ linesPlus out
+            if sel
+               then delSelection >> insertText out
+               else do
+                        b <- liftIO
+                           $ evaluate
+                           $ force
+                           $ B.moveTo (B.currPos bold)
+                           $ fromMaybe (B.singleton (False, ""))
+                           $ B.fromList
+                           $ zip (repeat False)
+                           $ linesPlus out
 
-            modify $ (\s -> s { edLines = b })
+                        modify $ (\s -> s { edLines = b })
+
             validateCursor
             dictAddRec

@@ -22,6 +22,7 @@
   start and the end of the tab space.
 - New language definition for patch files.
 - Switched to stack LTS 18.28 for GHC 8.10.7.
+- `Ctrl-P` now respects selection.
 
 # v1.2.4
 

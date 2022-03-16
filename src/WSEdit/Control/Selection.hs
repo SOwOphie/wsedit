@@ -32,9 +32,6 @@ import Data.Maybe
     )
 import Safe
     ( headMay
-    , headNote
-    , initNote
-    , lastNote
     )
 import System.Directory
     ( getHomeDirectory
@@ -55,10 +52,11 @@ import WSEdit.Control.Base
     ( alterBuffer
     , alterState
     , getInput
-    , moveCursor
-    , moveCursorHome
     , refuseOnReadOnly
     , validateCursor
+    )
+import WSEdit.Control.Text
+    ( insertText
     )
 import WSEdit.Data
     ( EdConfig
@@ -91,11 +89,6 @@ import WSEdit.Util
     )
 
 import qualified WSEdit.Buffer as B
-
-
-
-fqn :: String -> String
-fqn = ("WSEdit.Control.Selection." ++)
 
 
 
@@ -201,40 +194,7 @@ paste = alterBuffer $ do
 
        else do
             let c = linesPlus c1
-            s <- get
-
-            put $ s     -- Arcane buffer magic incoming...
-                { edLines =
-                    if length c == 1
-                       then B.withCurr (withSnd (\l -> take (cursorPos s - 1) l
-                                                    ++ headNote (fqn "paste") c
-                                                    ++ drop (cursorPos s - 1) l
-                                                )
-                                       )
-                          $ edLines s
-
-                       else B.insertLeft (False, lastNote (fqn "paste") c
-                                              ++ drop (cursorPos s - 1)
-                                                      (snd $ B.pos $ edLines s)
-                                         )
-                          $ flip (foldl (flip B.insertLeft))
-                                 ( zip (repeat False)
-                                 $ drop 1
-                                 $ initNote (fqn "paste") c
-                                 )
-                          $ B.withCurr (withSnd (\l -> take (cursorPos s - 1) l
-                                                    ++ headNote (fqn "paste") c
-                                                )
-                                       )
-                          $ edLines s
-                }
-
-            if length c > 1
-               then moveCursorHome
-                 >> moveCursor 0 (length $ last c)
-
-               else moveCursor 0 $ length c1
-
+            insertText c1
             setStatus $ "Pasted "
                      ++ show (length c)
                      ++ " lines ("
