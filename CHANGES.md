@@ -21,6 +21,7 @@
 - Changed tab rendering again, now a marking character is placed both at the
   start and the end of the tab space.
 - New language definition for patch files.
+- Switched to stack LTS 18.28 for GHC 8.10.7.
 
 # v1.2.4
 
