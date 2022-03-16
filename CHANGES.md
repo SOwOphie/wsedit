@@ -13,6 +13,8 @@
 ## Fixes
 
 - No longer clobbers symbolic links with atomic saves.
+- `Ctrl-A` now correctly selects all text if the file does not end with a
+  newline.
 
 ## Other Changes
 

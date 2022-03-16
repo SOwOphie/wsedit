@@ -118,7 +118,7 @@ selectAll = alterState $ do
     let l = B.toLast $ edLines s
     modify $ \s' -> s' { markPos   = Just (1, 1)
                        , edLines   = l
-                       , cursorPos = length $ snd $ B.pos l
+                       , cursorPos = length (snd $ B.pos l) + 1
                        }
     validateCursor
 
