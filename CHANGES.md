@@ -1,5 +1,7 @@
 # Unreleased
 
+# v1.2.5
+
 ## New Features
 
 - `-ep` can now be used to preserve whitespace exactly on save. This should help

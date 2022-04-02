@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.4.6"
+version = "1.2.5.0"
 
 -- | Upstream URL.
 upstream :: String
@@ -125,7 +125,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = RC
+stability = Release
 
 
 
