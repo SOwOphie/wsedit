@@ -499,14 +499,14 @@ makeHeader = do
           )
        <-> string (dFrameFormat d)
             ( replicate (lNoWidth + 2) '─'
-           ++ "╬"
+           ++ "╆"
            ++ take (txtCols + 1)
                   ( drop scrollCols
-                  $ ('═':)
+                  $ ('━':)
                   $ cycle
-                  $ '╬' : replicate (dColNoInterval d - 1) '═'
+                  $ '┿' : replicate (dColNoInterval d - 1) '━'
                   )
-           ++ "╬─"
+           ++ "╅─"
             )
 
 
@@ -540,7 +540,7 @@ makeLineNos = do
                   | n `mod` dLineNoInterv d == 0 || r == n -> show n
                   | otherwise                              -> "·"
              )
-         <|> string (dFrameFormat d) " ║"
+         <|> string (dFrameFormat d) " ┃"
 
 
 
@@ -558,9 +558,9 @@ makeFooter = do
 
     return $ string (dFrameFormat d)
                 ( replicate (lNoWidth + 2) '─'
-               ++ "╬═══════════╦"
-               ++ replicate (txtCols - 11) '═'
-               ++ "╩─"
+               ++ "╄━━━━━━━━━━━┯"
+               ++ replicate (txtCols - 11) '━'
+               ++ "┹─"
                 )
           <-> (  string (dFrameFormat d)
                     (" " ++ show (B.length $ edLines s) ++ " │ ")
@@ -766,7 +766,7 @@ makeScrollbar = do
     where
         repl :: (EdDesign, EdState, Int, [Int]) -> (Int, Char) -> Image
         repl (d, s, cProg, marksAt) (n, c) =
-            char (dFrameFormat d) '║'
+            char (dFrameFormat d) '┃'
                 <|> if | readOnly s       -> char (dFrameFormat  d)  c
                        | n == cProg       -> char (dLineNoFormat d) '<'
                        | n `elem` marksAt -> char (dJumpMarkFmt  d) '•'
@@ -781,14 +781,14 @@ makeShittyBadge str = do
     (_, cols) <- getDisplayBounds
 
     return $ vertCat
-           $ (++ [ pad (cols - 2) 0 0 0 $ string (dFrameFormat d) "\\ "
-                 , pad (cols - 1) 0 0 0 $ string (dFrameFormat d) "\\"
+           $ (++ [ pad (cols - 2) 0 0 0 $ string (dFrameFormat d) "╲ "
+                 , pad (cols - 1) 0 0 0 $ string (dFrameFormat d) "╲"
                  ]
              )
            $ map (\(n, c) -> pad (cols - length str - 2 + n) 0 0 0
-                           $  string (dFrameFormat  d) "\\ "
+                           $  string (dFrameFormat  d) "╲ "
                           <|> string (dLineNoFormat d) [c]
-                          <|> string (dFrameFormat  d) " \\"
+                          <|> string (dFrameFormat  d) " ╲"
                  )
            $ zip [0..] str
 

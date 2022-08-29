@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.0"
+version = "1.2.5.1"
 
 -- | Upstream URL.
 upstream :: String
@@ -515,7 +515,7 @@ instance Default EdDesign where
                             `withStyle`     bold
 
         , dBGChar        = '·'
-        , dColChar       = Just '|'
+        , dColChar       = Just '│'
         , dBGFormat      = defAttr
                             `withForeColor` black
 
@@ -529,7 +529,7 @@ instance Default EdDesign where
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
-        , dTabStr        = ('·', ' ', '|')
+        , dTabStr        = ('·', ' ', '│')
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
@@ -609,7 +609,7 @@ brightTheme = EdDesign
                             `withStyle`     bold
 
         , dBGChar        = '·'
-        , dColChar       = Just '|'
+        , dColChar       = Just '│'
         , dBGFormat      = defAttr
                             `withForeColor` white
 
@@ -622,7 +622,7 @@ brightTheme = EdDesign
         , dJumpMarkFmt   = defAttr
                             `withForeColor` red
 
-        , dTabStr        = ('·', ' ', '|')
+        , dTabStr        = ('·', ' ', '│')
 
         , dCharStyles    =
             [ (Whitesp    , defAttr
