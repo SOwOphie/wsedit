@@ -26,6 +26,8 @@
 	-lk -A
 	-lk -db
 	-lk -dB
+	-lk -dc
+	-lk -dC
 	-lk -ds
 	-lk -dS
 	-lk -dx
