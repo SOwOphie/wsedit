@@ -90,12 +90,14 @@ import Numeric
     )
 import Safe
     ( atDef
+    , atNote
     , lookupJustDef
     )
 
 import WSEdit.Data
     ( EdConfig
         ( addnIdChars
+        , colMarker
         , drawBg
         , edDesign
         , tabWidth
@@ -167,6 +169,9 @@ import qualified WSEdit.Buffer as B
 
 
 
+fqn :: String -> String
+fqn = ("WSEdit.Output." ++)
+
 
 
 -- | Returns the display width of a given char in a given column, ignoring
@@ -229,9 +234,10 @@ data CalcSnippet = CalcSnippet
 -- | Returns the visual representation of a character at a given buffer position
 --   and in a given display column. The first argument toggles the bracket
 --   format modifier.
-charRep :: Bool -> HighlightMode -> (Int, Int) -> Char -> WSEdit Snippet
+charRep :: Bool -> HighlightMode -> (Int, Int) -> Char -> WSEdit [Snippet]
 charRep br hl pos '\t' = do
-    (r, _)    <- getCursor
+    (r, c)    <- getCursor
+    c'        <- txtToVisPos r c
     st        <- get
     conf      <- ask
     dispWidth <- charWidth (fst pos) (snd pos) '\t'
@@ -239,53 +245,77 @@ charRep br hl pos '\t' = do
     let
         d       = edDesign   conf
         currSty = dCurrLnMod d
+        styBase = iff br (combineAttrs $ dBrMod d)
+                $ case hl of
+                       HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
+                       _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
+        str     = let (c1, c2, c3) = dTabStr d
+                  in take dispWidth $ c1 : replicate (dispWidth - 2) c2 ++ [c3]
 
-    return $ Snippet
-        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                         (flip combineAttrs currSty)
-                   $ iff br (combineAttrs $ dBrMod d)
-                   $ case hl of
-                          HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
-                          _         -> lookupJustDef defAttr Whitesp   $ dCharStyles d
-
-        , sStr     = let (c1, c2, c3) = dTabStr d
-                     in take dispWidth $ c1 : replicate (dispWidth - 2) c2 ++ [c3]
-        }
+    return $ if colMarker conf && snd pos <= c' && c' < snd pos + dispWidth
+                then [ Snippet
+                        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                                         (flip combineAttrs currSty) styBase
+                        , sStr     = take (c' - snd pos) str
+                        }
+                     , Snippet
+                        { sNominal = iff (hl /= HSelected && not (readOnly st))
+                                         (flip combineAttrs currSty) styBase
+                        , sStr     = [atNote (fqn "charRep") str $ c' - snd pos]
+                        }
+                     , Snippet
+                        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                                         (flip combineAttrs currSty) styBase
+                        , sStr     = drop (c' - snd pos + 1) str
+                        }
+                     ]
+                else [ Snippet
+                        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
+                                         (flip combineAttrs currSty) styBase
+                        , sStr     = str
+                        }
+                     ]
 
 charRep br hl pos ' ' = do
-    (r, _) <- getCursor
+    (r, c) <- getCursor
+    c'     <- txtToVisPos r c
     st     <- get
+    conf   <- ask
     d      <- edDesign <$> ask
 
-    return $ Snippet
-        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                         (flip combineAttrs $ dCurrLnMod d)
-                   $ iff br (combineAttrs $ dBrMod d)
-                   $ lookupJustDef defAttr hl
-                   $ dHLStyles d
+    return [ Snippet
+                { sNominal = iff ((r == fst pos || (colMarker conf && c' == snd pos)) && hl /= HSelected && not (readOnly st))
+                                 (flip combineAttrs $ dCurrLnMod d)
+                           $ iff br (combineAttrs $ dBrMod d)
+                           $ lookupJustDef defAttr hl
+                           $ dHLStyles d
 
-        , sStr     = " "
-        }
+                , sStr     = " "
+                }
+           ]
 
 charRep br hl pos ch = do
-    (r, _) <- getCursor
+    (r, c) <- getCursor
+    c'     <- txtToVisPos r c
     st     <- get
+    conf   <- ask
     d      <- edDesign    <$> ask
     l      <- addnIdChars <$> ask
 
-    return $ Snippet
-        { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                         (flip combineAttrs $ dCurrLnMod d)
-                   $ iff br (combineAttrs $ dBrMod d)
-                   $ lookupJustDef
-                        (lookupJustDef defAttr (charClass l ch) (dCharStyles d))
-                     hl
-                    (dHLStyles d)
+    return [ Snippet
+                { sNominal = iff ((r == fst pos || (colMarker conf && c' == snd pos)) && hl /= HSelected && not (readOnly st))
+                                 (flip combineAttrs $ dCurrLnMod d)
+                           $ iff br (combineAttrs $ dBrMod d)
+                           $ lookupJustDef
+                                (lookupJustDef defAttr (charClass (addnIdChars conf) ch) (dCharStyles d))
+                             hl
+                            (dHLStyles d)
 
-        , sStr     = if charClass l ch == Unprintable
-                        then "?#" ++ showHex (ord ch) ";"
-                        else [ch]
-        }
+                , sStr     = if charClass l ch == Unprintable
+                                then "?#" ++ showHex (ord ch) ";"
+                                else [ch]
+                }
+           ]
 
 
 
@@ -307,7 +337,7 @@ lineRep lNo off str = do
         --   state.
         f :: ([Snippet], Int, Int, Int) -> Char -> WSEdit ([Snippet], Int, Int, Int)
         f (im, tPos, vPos, toSkip) c = do
-            i <- charRep
+            is <- charRep
                     (fromMaybe False $ fmap (`inBracketHL` (lNo, tPos)) mayBr)
                     (case (maySel, lookupBy (`inRange` tPos) fmt) of
                           (Just (sS, sE), _     ) | sS <= (lNo, tPos) && (lNo, tPos) <= sE -> HSelected
@@ -317,18 +347,19 @@ lineRep lNo off str = do
                     (lNo, vPos)
                     c
 
-            return $ if
-                | toSkip <= 0              -> (i:im, tPos + 1, vPos + length (sStr i), 0)
-                | toSkip < length (sStr i) -> ( i { sStr = drop toSkip $ sStr i} : im
-                                              , tPos + 1
-                                              , vPos + length (sStr i)
-                                              , 0
-                                              )
-                | otherwise                -> ( im
-                                              , tPos + 1
-                                              , vPos + length (sStr i)
-                                              , toSkip - length (sStr i)
-                                              )
+            return $ foldl (\(im_, tPos_, vPos_, toSkip_) i -> if
+                                | toSkip_ <= 0              -> (i : im_, tPos_, vPos_ + length (sStr i), 0)
+                                | toSkip_ < length (sStr i) -> ( i { sStr = drop toSkip_ $ sStr i} : im_
+                                                               , tPos_
+                                                               , vPos_ + length (sStr i)
+                                                               , 0
+                                                               )
+                                | otherwise                 -> ( im_
+                                                               , tPos_
+                                                               , vPos_ + length (sStr i)
+                                                               , toSkip_ - length (sStr i)
+                                                               )
+                           ) (im, tPos + 1, vPos, toSkip) is
 
     (r,_,_,_) <- foldM f ([], 1, 1, off) str
 
@@ -391,22 +422,26 @@ lineRep lNo off str = do
 
 -- | Returns the textual position of the cursor in a line, given the line number
 --   and its visual position.
-visToTxtPos :: String -> Int -> Int -> WSEdit Int
-visToTxtPos = pos 1
+visToTxtPos :: Int -> Int -> WSEdit Int
+visToTxtPos r c = do
+    line <- snd . flip (B.atDef (undefined, "")) (r - 1) . edLines <$> get
+    pos 1 line r c
     where
         pos :: Int -> String -> Int -> Int -> WSEdit Int
-        pos _   []     _ _            = return 1
-        pos col _      _ c | col == c = return 1
-        pos col _      _ c | col >  c = return 0
-        pos col (x:xs) r c            = do
-            w <- charWidth r col x
-            (+ 1) <$> pos (col + w) xs r c
+        pos _   []     _  _              = return 1
+        pos col _      _  c' | col == c' = return 1
+        pos col _      _  c' | col >  c' = return 0
+        pos col (x:xs) r' c'             = do
+            w <- charWidth r' col x
+            (+ 1) <$> pos (col + w) xs r' c'
 
 
 -- | Returns the visual position of the cursor in a line, given the line number
 --  and its textual position.
-txtToVisPos :: String -> Int -> Int -> WSEdit Int
-txtToVisPos txt r n = (+1) <$> stringWidth r 1 (take (n - 1) txt)
+txtToVisPos :: Int -> Int -> WSEdit Int
+txtToVisPos r c = do
+    line <- snd . flip (B.atDef (undefined, "")) (r - 1) . edLines <$> get
+    (+1) <$> stringWidth r 1 (take (c - 1) line)
 
 
 
@@ -425,12 +460,7 @@ lineNoWidth =  length
 --   buffer.
 toCursorDispPos :: (Int, Int) -> WSEdit (Int, Int)
 toCursorDispPos (r, c) = do
-    currLine <-  snd
-              .  B.pos
-              .  edLines
-             <$> get
-
-    offset <- txtToVisPos currLine r c
+    offset <- txtToVisPos r c
 
     n <- lineNoWidth
     (r', c') <- scrollOffset <$> get
@@ -453,12 +483,10 @@ cursorOffScreen :: WSEdit ((Int, Int), (Int, Int))
 cursorOffScreen = do
     s <- get
 
-    let
-        currLn       = snd $ B.pos $ edLines s
-        (scrR, scrC) = scrollOffset s
+    let (scrR, scrC) = scrollOffset s
 
     (curR, curC_) <- getCursor
-    curC <- txtToVisPos currLn curR curC_
+    curC <- txtToVisPos curR curC_
 
     (maxR, maxC) <- getViewportDimensions
 
@@ -633,9 +661,22 @@ makeTextFrame = do
 
     (scrollRows, scrollCols) <- getOffset
     (   txtRows, txtCols   ) <- getViewportDimensions
-    (cR        , _         ) <- getCursor
+    (cR        , cC        ) <- getCursor
+    cC'                      <- txtToVisPos cR cC
 
-    txt <- mapM (\(n, (b, l)) -> lineRep n scrollCols l >>= \l' -> return (b, l'))
+    txt <- mapM (\(n, (b, l)) -> do
+                    lr <- lineRep n scrollCols l
+                    w <- stringWidth n (scrollCols + 1) l
+                    return (b, iff (not $ drawBg c)
+                                   (<|> char ( iff ((n == cR || (colMarker c && w + 1 == cC')) && not (readOnly s))
+                                                   (combineAttrs $ dCurrLnMod d)
+                                             $ lookupJustDef defAttr Whitesp
+                                             $ dCharStyles d
+                                             ) (dBGChar d)
+                                   )
+                                   lr
+                           )
+                )
          $ zip [1 + scrollRows ..]
          $ B.sub scrollRows (scrollRows + txtRows - 1)
          $ edLines s
@@ -655,15 +696,7 @@ makeTextFrame = do
 
                           _ -> (char (dLineNoFormat d) ' ' <|>)
                     )
-                    $ pad 0 0 1 0
-                    $ (iff (not $ drawBg c)
-                           (<|> char ( iff (l == cR && not (readOnly s))
-                                           (combineAttrs $ dCurrLnMod d)
-                                     $ lookupJustDef defAttr Whitesp
-                                     $ dCharStyles d
-                                     ) (dBGChar d)
-                           )
-                      ) ln
+                    $ pad 0 0 1 0 ln
                  )
            $ zip [1 + scrollRows ..] txt
 
@@ -678,7 +711,8 @@ makeBackground = do
     (nRows     , nCols     ) <- getViewportDimensions
     (scrollRows, scrollCols) <- getOffset
 
-    cursor   <- getCursor
+    (r, c)   <- getCursor
+    c'       <- txtToVisPos r c
     lNoWidth <- lineNoWidth
 
     let
@@ -690,16 +724,19 @@ makeBackground = do
 
     return $ pad (lNoWidth + 3) 2 0 0
            $ vertCat
-           $ map (\(n, l) -> string (if n == fst cursor && not (readOnly s)
-                                          then bgSty `withStyle` reverseVideo
-                                          else bgSty
-                                    ) l
+           $ map (\(n, (x, y, z)) ->
+                    if | readOnly s     -> string  bgSty                           $ x ++ y ++ z
+                       | n == r         -> string (bgSty `withStyle` reverseVideo) $ x ++ y ++ z
+                       | colMarker conf -> string  bgSty                             x
+                                       <|> string (bgSty `withStyle` reverseVideo)        y
+                                       <|> string  bgSty                                       z
+                       | otherwise      -> string  bgSty                           $ x ++ y ++ z
                  )
            $ take nRows
            $ drop scrollRows
            $ zip [1..]
            $ repeat
-           $ ('#' :)
+           $ (\l -> ('#' : take (c' - scrollCols - 1) l, [atNote (fqn "makeBackground") l $ c' - scrollCols - 1], drop (c' - scrollCols) l))
            $ take nCols
            $ drop scrollCols
            $ cycle

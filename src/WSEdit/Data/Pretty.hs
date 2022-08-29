@@ -26,6 +26,7 @@ import WSEdit.Data
         , blockComment
         , brackets
         , chrDelim
+        , colMarker
         , drawBg
         , dumpEvents
         , edDesign
@@ -85,6 +86,7 @@ data PrettyEdConfig = PrettyEdConfig
     , pHistSize     :: Int
     , pTabWidth     :: Int
     , pDrawBg       :: Bool
+    , pColMarker    :: Bool
     , pDumpEvents   :: Bool
     , pAtomicSaves  :: Bool
     , pWriCheck     :: Bool
@@ -117,6 +119,7 @@ prettyEdConfig c = PrettyEdConfig
     , pHistSize     =                  histSize     c
     , pTabWidth     =                  tabWidth     c
     , pDrawBg       =                  drawBg       c
+    , pColMarker    =                  colMarker    c
     , pDumpEvents   =                  dumpEvents   c
     , pAtomicSaves  =                  atomicSaves  c
     , pWriCheck     =                  wriCheck     c
@@ -148,6 +151,7 @@ unPrettyEdConfig v k p = EdConfig
     , histSize     = pHistSize                    p
     , tabWidth     = pTabWidth                    p
     , drawBg       = pDrawBg                      p
+    , colMarker    = pColMarker                   p
     , dumpEvents   = pDumpEvents                  p
     , atomicSaves  = pAtomicSaves                 p
     , wriCheck     = pWriCheck                    p

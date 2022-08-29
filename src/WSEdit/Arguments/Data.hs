@@ -81,8 +81,10 @@ data Argument = AutocompAdd      (Maybe Int) FileMatchProto
 
               | DisplayBadgeSet  String
               | DisplayBadgeOff
+              | DisplayColsOn
+              | DisplayColsOff
               | DisplayThemeOff
-              | DisplayThemeOn   String
+              | DisplayThemeOn    String
               | DisplayDotsOn
               | DisplayDotsOff
               | DisplayInvBGOn

@@ -164,6 +164,8 @@ configOption = (choice
     , autocompOff
     , displayBadgeSet
     , displayBadgeOff
+    , displayColsOn
+    , displayColsOff
     , displayDotsOn
     , displayDotsOff
     , displayInvBGOn
@@ -240,6 +242,8 @@ autocompOff       = try (string "-A"  ) >> return AutocompOff
 displayBadgeOff   = try (string "-dS" ) >> return DisplayBadgeOff
 displayDotsOn     = try (string "-db" ) >> return DisplayDotsOn
 displayDotsOff    = try (string "-dB" ) >> return DisplayDotsOff
+displayColsOn     = try (string "-dc" ) >> return DisplayColsOn
+displayColsOff    = try (string "-dC" ) >> return DisplayColsOff
 displayThemeOff   = try (string "-dT" ) >> return DisplayThemeOff
 displayInvBGOn    = try (string "-dx" ) >> return DisplayInvBGOn
 displayInvBGOff   = try (string "-dX" ) >> return DisplayInvBGOff

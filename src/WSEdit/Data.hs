@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.1"
+version = "1.2.5.2"
 
 -- | Upstream URL.
 upstream :: String
@@ -125,7 +125,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = Release
+stability = Prototype
 
 
 
@@ -334,6 +334,9 @@ data EdConfig = EdConfig
     , drawBg       :: Bool
         -- ^ Whether or not to draw the background.
 
+    , colMarker    :: Bool
+        -- ^ Whether or not to highlight the current column.
+
     , dumpEvents   :: Bool
         -- ^ Whether or not to dump every received event to the status line.
 
@@ -407,6 +410,7 @@ mkDefConfig v k = EdConfig
                 , histSize     = 100
                 , tabWidth     = 4
                 , drawBg       = False
+                , colMarker    = False
                 , dumpEvents   = False
                 , atomicSaves  = True
                 , wriCheck     = True

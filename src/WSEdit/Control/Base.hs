@@ -227,13 +227,11 @@ moveCursor r c = alterState $ do
             (currR, currC) <- getCursor
             s <- get
 
-            let lns      = edLines s
-                currLn   = snd $ B.pos lns
-                tLnNo    = min (B.length lns) $ max 1 $ currR + n
-                targetLn = snd $ B.atDef (undefined, "") lns $ tLnNo - 1
+            let lns   = edLines s
+                tLnNo = min (B.length lns) $ max 1 $ currR + n
 
             -- Current visual cursor offset (amount of columns)
-            vPos <- txtToVisPos currLn currR currC
+            vPos <- txtToVisPos currR currC
 
             -- Targeted visual cursor offset
             tPos <- case wantsPos s of
@@ -244,7 +242,7 @@ moveCursor r c = alterState $ do
                     return vPos
 
             -- Resulting textual cursor offset (amount of characters)
-            newC <- visToTxtPos targetLn tLnNo tPos
+            newC <- visToTxtPos tLnNo tPos
             setCursor (tLnNo, newC)
 
         -- | Horizontal portion of the movement

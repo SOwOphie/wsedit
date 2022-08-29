@@ -106,6 +106,7 @@ import WSEdit.Data
         , blockComment
         , brackets
         , chrDelim
+        , colMarker
         , drawBg
         , dumpEvents
         , edDesign
@@ -528,6 +529,8 @@ applyArg (c, s)  DebugWRIOff          = return (c { wriCheck     = False        
 applyArg (c, s)  DebugWRIOn           = return (c { wriCheck     = True                                    }, s)
 applyArg (c, s)  DisplayDotsOn        = return (c { drawBg       = True                                    }, s)
 applyArg (c, s)  DisplayDotsOff       = return (c { drawBg       = False                                   }, s)
+applyArg (c, s)  DisplayColsOn        = return (c { colMarker    = True                                    }, s)
+applyArg (c, s)  DisplayColsOff       = return (c { colMarker    = False                                   }, s)
 applyArg (c, s)  DisplayThemeOff      = return (c { edDesign     = def                                     }, s)
 applyArg (c, s)  DisplayInvBGOn       = return (c { edDesign     = brightTheme                             }, s)
 applyArg (c, s)  DisplayInvBGOff      = return (c { edDesign     = def                                     }, s)
