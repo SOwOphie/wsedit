@@ -59,6 +59,7 @@
 	-lk union
 	-lk unsigned
 	-lk void
+	-lk volatile
 	-lk while
 *.i
 	-lkp __
