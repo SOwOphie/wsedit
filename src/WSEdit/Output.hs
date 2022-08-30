@@ -736,7 +736,11 @@ makeBackground = do
            $ drop scrollRows
            $ zip [1..]
            $ repeat
-           $ (\l -> ('#' : take (c' - scrollCols - 1) l, [atNote (fqn "makeBackground") l $ c' - scrollCols - 1], drop (c' - scrollCols) l))
+           $ (\l -> ( '#' : take (c' - scrollCols - 1) l
+                    , if c' - scrollCols < 1 then "" else [atNote (fqn "makeBackground") l $ c' - scrollCols - 1]
+                    , drop (c' - scrollCols) l
+                    )
+             )
            $ take nCols
            $ drop scrollCols
            $ cycle
