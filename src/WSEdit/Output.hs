@@ -133,6 +133,7 @@ import WSEdit.Data
         , replaceTabs
         , scrollOffset
         , status
+        , visCursorPos
         )
     , HighlightMode
         ( HError
@@ -236,8 +237,8 @@ data CalcSnippet = CalcSnippet
 --   format modifier.
 charRep :: Bool -> HighlightMode -> (Int, Int) -> Char -> WSEdit [Snippet]
 charRep br hl pos '\t' = do
-    (r, c)    <- getCursor
-    c'        <- txtToVisPos r c
+    (r, _)    <- getCursor
+    c'        <- gets visCursorPos
     st        <- get
     conf      <- ask
     dispWidth <- charWidth (fst pos) (snd pos) '\t'
@@ -277,8 +278,8 @@ charRep br hl pos '\t' = do
                      ]
 
 charRep br hl pos ' ' = do
-    (r, c) <- getCursor
-    c'     <- txtToVisPos r c
+    (r, _) <- getCursor
+    c'     <- gets visCursorPos
     st     <- get
     conf   <- ask
     d      <- edDesign <$> ask
@@ -295,8 +296,8 @@ charRep br hl pos ' ' = do
            ]
 
 charRep br hl pos ch = do
-    (r, c) <- getCursor
-    c'     <- txtToVisPos r c
+    (r, _) <- getCursor
+    c'     <- gets visCursorPos
     st     <- get
     conf   <- ask
     d      <- edDesign    <$> ask
@@ -485,8 +486,8 @@ cursorOffScreen = do
 
     let (scrR, scrC) = scrollOffset s
 
-    (curR, curC_) <- getCursor
-    curC <- txtToVisPos curR curC_
+    (curR, _) <- getCursor
+    curC      <- gets visCursorPos
 
     (maxR, maxC) <- getViewportDimensions
 

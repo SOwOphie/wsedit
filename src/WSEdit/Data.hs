@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.3"
+version = "1.2.5.4"
 
 -- | Upstream URL.
 upstream :: String
@@ -125,7 +125,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = Prototype
+stability = WIP
 
 
 
@@ -199,6 +199,9 @@ data EdState = EdState
 
     , cursorPos    :: Int
         -- ^ 1-based offset from the left end of the current line in characters.
+
+    , visCursorPos :: Int
+        -- ^ Visual cursor position cache. Only valid during the output phase.
 
     , loadPos      :: (Int, Int)
         -- ^ Where to place the cursor when loading the file.
@@ -281,6 +284,7 @@ instance Default EdState where
         , elTabCache   = Nothing
 
         , cursorPos    = 1
+        , visCursorPos = 1
         , loadPos      = (1, 1)
         , wantsPos     = Nothing
         , markPos      = Nothing
