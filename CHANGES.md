@@ -8,6 +8,7 @@
 
 - Changed the characters used to render the border, background and badge to make
   the result look smoother.
+- Improved rendering of the gutter (the area immediately left to the text).
 
 # v1.2.5
 

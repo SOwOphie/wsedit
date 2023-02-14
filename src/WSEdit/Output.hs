@@ -695,7 +695,7 @@ makeTextFrame = do
                             |           l == y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '└' <|>)
                             | x <  l && l <  y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '│' <|>)
 
-                          _ -> (char (dLineNoFormat d) ' ' <|>)
+                          _ -> (char (dBGFormat d) '▋' <|>)
                     )
                     $ pad 0 0 1 0 ln
                  )
@@ -737,7 +737,7 @@ makeBackground = do
            $ drop scrollRows
            $ zip [1..]
            $ repeat
-           $ (\l -> ( '#' : take (c' - scrollCols - 1) l
+           $ (\l -> ( take (c' - scrollCols) l
                     , if c' - scrollCols < 1 then "" else [atNote (fqn "makeBackground") l $ c' - scrollCols - 1]
                     , drop (c' - scrollCols) l
                     )
