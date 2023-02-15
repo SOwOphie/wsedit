@@ -15,9 +15,6 @@ module WSEdit.Control.Text
 
 
 
-import Control.Monad
-    ( when
-    )
 import Control.Monad.RWS.Strict
     ( ask
     , get
@@ -253,9 +250,9 @@ smartHome = alterState $ do
          .  edLines
         <$> get
 
-    moveCursorHome
-
-    when (cC /= pos) $ moveCursor 0 $ pos - 1
+    if cC == pos
+       then moveCursorHome
+       else moveCursor 0 $ pos - cC
 
 
 

@@ -59,7 +59,6 @@ import WSEdit.Data
         , scrollOffset
         , searchTerms
         , tokenCache
-        , visCursorPos
         )
     , HighlightMode
         ( HComment
@@ -78,12 +77,8 @@ import WSEdit.Data
         )
     , WSEdit
     )
-import WSEdit.Data.Algorithms
-    ( getCursor
-    )
 import WSEdit.Output
     ( getViewportDimensions
-    , txtToVisPos
     )
 import WSEdit.Util
     ( findInStr
@@ -459,8 +454,4 @@ rebuildAll h = do
        then rebuildTk Nothing >> rebuildFmt Nothing
        else rebuildTk h       >> rebuildFmt h
 
-    c <- getCursor >>= uncurry txtToVisPos
-
-    modify $ \s' -> s' { fullRebdReq  = False
-                       , visCursorPos = c
-                       }
+    modify $ \s' -> s' { fullRebdReq  = False }

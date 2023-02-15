@@ -279,7 +279,7 @@ moveCursor r c = alterState $ do
 
 
 
--- | Moves the cursor to the first column using `moveCursor`.
+-- | Moves the cursor to the first column.
 moveCursorHome :: WSEdit ()
 moveCursorHome = do
     modify $ \s -> s { cursorPos = 1, wantsPos = Nothing }
@@ -287,7 +287,7 @@ moveCursorHome = do
 
 
 
--- | Moves the cursor to the last column using `moveCursor`.
+-- | Moves the cursor to the last column.
 moveCursorEnd :: WSEdit ()
 moveCursorEnd = do
     l <- currLineLen
