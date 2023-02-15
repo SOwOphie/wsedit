@@ -11,7 +11,7 @@
 - Improved rendering of the gutter (the area immediately left to the text).
 - Removed bold formatting from the default editor themes (it looks quite bad on
   some fonts).
-- Made search terms stand out more.
+- Made search terms stand out more, and error formatting more readable.
 
 # v1.2.5
 

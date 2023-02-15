@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.9"
+version = "1.2.5.10"
 
 -- | Upstream URL.
 upstream :: String
@@ -560,6 +560,7 @@ instance Default EdDesign where
                             `withForeColor` brightMagenta
               )
             , (HError   , defAttr
+                            `withForeColor` black
                             `withBackColor` brightRed
                             `withStyle`     bold
               )
@@ -651,6 +652,7 @@ brightTheme = EdDesign
                             `withForeColor` brightMagenta
               )
             , (HError   , defAttr
+                            `withForeColor` black
                             `withBackColor` brightRed
                             `withStyle`     bold
               )
