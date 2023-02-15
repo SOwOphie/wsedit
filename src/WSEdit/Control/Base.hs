@@ -91,7 +91,7 @@ import WSEdit.Data
         ( PNothing
         )
     , HighlightMode
-        ( HSearch
+        ( HSelected
         )
     , Keymap
     , WSEdit
@@ -325,7 +325,7 @@ standby str = do
                            $ zip (repeat False) strLn
 
             , rangeCache   = replicate (max 1 $ length strLn)
-                                       ([((1, maxBound), HSearch)], PNothing)
+                                       ([((1, maxBound), HSelected)], PNothing)
             , scrollOffset = (0, 0)
             , readOnly     = True
             , badgeText    = Nothing

@@ -63,7 +63,6 @@ import Graphics.Vty
     , brightGreen
     , brightMagenta
     , brightRed
-    , brightWhite
     , brightYellow
     , cyan
     , green
@@ -109,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.8"
+version = "1.2.5.9"
 
 -- | Upstream URL.
 upstream :: String
@@ -568,7 +567,8 @@ instance Default EdDesign where
                             `withForeColor` green
               )
             , (HSearch  , defAttr
-                            `withForeColor` brightRed
+                            `withForeColor` black
+                            `withBackColor` green
                             `withStyle`     bold
               )
             , (HSelected, defAttr
@@ -652,15 +652,18 @@ brightTheme = EdDesign
               )
             , (HError   , defAttr
                             `withBackColor` brightRed
+                            `withStyle`     bold
               )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
             , (HSearch  , defAttr
-                            `withForeColor` brightRed
+                            `withForeColor` white
+                            `withBackColor` green
+                            `withStyle`     bold
               )
             , (HSelected, defAttr
-                            `withForeColor` brightWhite
+                            `withStyle`     reverseVideo
               )
             , (HString  , defAttr
                             `withForeColor` cyan
