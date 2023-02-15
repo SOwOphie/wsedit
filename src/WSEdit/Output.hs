@@ -691,10 +691,10 @@ makeTextFrame = do
                           (_                    , True) -> (char (dJumpMarkFmt d) '•' <|>)
 
                           (Just ((x, _), (y, _)), _   )
-                            | x == l && l == y -> (char (                                dLineNoFormat d) ' ' <|>)
-                            | x == l           -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '┌' <|>)
-                            |           l == y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '└' <|>)
-                            | x <  l && l <  y -> (char (lookupJustDef defAttr Bracket $ dCharStyles   d) '│' <|>)
+                            | x == l && l == y -> (char (                                dBGFormat   d) '▋' <|>)
+                            | x == l           -> (char (lookupJustDef defAttr Bracket $ dCharStyles d) '┌' <|>)
+                            |           l == y -> (char (lookupJustDef defAttr Bracket $ dCharStyles d) '└' <|>)
+                            | x <  l && l <  y -> (char (lookupJustDef defAttr Bracket $ dCharStyles d) '│' <|>)
 
                           _ -> (char (dBGFormat d) '▋' <|>)
                     )

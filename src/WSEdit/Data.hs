@@ -110,7 +110,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.6"
+version = "1.2.5.7"
 
 -- | Upstream URL.
 upstream :: String
@@ -506,17 +506,14 @@ instance Default EdDesign where
 
         , dStatusFormat  = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
 
         , dLineNoFormat  = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
         , dLineNoInterv  = 10
 
         , dColNoInterval = 40
         , dColNoFormat   = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
 
         , dBGChar        = '·'
         , dColChar       = Just '│'
@@ -551,11 +548,9 @@ instance Default EdDesign where
               )
             , (Operator   , defAttr
                             `withForeColor` brightYellow
-                            `withStyle`     bold
               )
             , (Unprintable, defAttr
                             `withForeColor` magenta
-                            `withStyle`     bold
               )
             , (Special    , defAttr
                             `withForeColor` magenta
@@ -565,22 +560,18 @@ instance Default EdDesign where
         , dHLStyles      =
             [ (HComment , defAttr
                             `withForeColor` brightMagenta
-                            `withStyle`     bold
               )
             , (HError   , defAttr
                             `withBackColor` brightRed
-                            `withStyle`     bold
               )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
             , (HSearch  , defAttr
                             `withForeColor` brightRed
-                            `withStyle`     bold
               )
             , (HSelected, defAttr
                             `withForeColor` brightBlack
-                            `withBackColor` white
               )
             , (HString  , defAttr
                             `withForeColor` cyan
@@ -601,17 +592,14 @@ brightTheme = EdDesign
 
         , dStatusFormat  = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
 
         , dLineNoFormat  = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
         , dLineNoInterv  = 10
 
         , dColNoInterval = 40
         , dColNoFormat   = defAttr
                             `withForeColor` brightGreen
-                            `withStyle`     bold
 
         , dBGChar        = '·'
         , dColChar       = Just '│'
@@ -645,11 +633,9 @@ brightTheme = EdDesign
               )
             , (Operator   , defAttr
                             `withForeColor` brightYellow
-                            `withStyle`     bold
               )
             , (Unprintable, defAttr
                             `withForeColor` magenta
-                            `withStyle`     bold
               )
             , (Special    , defAttr
                             `withForeColor` magenta
@@ -662,22 +648,18 @@ brightTheme = EdDesign
               )
             , (HComment , defAttr
                             `withForeColor` brightMagenta
-                            `withStyle`     bold
               )
             , (HError   , defAttr
                             `withBackColor` brightRed
-                            `withStyle`     bold
               )
             , (HKeyword , defAttr
                             `withForeColor` green
               )
             , (HSearch  , defAttr
                             `withForeColor` brightRed
-                            `withStyle`     bold
               )
             , (HSelected, defAttr
                             `withForeColor` brightWhite
-                            `withBackColor` black
               )
             , (HString  , defAttr
                             `withForeColor` cyan
