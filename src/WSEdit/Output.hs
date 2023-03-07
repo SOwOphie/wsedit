@@ -115,6 +115,7 @@ import WSEdit.Data
         , dLineNoFormat
         , dLineNoInterv
         , dJumpMarkFmt
+        , dOverwrite
         , dStatusFormat
         , dTabStr
         )
@@ -244,7 +245,6 @@ charRep br hl visC pos '\t' = do
 
     let
         d       = edDesign   conf
-        currSty = dCurrLnMod d
         styBase = iff br (combineAttrs $ dBrMod d)
                 $ case hl of
                        HSelected -> lookupJustDef defAttr HSelected $ dHLStyles   d
@@ -255,23 +255,26 @@ charRep br hl visC pos '\t' = do
     return $ if colMarker conf && snd pos <= visC && visC < snd pos + dispWidth
                 then [ Snippet
                         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                                         (flip combineAttrs currSty) styBase
+                                         (flip combineAttrs $ dCurrLnMod d) styBase
                         , sStr     = take (visC - snd pos) str
                         }
                      , Snippet
                         { sNominal = iff (hl /= HSelected && not (readOnly st))
-                                         (flip combineAttrs currSty) styBase
+                                         (if overwrite st && r == fst pos && visC == snd pos
+                                             then const $ dOverwrite d
+                                             else flip combineAttrs $ dCurrLnMod d
+                                         ) styBase
                         , sStr     = [atNote (fqn "charRep") str $ visC - snd pos]
                         }
                      , Snippet
                         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                                         (flip combineAttrs currSty) styBase
+                                         (flip combineAttrs $ dCurrLnMod d) styBase
                         , sStr     = drop (visC - snd pos + 1) str
                         }
                      ]
                 else [ Snippet
                         { sNominal = iff (r == fst pos && hl /= HSelected && not (readOnly st))
-                                         (flip combineAttrs currSty) styBase
+                                         (flip combineAttrs $ dCurrLnMod d) styBase
                         , sStr     = str
                         }
                      ]
@@ -284,7 +287,10 @@ charRep br hl visC pos ' ' = do
 
     return [ Snippet
                 { sNominal = iff ((r == fst pos || (colMarker conf && visC == snd pos)) && hl /= HSelected && not (readOnly st))
-                                 (flip combineAttrs $ dCurrLnMod d)
+                                         (if overwrite st && r == fst pos && visC == snd pos
+                                             then const $ dOverwrite d
+                                             else flip combineAttrs $ dCurrLnMod d
+                                         )
                            $ iff br (combineAttrs $ dBrMod d)
                            $ lookupJustDef defAttr hl
                            $ dHLStyles d
@@ -302,7 +308,10 @@ charRep br hl visC pos ch = do
 
     return [ Snippet
                 { sNominal = iff ((r == fst pos || (colMarker conf && visC == snd pos)) && hl /= HSelected && not (readOnly st))
-                                 (flip combineAttrs $ dCurrLnMod d)
+                                         (if overwrite st && r == fst pos && visC == snd pos
+                                             then const $ dOverwrite d
+                                             else flip combineAttrs $ dCurrLnMod d
+                                         )
                            $ iff br (combineAttrs $ dBrMod d)
                            $ lookupJustDef
                                 (lookupJustDef defAttr (charClass (addnIdChars conf) ch) (dCharStyles d))
@@ -671,7 +680,10 @@ makeTextFrame = do
                     w <- stringWidth n (scrollCols + 1) l
                     return (b, iff (not $ drawBg c)
                                    (<|> char ( iff ((n == cR || (colMarker c && w + 1 == cC')) && not (readOnly s))
-                                                   (combineAttrs $ dCurrLnMod d)
+                                                   (if overwrite s && n == cR && w + 1 == cC'
+                                                      then const $ dOverwrite d
+                                                      else flip combineAttrs $ dCurrLnMod d
+                                                   )
                                              $ lookupJustDef defAttr Whitesp
                                              $ dCharStyles d
                                              ) (dBGChar d)
@@ -857,7 +869,7 @@ draw = do
 
     liftIO $ update (vtyObj c)
              Picture
-                { picCursor     = if readOnly s || ru + rd + cl + cr > 0
+                { picCursor     = if readOnly s || ru + rd + cl + cr > 0 || overwrite s
                                      then NoCursor
                                      else uncurry Cursor $ swap cursor
                 , picLayers     = [ bad

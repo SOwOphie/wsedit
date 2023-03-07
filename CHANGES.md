@@ -12,6 +12,7 @@
 - Removed bold formatting from the default editor themes (it looks quite bad on
   some fonts).
 - Made search terms stand out more, and error formatting more readable.
+- The cursor now turns bright red if overwrite mode is active.
 
 # v1.2.5
 

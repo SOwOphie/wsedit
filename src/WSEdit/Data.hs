@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.10"
+version = "1.2.5.11"
 
 -- | Upstream URL.
 upstream :: String
@@ -477,6 +477,9 @@ data EdDesign = EdDesign
     , dCurrLnMod     :: Attr
         -- ^ Attribute modifications to apply to the current line
 
+    , dOverwrite     :: Attr
+        -- ^ Attribute for the cursor if overwrite is on
+
     , dBrMod         :: Attr
         -- ^ Attribute modifications for bracket matching.
 
@@ -520,6 +523,10 @@ instance Default EdDesign where
 
         , dCurrLnMod     = defAttr
                             `withBackColor` black
+
+        , dOverwrite     = defAttr
+                            `withForeColor` black
+                            `withBackColor` brightRed
 
 
         , dBrMod         = defAttr
@@ -610,6 +617,10 @@ brightTheme = EdDesign
 
         , dCurrLnMod     = defAttr
                             `withBackColor` white
+
+        , dOverwrite     = defAttr
+                            `withForeColor` white
+                            `withBackColor` brightRed
 
         , dBrMod         = defAttr
                             `withStyle`     reverseVideo

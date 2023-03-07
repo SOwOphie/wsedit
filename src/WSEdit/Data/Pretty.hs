@@ -64,6 +64,7 @@ import WSEdit.Data
         , dJumpMarkFmt
         , dLineNoFormat
         , dLineNoInterv
+        , dOverwrite
         , dStatusFormat
         , dTabStr
         )
@@ -189,6 +190,7 @@ data PrettyEdDesign = PrettyEdDesign
     , pDColChar       :: Maybe Char
     , pDBGFormat      :: Attr
     , pDCurrLnMod     :: Attr
+    , pDOverwrite     :: Attr
     , pDBrMod         :: Attr
     , pDJumpMarkFmt   :: Attr
     , pDTabStr        :: (Char, Char, Char)
@@ -210,6 +212,7 @@ prettyEdDesign d = PrettyEdDesign
     , pDColChar       = dColChar       d
     , pDBGFormat      = dBGFormat      d
     , pDCurrLnMod     = dCurrLnMod     d
+    , pDOverwrite     = dOverwrite     d
     , pDBrMod         = dBrMod         d
     , pDJumpMarkFmt   = dJumpMarkFmt   d
     , pDTabStr        = dTabStr        d
@@ -230,6 +233,7 @@ unPrettyEdDesign p = EdDesign
     , dColChar       = pDColChar       p
     , dBGFormat      = pDBGFormat      p
     , dCurrLnMod     = pDCurrLnMod     p
+    , dOverwrite     = pDOverwrite     p
     , dBrMod         = pDBrMod         p
     , dJumpMarkFmt   = pDJumpMarkFmt   p
     , dTabStr        = pDTabStr        p
