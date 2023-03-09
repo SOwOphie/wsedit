@@ -23,6 +23,8 @@ import Graphics.Vty
         , KHome
         , KIns
         , KLeft
+        , KPageDown
+        , KPageUp
         , KRight
         , KUp
         )
@@ -138,6 +140,16 @@ defaultKM =
     , Just ( EvKey (KChar 'r') [MMeta]
            , ( moveViewport 0 10
              , "Move Viewport right 100 columns."
+             )
+           )
+    , Just ( EvKey (KPageUp) []
+           , ( moveViewport (-10) 0
+             , "Move Viewport up 10 lines."
+             )
+           )
+    , Just ( EvKey (KPageDown) []
+           , ( moveViewport 10 0
+             , "Move Viewport down 10 lines."
              )
            )
     , Nothing

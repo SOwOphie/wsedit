@@ -3,6 +3,7 @@
 ## New Features
 
 - `-dc` now highlights the current column.
+- PageUp / PageDown now do something reasonable (move the viewport by 10 lines).
 
 ## Other Changes
 
