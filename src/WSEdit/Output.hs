@@ -88,6 +88,7 @@ import Numeric
     )
 import Safe
     ( atDef
+    , atMay
     , atNote
     , lookupJustDef
     )
@@ -736,7 +737,7 @@ makeBackground = do
         bgSty   =                    dBGFormat  $ edDesign conf
         colChar = fromMaybe bgChar $ dColChar   $ edDesign conf
 
-    return $ pad (lNoWidth + 3) 2 0 0
+    return $ pad (lNoWidth + 4) 2 0 0
            $ vertCat
            $ map (\(n, (x, y, z)) ->
                     if | readOnly s     -> string  bgSty                           $ x ++ y ++ z
@@ -750,13 +751,13 @@ makeBackground = do
            $ drop scrollRows
            $ zip [1..]
            $ repeat
-           $ (\l -> ( take (c' - scrollCols) l
-                    , if c' - scrollCols < 1 || c' - scrollCols > nCols then "" else [atNote (fqn "makeBackground") l $ c' - scrollCols - 1]
+           $ (\l -> ( take (c' - scrollCols - 1) l
+                    , fromMaybe "" $ fmap return $ atMay l $ c' - scrollCols - 1
                     , drop (c' - scrollCols) l
                     )
              )
            $ take nCols
-           $ drop scrollCols
+           $ drop (scrollCols - 1)
            $ cycle
            $ colChar : replicate (dColNoInterval (edDesign conf) - 1) bgChar
 
