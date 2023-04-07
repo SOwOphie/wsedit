@@ -9,6 +9,8 @@
 
 - Jumping around using `Ctrl-B` / `Ctrl-N` now correctly clears the selection.
 - Search terms are now porperly highlighted within line comments.
+- Jumping around using `Ctrl-B` / `Ctrl-N` now jumps as expected when there are
+  multiple search terms in the current line.
 
 ## Other Changes
 

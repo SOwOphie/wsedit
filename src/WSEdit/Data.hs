@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances
            , TypeSynonymInstances
-                      #-}
+           #-}
 
 
 module WSEdit.Data
@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.15"
+version = "1.2.5.16"
 
 -- | Upstream URL.
 upstream :: String
