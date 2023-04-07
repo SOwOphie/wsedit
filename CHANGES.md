@@ -8,6 +8,7 @@
 ## Fixes
 
 - Jumping around using `Ctrl-B` / `Ctrl-N` now correctly clears the selection.
+- Search terms are now porperly highlighted within line comments.
 
 ## Other Changes
 

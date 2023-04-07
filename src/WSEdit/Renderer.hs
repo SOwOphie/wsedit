@@ -237,6 +237,12 @@ rLn (rc, bc) (lNr, l) = do
            $ fsm (c,s) lNr (headDef PNothing $ map snd rc, headDef [] $ map snd bc) l
 
     where
+        searchTermRanges :: EdState -> [(Int, String)]  -> [((Int, Int), HighlightMode)]
+        searchTermRanges _ []          = []
+        searchTermRanges s ((n, x):xs)
+            | x `elem` searchTerms s   = ((n, n + length x - 1), HSearch) : searchTermRanges s xs
+            | otherwise                =                                    searchTermRanges s xs
+
         fsm, fsm2
             :: (EdConfig, EdState)              -- ^ Editor parameters
             -> Int                              -- ^ Line number
@@ -257,7 +263,7 @@ rLn (rc, bc) (lNr, l) = do
         -- Search term
         fsm (c, s) lNo st xxs@((n, x):_)
             | x `elem` searchTerms s
-                = withFst (withFst (((n, n + length x - 1), HSearch):))
+                = withFst (withFst ((searchTermRanges s [(n, x)]) ++))
                 $ fsm2 (c, s) lNo st xxs
 
         -- Keyword
@@ -420,7 +426,7 @@ rLn (rc, bc) (lNr, l) = do
 
             -- Line comment
             |            x `elem`   lineComment  c
-                = (([((n1, maxBound), HComment)], PNothing), ([], st))
+                = ((searchTermRanges s xs ++ [((n1, maxBound), HComment)], PNothing), ([], st))
 
             -- Bracket
             | Just cl <- x `lookup` brackets     c
