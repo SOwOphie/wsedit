@@ -297,12 +297,12 @@ defaultKM =
              )
            )
     , Just ( EvKey (KChar 'n') [MCtrl]
-           , ( forwardToMark
+           , ( forwardToMark >> clearMark
              , "Advance to the next jump mark."
              )
            )
     , Just ( EvKey (KChar 'b') [MCtrl]
-           , ( backwardsToMark
+           , ( backwardsToMark >> clearMark
              , "Go back to the previous jump mark."
              )
            )

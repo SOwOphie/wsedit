@@ -5,6 +5,10 @@
 - `-dc` now highlights the current column.
 - PageUp / PageDown now do something reasonable (move the viewport by 10 lines).
 
+## Fixes
+
+- Jumping around using `Ctrl-B` / `Ctrl-N` now correctly clears the selection.
+
 ## Other Changes
 
 - Changed the characters used to render the border, background and badge to make
