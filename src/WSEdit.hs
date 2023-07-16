@@ -46,7 +46,8 @@ import WSEdit.Arguments
     ( parseArguments
     )
 import WSEdit.Control.Autocomplete
-    ( listAutocomplete
+    ( calcAutocomplete
+    , clearAutocomplete
     )
 import WSEdit.Control.Base
     ( standby
@@ -187,13 +188,13 @@ mainLoop = do
         maybe (case ev of
                     EvKey (KChar k) [] -> deleteSelection
                                        >> insert k
-                                       >> listAutocomplete
+                                       >> calcAutocomplete
 
                     EvResize _ _       -> setStatus $ status s
                     _                  -> setStatus $ "Event not bound: "
                                                    ++ show ev
               )
-              fst
+              ((>> clearAutocomplete) . fst)
               $ lookup ev
               $ catMaybes
               $ keymap c

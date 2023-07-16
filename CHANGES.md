@@ -21,6 +21,7 @@
   some fonts).
 - Made search terms stand out more, and error formatting more readable.
 - The cursor now turns bright red if overwrite mode is active.
+- Added popup for autocompletion.
 
 # v1.2.5
 

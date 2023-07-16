@@ -44,12 +44,6 @@ import Data.Tuple
     )
 import Graphics.Vty
     ( Attr
-        ( Attr
-        , attrBackColor
-        , attrForeColor
-        , attrStyle
-        , attrURL
-        )
     , Background
         ( ClearBackground
         )
@@ -58,9 +52,6 @@ import Graphics.Vty
         , NoCursor
         )
     , Image
-    , MaybeDefault
-        ( KeepCurrent
-        )
     , Picture
         ( Picture
         , picBackground
@@ -123,6 +114,7 @@ import WSEdit.Data
     , EdState
         ( badgeText
         , changed
+        , completion
         , edLines
         , elTabCache
         , fname
@@ -215,18 +207,6 @@ data Snippet = Snippet
         -- | What it should look like.
 
     , sStr     :: String
-        -- | Contained string.
-    }
-
--- | Intermediate format for rendering.
-data CalcSnippet = CalcSnippet
-    { csNominal :: Attr
-        -- | What it should look like.
-
-    , csActual  :: Attr
-        -- | Optimized `Attr` carrying over attributes from the previous snippet, if possibe.
-
-    , csStr     :: String
         -- | Contained string.
     }
 
@@ -376,56 +356,20 @@ lineRep visC lNo off str = do
     (r,_,_,_) <- foldM f ([], 1, 1, off) str
 
     return $ horizCat
-           $ map (\CalcSnippet { csActual = a, csStr = b } -> string a b)
+           $ map (\Snippet { sNominal = a, sStr = b } -> string a b)
            $ calcSnippet Nothing
            $ reverse r
 
     where
         -- | Snippet combiner. The first argument is an accumulator for the
         --   current snippet, the second is a list of snippets to combine.
-        calcSnippet :: Maybe CalcSnippet -> [Snippet] -> [CalcSnippet]
-        calcSnippet  Nothing      []             = []
-        calcSnippet (Just x     ) []             = [x]
-        calcSnippet  Nothing      (x       :xs ) =
-            calcSnippet (Just $ CalcSnippet { csNominal = sNominal x
-                                            , csActual  = sNominal x
-                                            , csStr     = sStr     x
-                                            }
-                        ) xs
-
-        calcSnippet (Just cs) (x:xs)
-            | csNominal cs == sNominal x =
-                calcSnippet (Just $ cs { csStr = csStr cs ++ sStr x }) xs
-
-            | otherwise                  =
-                cs : calcSnippet (Just $ CalcSnippet
-                                    { csNominal = sNominal x
-                                    , csActual  = Attr
-                                        { attrStyle     = tryPreserve
-                                            (attrStyle     $ csNominal cs)
-                                            (attrStyle     $  sNominal x )
-
-                                        , attrForeColor = tryPreserve
-                                            (attrForeColor $ csNominal cs)
-                                            (attrForeColor $  sNominal x )
-
-                                        , attrBackColor = tryPreserve
-                                            (attrBackColor $ csNominal cs)
-                                            (attrBackColor $  sNominal x )
-
-                                        , attrURL       = tryPreserve
-                                            (attrURL       $ csNominal cs)
-                                            (attrURL       $  sNominal x )
-                                        }
-                                    , csStr     = sStr x
-                                    }
-                                 ) xs
-
-
-        tryPreserve :: (Eq a) => MaybeDefault a -> MaybeDefault a -> MaybeDefault a
-        tryPreserve x y | x == y    = KeepCurrent
-                        | otherwise = y
-
+        calcSnippet :: Maybe Snippet -> [Snippet] -> [Snippet]
+        calcSnippet Nothing  []        = []
+        calcSnippet (Just x) []        = [x]
+        calcSnippet Nothing  (x:xs)    = calcSnippet (Just x) xs
+        calcSnippet (Just s) (x:xs)
+            | sNominal s == sNominal x = calcSnippet (Just $ s { sStr = sStr s ++ sStr x }) xs
+            | otherwise                = s : calcSnippet (Just x) xs
 
         inBracketHL :: ((Int, Int), (Int, Int)) -> (Int, Int) -> Bool
         inBracketHL ((a, b), (c, d)) (x, y) = (x, y) `elem` [(a, b), (c, d)]
@@ -850,6 +794,31 @@ makeShittyBadge str = do
 
 
 
+-- | Generates the autocomplete popup.
+makeAutocompletePopup :: WSEdit Image
+makeAutocompletePopup = gets completion >>= \case
+    Nothing         -> return emptyImage
+    Just (t, p, ss) -> do
+        ((ru, rd), (cl, cr)) <- cursorOffScreen
+        if (ru + rd + cl + cr > 0)
+           then return emptyImage
+           else do
+                    d      <- asks edDesign
+                    (r, c) <- getCursor >>= toCursorDispPos
+                    let w    = maximum $ map length $ "" : ss
+                        go s = horizCat
+                                    [ string               (dCurrLnMod d)                    t
+                                    , string (combineAttrs (dCurrLnMod d) $ dStatusFormat d) p
+                                    , string               (dCurrLnMod d)                    s
+                                    ]
+                    return $ pad (c - length t - 1) (r + 1) 0 0
+                           $ (<-> string (dFrameFormat d) ("└" ++ replicate (length t + length p + w) '─' ++ "┘"))
+                           $ vertCat
+                           $ map (\s -> horizCat [string (dFrameFormat d) "│", go s, string (dFrameFormat d) "│"])
+                           $ map (padRight w ' ') ss
+
+
+
 -- | Draws everything.
 draw :: WSEdit ()
 draw = do
@@ -868,6 +837,8 @@ draw = do
                   Just str  -> makeShittyBadge $ " " ++ str ++ " "
                   Nothing -> return emptyImage
 
+    ac    <- makeAutocompletePopup
+
     liftIO $ update (vtyObj c)
              Picture
                 { picCursor     = if readOnly s || ru + rd + cl + cr > 0 || overwrite s
@@ -875,9 +846,10 @@ draw = do
                                      else uncurry Cursor $ swap cursor
                 , picLayers     = [ bad
                                   , frame
+                                  , scr
+                                  , ac
                                   , txt
                                   , bg
-                                  , scr
                                   ]
                 , picBackground = ClearBackground
                 }

@@ -108,7 +108,7 @@ import qualified WSEdit.Buffer as B
 
 -- | Version number constant.
 version :: String
-version = "1.2.5.16"
+version = "1.2.5.17"
 
 -- | Upstream URL.
 upstream :: String
@@ -123,7 +123,7 @@ data Stability = Prototype
 
 -- | Current release stability
 stability :: Stability
-stability = WIP
+stability = Prototype
 
 
 
@@ -234,10 +234,10 @@ data EdState = EdState
         -- ^ File match and indentation depth pairs for dictionary building.
         --   'Nothing' stands for the current file or all depths.
 
-    , canComplete  :: Bool
-        -- ^ Whether the autocomplete function can be invoked at this moment
-        --   (usually 'True' while the user is typing and 'False' while he's
-        --   scrolling).
+    , completion   :: Maybe (String, String, [String])
+        -- ^ If autocompletion can be applied, already typed part, common prefix
+        --   of all suggestions minus typed part, all the possible suffixes
+        --   after that.
 
     , replaceTabs  :: Bool
         -- ^ Whether to insert spaces instead of tabs. Has no effect on existing
@@ -295,7 +295,7 @@ instance Default EdState where
         , lastEvent    = Nothing
 
         , buildDict    = []
-        , canComplete  = False
+        , completion   = Nothing
         , replaceTabs  = False
         , detectTabs   = True
         , overwrite    = False

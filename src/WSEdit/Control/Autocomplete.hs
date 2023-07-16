@@ -1,8 +1,10 @@
+{-# LANGUAGE LambdaCase #-}
+
 module WSEdit.Control.Autocomplete
     ( dictAdd
     , dictAddRec
-    , listAutocomplete
-    , applyAutocomplete
+    , clearAutocomplete
+    , calcAutocomplete
     , completeOr
     ) where
 
@@ -21,6 +23,7 @@ import Control.Monad.IO.Class
 import Control.Monad.RWS.Strict
     ( ask
     , get
+    , gets
     , modify
     , put
     )
@@ -28,9 +31,11 @@ import Data.Char
     ( isSpace
     )
 import Data.List
-    ( intercalate
-    , isPrefixOf
+    ( isPrefixOf
     , stripPrefix
+    )
+import Data.Maybe
+    ( catMaybes
     )
 import Safe
     ( lastDef
@@ -61,7 +66,7 @@ import WSEdit.Data
         )
     , EdState
         ( buildDict
-        , canComplete
+        , completion
         , cursorPos
         , dict
         , edLines
@@ -72,7 +77,6 @@ import WSEdit.Data
 import WSEdit.Data.Algorithms
     ( canonicalPath
     , fileMatch
-    , setStatus
     )
 import WSEdit.Util
     ( findInStr
@@ -89,7 +93,6 @@ import WSEdit.WordTree
     )
 
 import qualified WSEdit.Buffer as B
-
 
 
 
@@ -195,9 +198,15 @@ dictAddRec = do
 
 
 
--- | Lists all autocomplete possibilities into the status bar.
-listAutocomplete :: WSEdit ()
-listAutocomplete = do
+-- | Clears the autocompletion state.
+clearAutocomplete :: WSEdit ()
+clearAutocomplete = modify $ \s -> s { completion = Nothing }
+
+
+
+-- | Calculate autocomplete possibilities.
+calcAutocomplete :: WSEdit ()
+calcAutocomplete = do
     s <- get
     c <- ask
 
@@ -207,47 +216,14 @@ listAutocomplete = do
                 $ B.pos
                 $ edLines s of
 
-               Nothing -> setStatus "..."
+               Nothing -> clearAutocomplete
                Just  k ->
                 let
-                    l = complete k
-                        $ dict s
-                    p = longestCommonPrefix l
-                in do
-                    setStatus $ k
-                            ++ " => "
-                            ++ p
-                            ++ " => { "
-                            ++ intercalate " | " l
-                            ++ " }"
-
-                    modify (\s' -> s' { canComplete = p /= "" })
-
-
-
--- | Inserts the longest common prefix of all autocomplete suggestions.
-applyAutocomplete :: WSEdit ()
-applyAutocomplete = do
-    s <- get
-    c <- ask
-
-    when (not (null $ buildDict s) && canComplete s)
-        $ case getKeywordAtCursor (addnIdChars c) (cursorPos s)
-                $ snd
-                $ B.pos
-                $ edLines s of
-
-               Nothing -> return ()
-               Just  k ->
-                let
-                    w = longestCommonPrefix
-                        $ complete k
-                        $ dict s
-                in
-                    case stripPrefix k w of
-                         Nothing -> setStatus "X"
-                         Just  i -> alterBuffer
-                                  $ insertRaw i
+                    l  = complete k $ dict s
+                    p  = longestCommonPrefix l
+                in  case stripPrefix k p of
+                         Nothing -> return ()
+                         Just p' -> modify $ \s' -> s' { completion = Just (k, p', catMaybes $ map (stripPrefix p) l) }
 
 
 
@@ -255,7 +231,8 @@ applyAutocomplete = do
 --   if impossible.
 completeOr :: WSEdit () -> WSEdit ()
 completeOr a = do
-    b <- canComplete <$> get
-    if b
-       then applyAutocomplete
-       else a
+    calcAutocomplete
+
+    gets completion >>= \case
+        Nothing        -> a
+        Just (_, p, _) -> alterBuffer $ insertRaw p

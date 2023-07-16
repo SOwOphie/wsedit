@@ -76,7 +76,7 @@ import WSEdit.Data
         )
     , EdState
         ( badgeText
-        , canComplete
+        , completion
         , continue
         , cursorPos
         , edLines
@@ -160,7 +160,7 @@ alterBuffer a = refuseOnReadOnly
 -- | Declares that an action will alter the text buffer or the cursor position.
 --   Included in 'alterBuffer'.
 alterState :: WSEdit a -> WSEdit a
-alterState a = modify (\s -> s { canComplete = False })
+alterState a = modify (\s -> s { completion = Nothing })
             >> a
 
 
