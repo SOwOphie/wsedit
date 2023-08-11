@@ -44,7 +44,7 @@ how `wsedit` works, except some small quirks here and there maybe.
 
 As `vty` (`wsedit`'s terminal I/O library) depends on `unix` which supports
 neither `Cygwin` nor `MinGW`, there's currently no way to build `wsedit` for
-Windows. Maybe with `WSL`?
+Windows
 
 ### Linux: build from source
 
@@ -69,7 +69,8 @@ need your help to test some things for me.
 1.  Install:
   * [stack](http://docs.haskellstack.org/en/stable/README/),
   * `ncurses` with unicode support,
-  * `xclip` or `xsel`, optional, makes `wsedit` use the system clipboard.
+  * `wl-clipboard`, `xclip` or `xsel`, optional, makes `wsedit` use the system
+    clipboard.
 2.  Grab the latest `wsedit` release off GitHub.
 3.  Run `stack install`, the binary will be placed into `$HOME/.local/bin/`.
 4.  Either add `$HOME/.local/bin/` to your `$PATH` or copy/link/symlink the
@@ -94,9 +95,9 @@ the `Troubleshooting` section further down below and see if it helps.
     directly.)
 2.  Make sure you have `ncurses` with unicode support installed. This should be
     default on most popular distributions.
-3.  *Optional*, Linux only: Install either `xclip` or `xsel` with your package
-    manager. If this step is skipped, `wsedit` will use a file buffer instead of
-    the system facilities for copy/paste functionality.
+3.  *Optional*, Linux only: Install either `wl-clipboard`, `xclip` or `xsel`
+    with your package manager. If this step is skipped, `wsedit` will use a file
+    buffer instead of the system facilities for copy/paste functionality.
 4.  Grab the latest stable release of `wsedit` from the `Releases` tab on
     GitHub.
 5.  Extract the archive and point your shell towards its contents.

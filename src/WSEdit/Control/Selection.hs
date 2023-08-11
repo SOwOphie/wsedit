@@ -1,4 +1,6 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase
+           , TupleSections
+           #-}
 
 module WSEdit.Control.Selection
     ( initMark
@@ -14,6 +16,10 @@ module WSEdit.Control.Selection
     ) where
 
 
+import Control.Exception
+    ( SomeException
+    , try
+    )
 import Control.Monad.IO.Class
     ( liftIO
     )
@@ -22,6 +28,7 @@ import Control.Monad.RWS.Strict
     , get
     , modify
     , put
+    , void
     )
 import Data.List
     ( stripPrefix
@@ -32,13 +39,18 @@ import Data.Maybe
     )
 import Safe
     ( headMay
+    , initNote
     )
 import System.Directory
     ( getHomeDirectory
     )
-import System.Hclip
-    ( getClipboard
-    , setClipboard
+import System.Exit
+    ( ExitCode
+        ( ExitSuccess
+        )
+    )
+import System.Info
+    ( os
     )
 import System.Posix.Files
     ( fileMode
@@ -46,6 +58,11 @@ import System.Posix.Files
     , intersectFileModes
     , ownerModes
     , setFileMode
+    )
+import System.Process
+    ( readCreateProcess
+    , readCreateProcessWithExitCode
+    , shell
     )
 
 import WSEdit.Control.Base
@@ -82,13 +99,17 @@ import WSEdit.Data.Algorithms
     , setStatus
     )
 import WSEdit.Util
-    ( checkClipboardSupport
-    , linesPlus
+    ( linesPlus
     , mayReadFile
     , withSnd
     )
 
 import qualified WSEdit.Buffer as B
+
+
+
+fqn :: String -> String
+fqn = ("WSEdit.Control.Selection." ++)
 
 
 
@@ -136,72 +157,103 @@ deleteSelection = flip ifMarked (return ()) $ alterBuffer $ do
 
 
 
+-- | Check if the specified clipboard command works.
+haveClipboardCmd :: String -> IO Bool
+haveClipboardCmd s = (try (readCreateProcessWithExitCode (shell s) "") :: IO (Either SomeException (ExitCode, String, String))) >>= \case
+    Right (ExitSuccess, _, _) -> return True
+    _                         -> return False
+
+
+
 -- | Copy the text in the selection to the clipboard.
 copy :: WSEdit ()
-copy = refuseOnReadOnly
-     $ getSelection >>= \case
+copy = refuseOnReadOnly $ getSelection >>= \case
             Nothing -> setStatus "Warning: nothing selected."
-            Just s  -> do
-                b <- liftIO checkClipboardSupport
+            Just s  -> firstOrBuiltin s $ case os of
+                                               "darwin" -> [ (return True                             , into "pbcopy"            , "pbcopy" ) ]
+                                               "linux"  -> [ (haveClipboardCmd "wl-paste"             , into "wl-copy"           , "wl-copy")
+                                                           , (haveClipboardCmd "xsel -b -o"           , into "xsel -b -i"        , "xsel"   )
+                                                           , (haveClipboardCmd "xclip -selection c -o", into "xclip -selection c", "xclip"  )
+                                                           ]
+                                               _        -> []
+    where
+        into :: String -> String -> IO ()
+        into cmd text = void $ readCreateProcess (shell cmd) text
 
-                if b
-                   then do
-                        liftIO $ setClipboard s
+        firstOrBuiltin :: String -> [(IO Bool, String -> IO (), String)] -> WSEdit ()
+        firstOrBuiltin s ((t, a, n):xs) = do
+            liftIO t >>= \case
+                False -> firstOrBuiltin s xs
+                True  -> liftIO (a s) >> setStatus ( n
+                                                  ++ ": copied "
+                                                  ++ show (length $ linesPlus s)
+                                                  ++ " lines ("
+                                                  ++ show (length s)
+                                                  ++ " chars) to system clipboard."
+                                                   )
+        firstOrBuiltin s []          = do
+            liftIO $ do
+                fname <- (++ "/.wsedit-clipboard")
+                     <$> getHomeDirectory
 
-                        setStatus $ "Copied "
-                                 ++ show (length $ linesPlus s)
-                                 ++ " lines ("
-                                 ++ show (length s)
-                                 ++ " chars) to system clipboard."
+                writeFile   fname ""
+                setFileMode fname
+                    . intersectFileModes ownerModes
+                  =<< fmap fileMode (getFileStatus fname)
 
-                   else do
-                        liftIO $ do
-                            fname <- (++ "/.wsedit-clipboard")
-                                 <$> getHomeDirectory
+                writeFile fname s
 
-                            writeFile   fname ""
-                            setFileMode fname
-                                . intersectFileModes ownerModes
-                              =<< fmap fileMode (getFileStatus fname)
-
-                            writeFile fname s
-
-                        setStatus $ "Copied "
-                                 ++ show (length $ linesPlus s)
-                                 ++ " lines ("
-                                 ++ show (length s)
-                                 ++ " chars) to editor clipboard."
-
+            setStatus $ "Copied "
+                     ++ show (length $ linesPlus s)
+                     ++ " lines ("
+                     ++ show (length s)
+                     ++ " chars) to editor clipboard."
 
 
 
 -- | Paste the clipboard contents to the cursor position.
 paste :: WSEdit ()
 paste = alterBuffer $ do
-    b <- liftIO checkClipboardSupport
+    (back, txt) <- firstOrBuiltin $ case os of
+                                         "darwin" -> [ (return True                             ,              from "pbpaste"              , "pbpaste" ) ]
+                                         "linux"  -> [ (haveClipboardCmd "wl-paste"             , fmap strip $ from "wl-paste"             , "wl-paste")
+                                                     , (haveClipboardCmd "xsel -b -o"           ,              from "xsel -b -o"           , "xsel"    )
+                                                     , (haveClipboardCmd "xclip -selection c -o",              from "xclip -selection c -o", "xclip"   )
+                                                     ]
+                                         _        -> []
 
-    c1 <- liftIO
-        $ if b
-             then getClipboard
-             else do
-                    h <- getHomeDirectory
-                    fromMaybe "" <$> mayReadFile (h ++ "/.wsedit-clipboard")
-
-    if c1 == ""
-       then setStatus $ if b
+    if txt == ""
+       then setStatus $ if isJust back
                            then "Warning: System clipboard is empty."
                            else "Warning: Editor clipboard is empty."
 
        else do
-            let c = linesPlus c1
-            insertText c1
-            setStatus $ "Pasted "
-                     ++ show (length c)
+            insertText txt
+            setStatus $ maybe "Pasted " (++ ": pasted ") back
+                     ++ show (length $ linesPlus txt)
                      ++ " lines ("
-                     ++ show (length c1)
-                     ++ if b
+                     ++ show (length txt)
+                     ++ if isJust back
                            then " chars) from system clipboard."
                            else " chars) from editor clipboard."
+
+    where
+        from :: String -> IO String
+        from cmd = readCreateProcess (shell cmd) ""
+
+        firstOrBuiltin :: [(IO Bool, IO String, String)] -> WSEdit (Maybe String, String)
+        firstOrBuiltin ((t, a, n):xs) = do
+            liftIO t >>= \case
+                False -> firstOrBuiltin xs
+                True  -> fmap (Just n,) $ liftIO a
+
+        firstOrBuiltin []          = liftIO $ do
+            h <- getHomeDirectory
+            fmap ((Nothing,) . fromMaybe "") $ mayReadFile (h ++ "/.wsedit-clipboard")
+
+        strip :: String -> String
+        strip "" = ""
+        strip s  = initNote (fqn "paste") s
 
 
 

@@ -37,7 +37,6 @@ module WSEdit.Util
     , getExt
     , getKeywordAtCursor
     , longestCommonPrefix
-    , checkClipboardSupport
     , findInStr
     , findIsolated
     , findPrefixed
@@ -86,9 +85,6 @@ import Data.List
     , intersect
     , tails
     )
-import Data.Maybe
-    ( isJust
-    )
 #ifdef dev
 import Data.Time.Clock
     ( diffTimeToPicoseconds
@@ -124,19 +120,8 @@ import System.Directory
 #endif
     , listDirectory
     )
-import System.Environment
-    ( lookupEnv
-    )
-import System.Exit
-    ( ExitCode
-        ( ExitSuccess
-        )
-    )
 import System.FilePath
     ( (</>)
-    )
-import System.Info
-    ( os
     )
 import System.IO
     ( IOMode
@@ -157,9 +142,6 @@ import System.IO.Unsafe
     ( unsafePerformIO
     )
 #endif
-import System.Process
-    ( readProcessWithExitCode
-    )
 #ifdef dev
 import Text.Show.Pretty
     ( ppShow
@@ -527,25 +509,6 @@ longestCommonPrefix [] = []
 longestCommonPrefix s  = lastDef []
                        $ foldl1Note (fqn "longestCommonPrefix") intersect
                        $ map inits s
-
-
-
--- | Checks whether either `xclip` or `xsel` is ready for action.  Always
---   returns `True` on Darwin, since HClip uses built-in features there.
-checkClipboardSupport :: IO Bool
-checkClipboardSupport =
-    if os == "darwin"
-       then return True
-       else do
-            r1   <- try $ readProcessWithExitCode "xclip" ["-version"] ""
-            r2   <- try $ readProcessWithExitCode "xsel"  []           ""
-            disp <- lookupEnv "DISPLAY"
-            return $ (ok r1 || ok r2) && isJust disp
-
-    where
-        ok :: Either SomeException (ExitCode, String, String) -> Bool
-        ok (Right (ExitSuccess, _, _)) = True
-        ok _                           = False
 
 
 

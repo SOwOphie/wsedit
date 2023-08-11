@@ -22,6 +22,9 @@
 - Made search terms stand out more, and error formatting more readable.
 - The cursor now turns bright red if overwrite mode is active.
 - Added popup for autocompletion.
+- Removed dependency on stale `hclip`. Clipboard support is now implemented
+  directly. Also, wayland clipboard support is now implemented via
+  `wl-clipboard`.
 
 # v1.2.5
 
